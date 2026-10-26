@@ -1,0 +1,209 @@
+import AppKit
+import YuzuCore
+
+// URLs and their grants are immutable; Foundation permits balancing scopes on another thread.
+final class ScopedFiles: @unchecked Sendable {
+    let urls: [URL]
+    private let granted: [URL]
+
+    init(_ urls: [URL]) {
+        self.urls = urls
+        granted = urls.filter { $0.startAccessingSecurityScopedResource() }
+    }
+    deinit { granted.forEach { $0.stopAccessingSecurityScopedResource() } }
+}
+
+@MainActor
+final class ActionController: NSObject, NSSharingServiceDelegate {
+    private let access: AccessStore
+    private let settings: Settings
+    private var sharing: NSSharingService?
+    private var sharedFiles: ScopedFiles?
+    private var clipboardFiles: ScopedFiles?
+    private var clipboardTimer: Timer?
+    private var shelves: [ShelfController] = []
+    var onMove: ((ScopedFiles, URL) -> Void)?
+    var onCompress: ((ScopedFiles, URL) -> Void)?
+
+    init(access: AccessStore, settings: Settings) {
+        self.access = access
+        self.settings = settings
+    }
+
+    func perform(_ action: FileAction, files: ScopedFiles) {
+        do {
+            switch action {
+            case .copy:
+                NSPasteboard.general.clearContents()
+                guard NSPasteboard.general.writeObjects(files.urls as [NSURL]) else {
+                    throw CocoaError(.fileWriteUnknown)
+                }
+                retainClipboardFiles(files)
+            case .copyPath:
+                NSPasteboard.general.clearContents()
+                guard NSPasteboard.general.setString(files.urls.map(\.path).joined(separator: "\n"),
+                                                      forType: .string) else { throw CocoaError(.fileWriteUnknown) }
+            case .move:
+                NSApp.activate(ignoringOtherApps: true)
+                if let folder = try access.chooseDestination() { onMove?(files, folder) }
+            case .compress:
+                NSApp.activate(ignoringOtherApps: true)
+                if let first = files.urls.first, let folder = try access.outputFolder(beside: first) {
+                    onCompress?(files, folder)
+                }
+            case .airDrop:
+                guard sharing == nil else { throw ActionError.sharingInProgress }
+                guard let service = NSSharingService(named: .sendViaAirDrop),
+                      service.canPerform(withItems: files.urls) else { throw ActionError.airDropUnavailable }
+                // Keep the file grants alive until AppKit completes or fails the share.
+                sharing = service
+                sharedFiles = files
+                service.delegate = self
+                service.perform(withItems: files.urls)
+            case .openTerminal:
+                guard let terminal = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal")
+                else { throw ActionError.terminalUnavailable }
+                Task {
+                    do {
+                        let folders = try await Task.detached { try Self.terminalFolders(files.urls) }.value
+                        let config = NSWorkspace.OpenConfiguration()
+                        NSWorkspace.shared.open(folders, withApplicationAt: terminal,
+                                                configuration: config) { _, error in
+                            if let error { Task { @MainActor in Self.show(error) } }
+                            _ = files
+                        }
+                    } catch { Self.show(error) }
+                }
+            case .float:
+                shelves.removeAll { $0.window?.isVisible != true }
+                let shelf: ShelfController
+                if settings.addToShelf, let existing = shelves.last { shelf = existing }
+                else { shelf = ShelfController(); shelves.append(shelf) }
+                shelf.add(files)
+            }
+        } catch { Self.show(error) }
+    }
+
+    func sharingService(_ sharingService: NSSharingService, didShareItems items: [Any]) { finishSharing() }
+    func sharingService(_ sharingService: NSSharingService, didFailToShareItems items: [Any], error: Error) {
+        finishSharing()
+        Self.show(error)
+    }
+    private func finishSharing() { sharing?.delegate = nil; sharing = nil; sharedFiles = nil }
+
+    private func retainClipboardFiles(_ files: ScopedFiles) {
+        clipboardFiles = files
+        clipboardTimer?.invalidate()
+        let changeCount = NSPasteboard.general.changeCount
+        // A later paste may still need the original Sandbox file grants.
+        clipboardTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] timer in
+            MainActor.assumeIsolated {
+                if NSPasteboard.general.changeCount != changeCount {
+                    self?.clipboardFiles = nil
+                    self?.clipboardTimer = nil
+                    timer.invalidate()
+                }
+            }
+        }
+    }
+
+    nonisolated static func terminalFolders(_ urls: [URL]) throws -> [URL] {
+        var folders: [URL] = []
+        for url in urls {
+            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey])
+            let folder = (values.isDirectory == true && values.isPackage != true
+                          ? url : url.deletingLastPathComponent()).standardizedFileURL
+            if !folders.contains(where: { $0.path == folder.path }) { folders.append(folder) }
+        }
+        return folders
+    }
+
+    static func show(_ error: Error) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert(error: error)
+        alert.runModal()
+    }
+}
+
+private enum ActionError: LocalizedError {
+    case airDropUnavailable, sharingInProgress, terminalUnavailable
+    var errorDescription: String? {
+        switch self {
+        case .airDropUnavailable: return "AirDrop недоступен для этих файлов на этом Mac."
+        case .sharingInProgress: return "Дождитесь завершения текущей отправки AirDrop."
+        case .terminalUnavailable: return "Приложение Terminal не найдено."
+        }
+    }
+}
+
+@MainActor
+private final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate,
+                                     NSWindowDelegate {
+    private let table = NSTableView()
+    private var files: [URL] = []
+    private var leases: [ScopedFiles] = []
+
+    init() {
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 310, height: 260),
+                            styleMask: [.titled, .closable, .resizable, .utilityWindow],
+                            backing: .buffered, defer: false)
+        panel.title = "Полка Yuzu"
+        panel.level = .floating
+        panel.isReleasedWhenClosed = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        super.init(window: panel)
+        panel.delegate = self
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("file"))
+        column.width = 286
+        table.addTableColumn(column)
+        table.headerView = nil
+        table.rowHeight = 38
+        table.allowsMultipleSelection = true
+        table.dataSource = self
+        table.delegate = self
+        table.setDraggingSourceOperationMask(.copy, forLocal: false)
+        table.setAccessibilityLabel("Файлы на полке. Перетащите в другое приложение.")
+        let menu = NSMenu()
+        let remove = menu.addItem(withTitle: "Убрать с полки", action: #selector(removeSelected), keyEquivalent: "")
+        remove.target = self
+        table.menu = menu
+        let scroll = NSScrollView(frame: panel.contentView!.bounds)
+        scroll.autoresizingMask = [.width, .height]
+        scroll.hasVerticalScroller = true
+        scroll.documentView = table
+        panel.contentView?.addSubview(scroll)
+        panel.center()
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+
+    func add(_ incoming: ScopedFiles) {
+        files.append(contentsOf: incoming.urls.filter { !files.contains($0) })
+        leases.append(incoming)
+        table.reloadData()
+        window?.orderFrontRegardless()
+    }
+    func numberOfRows(in tableView: NSTableView) -> Int { files.count }
+    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+        let view = NSTableCellView()
+        let icon = NSImageView(frame: NSRect(x: 7, y: 5, width: 28, height: 28))
+        icon.image = NSWorkspace.shared.icon(forFile: files[row].path)
+        let label = NSTextField(labelWithString: files[row].lastPathComponent)
+        label.frame = NSRect(x: 44, y: 10, width: 238, height: 20)
+        label.lineBreakMode = .byTruncatingMiddle
+        label.setAccessibilityLabel(files[row].path)
+        view.addSubview(icon)
+        view.addSubview(label)
+        return view
+    }
+    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
+        files[row] as NSURL
+    }
+    @objc private func removeSelected() {
+        let rows = table.selectedRowIndexes
+        files = files.enumerated().filter { !rows.contains($0.offset) }.map(\.element)
+        // Closing or removing a reference never deletes the original file.
+        if files.isEmpty { leases.removeAll() }
+        table.reloadData()
+    }
+    func windowWillClose(_ notification: Notification) { files.removeAll(); leases.removeAll() }
+}
