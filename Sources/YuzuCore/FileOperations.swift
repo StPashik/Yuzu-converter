@@ -1,0 +1,144 @@
+import Foundation
+import Darwin
+
+public enum FileOperations {
+    public static func copy(_ sources: [URL], to directory: URL, move: Bool) throws -> [URL] {
+        var isDirectory: ObjCBool = false
+        guard !sources.isEmpty, FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            throw ConversionError.invalid("Выберите существующую папку назначения.")
+        }
+        let selected = try normalized(sources)
+        var outputs: [URL] = []
+        for source in selected {
+            try Task.checkCancellation()
+            let source = source.standardizedFileURL
+            let destination = directory.standardizedFileURL
+            // A directory cannot be copied into itself, even through a symlink.
+            let resolvedSource = source.resolvingSymlinksInPath().path
+            let resolvedDestination = destination.resolvingSymlinksInPath().path
+            if (try source.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true,
+               resolvedDestination == resolvedSource || resolvedDestination.hasPrefix(resolvedSource + "/") {
+                throw ConversionError.invalid("Нельзя поместить папку внутрь неё самой.")
+            }
+            if move {
+                if source.deletingLastPathComponent().resolvingSymlinksInPath() == destination.resolvingSymlinksInPath() { outputs.append(source); continue }
+                do {
+                    outputs.append(try publish(source, named: source.lastPathComponent, in: destination))
+                    continue
+                } catch let error as POSIXError where error.code == .EXDEV {
+                    // shortcut: cross-volume folder moves need coordinated recursive verification before deletion.
+                    if try source.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true {
+                        throw ConversionError.unsupported("Перемещение папок между томами пока недоступно; исходники сохранены. Используйте копирование или Finder.")
+                    }
+                }
+            }
+            let before = try source.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+            let scratch = destination.appendingPathComponent(".yuzu-copy-" + UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: scratch) }
+            try FileManager.default.copyItem(at: source, to: scratch)
+            try Task.checkCancellation()
+            let output = try publish(scratch, named: source.lastPathComponent, in: destination)
+            outputs.append(output)
+            if move {
+                // Publish the complete copy before removing anything from the original location.
+                let after = try source.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+                guard before.fileSize == after.fileSize, before.contentModificationDate == after.contentModificationDate else {
+                    throw ConversionError.failed("Исходник изменился во время копирования; обе копии сохранены.")
+                }
+                try FileManager.default.removeItem(at: source)
+            }
+        }
+        return outputs
+    }
+
+    public static func compress(_ sources: [URL], in directory: URL) throws -> URL {
+        try Task.checkCancellation()
+        let selected = try normalized(sources)
+        var isDirectory: ObjCBool = false
+        guard !selected.isEmpty, FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+            throw ConversionError.invalid("Выберите файлы и существующую папку для ZIP.")
+        }
+        let names = selected.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
+        guard Set(names).count == names.count else {
+            throw ConversionError.invalid("У выбранных файлов совпадают имена; переименуйте их перед созданием одного ZIP.")
+        }
+        let destination = directory.resolvingSymlinksInPath()
+        for source in selected {
+            let values = try source.resourceValues(forKeys: [.isDirectoryKey])
+            if values.isDirectory == true {
+                let path = source.resolvingSymlinksInPath().path
+                guard destination.path != path, !destination.path.hasPrefix(path + "/") else {
+                    throw ConversionError.invalid("ZIP нельзя создавать внутри сжимаемой папки.")
+                }
+            }
+            try rejectLinks(source)
+        }
+        let scratch = try self.scratch(in: directory)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let contents = scratch.appendingPathComponent("contents", isDirectory: true)
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: false)
+        _ = try copy(selected, to: contents, move: false)
+        try rejectLinks(contents)
+        let output = scratch.appendingPathComponent("result.zip")
+        // -y prevents a link introduced during staging from making zip follow another tree.
+        _ = try ProcessRunner.checked(URL(fileURLWithPath: "/usr/bin/zip"), ["-q", "-r", "-y", output.path, "."], directory: contents)
+        _ = try ArchiveReader(output).entries()
+        try Task.checkCancellation()
+        let name = selected.count == 1 ? selected[0].lastPathComponent + ".zip" : "Archive.zip"
+        return try publish(output, named: name, in: directory)
+    }
+
+    private static func normalized(_ sources: [URL]) throws -> [URL] {
+        var seen = Set<URL>()
+        let unique = sources.map(\.standardizedFileURL).filter { seen.insert($0).inserted }
+        let parents = try unique.filter { url in
+            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            return values.isDirectory == true && values.isSymbolicLink != true
+        }
+        // A selected folder already includes its descendants; moving those URLs again would fail.
+        return unique.filter { candidate in !parents.contains { parent in candidate != parent && candidate.path.hasPrefix(parent.path + "/") } }
+    }
+
+    private static func rejectLinks(_ source: URL) throws {
+        func check(_ url: URL) throws {
+            try Task.checkCancellation()
+            let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+            guard values.isSymbolicLink != true, values.isDirectory == true || values.isRegularFile == true else {
+                throw ConversionError.invalid("ZIP поддерживает обычные файлы и папки, без ссылок и специальных файлов: \(url.lastPathComponent)")
+            }
+        }
+        try check(source)
+        guard try source.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else { return }
+        var enumerationError: Error?
+        guard let items = FileManager.default.enumerator(at: source, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey], errorHandler: { _, error in enumerationError = error; return false }) else {
+            throw ConversionError.failed("Не удалось прочитать папку \(source.lastPathComponent).")
+        }
+        for case let item as URL in items { try check(item) }
+        if let enumerationError { throw enumerationError }
+    }
+
+    static func publish(_ staged: URL, named name: String, in directory: URL) throws -> URL {
+        let safeName = URL(fileURLWithPath: name).lastPathComponent
+        let ext = (safeName as NSString).pathExtension
+        let stem = (safeName as NSString).deletingPathExtension
+        for index in 1...10_000 {
+            try Task.checkCancellation()
+            let candidate = index == 1 ? safeName : stem + " \(index)" + (ext.isEmpty ? "" : "." + ext)
+            let destination = directory.appendingPathComponent(candidate)
+            // RENAME_EXCL makes the last step atomic and closes the check-then-overwrite race.
+            let result = staged.path.withCString { from in
+                destination.path.withCString { to in renamex_np(from, to, UInt32(RENAME_EXCL)) }
+            }
+            if result == 0 { return destination }
+            if errno == EEXIST || errno == ENOTEMPTY { continue }
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        throw ConversionError.failed("Не удалось подобрать свободное имя для \(name).")
+    }
+
+    static func scratch(in directory: URL) throws -> URL {
+        let url = directory.appendingPathComponent(".yuzu-" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+        return url
+    }
+}
