@@ -54,3 +54,7 @@ App icon копируется как `Contents/Resources/Yuzu.icns`, на нег
 - Сборка x64 не доказывает запуск на Intel; min macOS 13 в metadata не доказывает runtime-проверку на macOS 13. Подпись, notarization, Gatekeeper и установка из опубликованного Release должны описываться только по фактическому результату поставки.
 
 Review меняет только этот документ; code/commits и фоновые процессы не создавались.
+
+## Результаты менеджера после review
+
+Финальные 26 Swift tests прошли на arm64 и x86_64 через Rosetta; 13 Node tests прошли. Оба signed Sandbox архива прошли self-check, установку в временные home, codesign strict и проверку версии. Команды и точные границы свидетельства записаны в [Validation.md](Validation.md). Это дополнение менеджера к независимому статическому review; отложенные физические gates остаются в силе.

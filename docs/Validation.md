@@ -10,6 +10,7 @@
 | `bash scripts/build-app.sh arm64` и `x64` | Архивы собраны, Info.plist, codesign strict и lipo проверены |
 | `.app/Contents/MacOS/YuzuApp --self-check` | Sandbox arm64 и x64 (Rosetta): DOCX/textutil roundtrip, CSV/XLSX, ZIP/TAR и ZIP Action прошли в собственном temp |
 | `npm pack --pack-destination dist` | Пакет собран с обоими SHA-256 в manifest, prepack прошёл; 7 файлов, без бинарников и зависимостей |
+| Установка обоих окончательных ZIP | Установщик распаковал реальные arm64/x64 архивы в временные home; codesign strict и `--version` прошли, временные каталоги удалены |
 | Иконки приложения/menu bar | SHA-256 обеих копий совпадает с разрешёнными оригиналами Yuzu Mac App |
 
 Swift fixtures включают реальную обработку PDF всех страниц при 300 DPI, EXIF orientation, native audio/video, DOCX/EPUB structure, quoted/CRLF CSV, XLSX/ODS namespaces/row groups/overflow, ZIP creation, archive collisions/traversal/symlinks, отмену subprocess и сохранность существующих файлов. FFmpeg fixture прошёл с отдельно установленным FFmpeg в developer-контексте; готовая Sandbox `.app` внешний FFmpeg не запускает.
@@ -19,3 +20,5 @@ Build script запускался вне sandbox агента: вложенны�
 Физические Finder drag, Powerbox/bookmark recovery с внешними файлами, AirDrop, Terminal, VoiceOver и перенос с полки вручную не проверялись по установленному ограничению. Sandbox self-check внутри контейнера не подменяет эти проверки. Intel hardware, macOS 13 и другие версии macOS отдельно не запускались. Реальный EXDEV для папки не моделировался; отказ до копирования проверен статически. Перенос файла между томами сравнивает только size/mtime исходника, без хеширования.
 
 Подпись ad-hoc, Developer ID/notarization отсутствуют. Поэтому выпуск отмечен preview; полная совместимость с Tangerine не заявляется.
+
+SHA-256 окончательных архивов и npm-пакета записаны в [Release-checksums-0.1.0.txt](Release-checksums-0.1.0.txt). После любого изменения архива необходимо заново выполнить prepare-npm, npm pack и обновить checksum.
