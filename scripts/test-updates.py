@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Run real Sparkle checks against a local HTTP feed; never launch/install the fixture app."""
 import http.server
+import base64
+import json
 import pathlib
 import plistlib
 import shutil
@@ -16,7 +18,7 @@ probe = root / ".build/update-feed-probe"
 subprocess.run(["swiftc", "-parse-as-library", "-module-cache-path", str(root / ".build/probe-cache"),
                 "-F", str(frameworks), "-framework", "Sparkle", "-Xlinker", "-rpath", "-Xlinker", str(frameworks),
                 str(root / "Tests/updater/FeedProbe.swift"), "-o", str(probe)], check=True)
-feed = (root / "updates/appcast-arm64.xml").read_bytes()
+feed = b""
 requests = []
 
 
@@ -44,6 +46,33 @@ try:
         info = plistlib.loads(plist.read_bytes())
         build = int(info["CFBundleVersion"])
         info["CFBundleIdentifier"] = identifier
+        # Test keys are temporary and unrelated to the owner's Keychain/release signing key.
+        key_generator = """
+const { generateKeyPairSync } = require('node:crypto');
+const pair = generateKeyPairSync('ed25519');
+process.stdout.write(JSON.stringify(pair.privateKey.export({ format: 'jwk' })));
+"""
+        key = json.loads(subprocess.run(["node", "-e", key_generator], check=True, capture_output=True, text=True).stdout)
+
+        def decode(value):
+            return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+
+        private_key = pathlib.Path(directory) / "test-key"
+        private_key.write_bytes(base64.b64encode(decode(key["d"])))
+        private_key.chmod(0o600)
+        info["SUPublicEDKey"] = base64.b64encode(decode(key["x"])).decode()
+        xml = pathlib.Path(directory) / "feed.xml"
+        signature = base64.b64encode(bytes(64)).decode()
+        xml.write_text(f'''<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"><channel>
+<title>Yuzu Converter Updates</title><item><title>Update fixture</title>
+<sparkle:version>{build}</sparkle:version><sparkle:shortVersionString>{info['CFBundleShortVersionString']}</sparkle:shortVersionString>
+<sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<enclosure url="https://example.invalid/Yuzu.zip" sparkle:edSignature="{signature}" length="1" type="application/octet-stream"/>
+</item></channel></rss>''')
+        signer = root / ".build/verification/artifacts/sparkle/Sparkle/bin/sign_update"
+        subprocess.run([str(signer), "--ed-key-file", str(private_key), str(xml)], check=True, capture_output=True)
+        feed = xml.read_bytes()
         for path, version, expected in [("/feed.xml", build - 1, "available"), ("/feed.xml", build, "current"),
                                          ("/tampered.xml", build - 1, "error"), ("/unavailable.xml", build - 1, "error")]:
             info["CFBundleVersion"] = str(version)

@@ -17,10 +17,11 @@ Fresh local checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Signed Sandbox self-checks | Both apps loaded Sparkle and all five languages, then passed the existing conversion/ZIP self-checks |
 | Final ZIP installation | Both archives installed into temporary homes; native version 0.2.0 and codesign passed |
 | npm package | Prepack passed with final pinned ZIP hashes; 7 files, no npm dependencies |
+| Sparkle HTTP fixtures | Real probing checks reached the local HTTP server: available update, current version, tampered-feed rejection, and HTTP 500 handling all passed with an isolated ephemeral test key |
 
 Independent source review covered the shared controller, optional delegate contracts, abort recovery, busy queue/restart handling, Sandbox configuration, signing order, archive aliases, and prevention of npm downgrades. Reported issues were fixed before final builds/tests.
 
-Archive/feed signing is waiting for the owner's macOS Keychain authorization of `sign_update`. Signed-feed HTTP probes, public release verification, and installation of the published version remain pending. The private signing key stays in the login Keychain, not Git or release assets. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
+Production archive/feed signing is waiting for the owner's macOS Keychain authorization of `sign_update`. Verification of the production signatures/live feed, the public release, and installation of the published version remain pending. The private release signing key stays in the login Keychain, not Git or release assets; HTTP fixtures used a separate temporary key and did not install anything. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
 
 ## v0.1.2 — wheel input fix
 

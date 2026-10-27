@@ -14,6 +14,7 @@ const value = async key => (await run('/usr/bin/plutil', ['-extract', key, 'raw'
 const build = await value('CFBundleVersion');
 const publicBytes = Buffer.from(await value('SUPublicEDKey'), 'base64');
 if (publicBytes.length !== 32) throw new Error('A valid Sparkle public key is required.');
+// Node expects SPKI metadata around the raw Ed25519 key stored in Info.plist.
 const key = createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), publicBytes]), type: 'spki', format: 'der' });
 validateRelease(releaseInfo);
 await mkdir('updates', { recursive: true });

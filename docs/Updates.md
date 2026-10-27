@@ -30,4 +30,6 @@ The feeds are served over HTTPS from `raw.githubusercontent.com/StPashik/Yuzu-co
 
 The npm archive guard permits only Sparkle's nine canonical, fixed-target framework symlinks. It rejects other links, duplicate paths, empty path components, and members below a symlink before extraction.
 
+After building the arm64 app, run `python3 scripts/test-updates.py` with Swift and Node on PATH. This exercises Sparkle's real HTTP and signature/version logic against a local server: available update, current version, tampered signed feed, and HTTP 500. The fixture uses a temporary test key and an isolated app identity; it neither accesses the release Keychain key nor downloads/installs an update. These passes do not replace verification of the production signatures/feed or a full interactive installation.
+
 See [Sparkle setup](https://sparkle-project.org/documentation/), [Sandbox integration](https://sparkle-project.org/documentation/sandboxing/), and [publishing updates](https://sparkle-project.org/documentation/publishing/) for the upstream contracts. Test results and unverified physical gates belong in [Validation.md](Validation.md).
