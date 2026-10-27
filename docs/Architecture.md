@@ -67,11 +67,13 @@ For saved ancestor access, resolve scopes without UI/mounting, validate canonica
 
 A small Node installer and launch command select the declared macOS architecture, download their package version from `StPashik/Yuzu-converter` when needed, verify a pinned SHA-256, and install the app into `~/Applications` using system `ditto`. Preserve the same or a newer installed numeric release so an old launcher cannot undo a Sparkle update. Keep the existing app until the replacement is ready. Do not execute downloaded shell scripts.
 
+Release changes move through feature/develop, release/main, and release/develop pull requests with CI and merge commits. Tag the main release-PR merge commit. Stable Latest is the default; a beta/RC requires an explicit owner request. Publication does not install, quit, or relaunch the owner's app. [Releasing.md](Releasing.md) defines the release/legacy-feed sequence.
+
 A release contains app ZIPs, the npm `.tgz`, checksums, and license notices. The `.tgz` can be installed by release URL without npm registry publication. Generate checksums from the final archives and check package version/tag/asset names. Describe architecture support, signing, and notarization only after validating the actual artifacts.
 
 ## In-app updates
 
-Version 0.2.0 adds a shared `AppUpdater` to the menu and Settings. Sparkle 2.10.1 owns network checks, update UI, Ed25519 verification, installation, and relaunch. Checks are manual and installation requires user confirmation. Each architecture reads its signed appcast from the repository's `main/updates` path. Both the feed and archive must verify against the public key embedded in the app, before archive extraction.
+Version 0.2.0 adds a shared `AppUpdater` to the menu and Settings. Sparkle 2.10.1 owns network checks, update UI, Ed25519 verification, installation, and relaunch. Checks are manual and installation requires user confirmation. New builds read their signed architecture-specific appcast from GitHub's Latest release assets. Versions through 0.4.0 retain the main/updates bridge, advanced by a PR only after the referenced assets are public. Both the feed and archive must verify against the public key embedded in the app, before archive extraction.
 
 Postpone relaunch while the file queue is nonempty. When the queue drains, stop new drags/jobs before resuming Sparkle's installation handler. A finished/cancelled/failed cycle clears the retained handler and restores the monitor if the application is still alive. Normal termination retains its cancellation/cleanup safety net.
 

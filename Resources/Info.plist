@@ -17,11 +17,13 @@
     <key>NSPrincipalClass</key><string>NSApplication</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>YuzuSandboxed</key><true/>
-    <key>SUFeedURL</key><string>https://raw.githubusercontent.com/StPashik/Yuzu-converter/main/updates/appcast-arm64.xml</string>
+    <key>SUFeedURL</key><string>https://github.com/StPashik/Yuzu-converter/releases/latest/download/appcast-arm64.xml</string>
     <key>SUPublicEDKey</key><string>IVOZO01ZLkVufQPqzWYXLatnjLzseWHAkiYa/n4xrrw=</string>
     <key>SUEnableInstallerLauncherService</key><true/>
     <key>SUEnableAutomaticChecks</key><false/>
+    <key>SUAutomaticallyUpdate</key><false/>
     <key>SUAllowsAutomaticUpdates</key><false/>
+    <key>SUEnableSystemProfiling</key><false/>
     <key>SUVerifyUpdateBeforeExtraction</key><true/>
     <key>SURequireSignedFeed</key><true/>
 </dict></plist>

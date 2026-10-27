@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  metadata:
+    name: GitFlow and signed feeds
+    runs-on: ubuntu-24.04
+    outputs:
+      native: ${{ steps.changes.outputs.native }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Validate PR route and detect native changes
+        id: changes
+        env:
+          PR_BASE: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            case "$PR_BASE:$PR_HEAD" in
+              develop:feature/*|develop:release/*|develop:hotfix/*|main:release/*|main:hotfix/*) ;;
+              *) echo 'Use a GitFlow feature, release, or hotfix PR.' >&2; exit 1 ;;
+            esac
+            git diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/yuzu-changed.txt"
+            python3 - "$RUNNER_TEMP/yuzu-changed.txt" >> "$GITHUB_OUTPUT" <<'PY'
+          from pathlib import Path
+          import sys
+          files = Path(sys.argv[1]).read_text().splitlines()
+          def metadata_only(path):
+              return path in {"README.md", "CONTRIBUTING.md", "AGENTS.md", "npm/release.json"} or (
+                  path.startswith(("docs/", "updates/")) and not path.startswith("docs/licenses/"))
+          print("native=" + str(any(not metadata_only(path) for path in files)).lower())
+          PY
+          else
+            echo 'native=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify signed legacy feeds and release metadata tests
+        run: |
+          npm ci --ignore-scripts
+          npm run test:release
+          node scripts/verify-update-feeds.mjs updates
+
+  native:
+    name: Native ${{ matrix.arch }}
+    needs: metadata
+    if: needs.metadata.outputs.native == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            cpu: arm64
+            runner: macos-26
+          - arch: x64
+            cpu: x86_64
+            runner: macos-26-intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      APP_ARCH: ${{ matrix.arch }}
+      APP_CPU: ${{ matrix.cpu }}
+      YUZU_MEDIA_REQUIRED: "1"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Build pinned media tools for the runner CPU
+        run: |
+          test "$(uname -m)" = "$APP_CPU"
+          brew install pkg-config xz
+          python3 scripts/build-media.py "$APP_ARCH"
+          echo "YUZU_FFMPEG=$PWD/.build/media-$APP_ARCH/Tools/ffmpeg" >> "$GITHUB_ENV"
+          echo "YUZU_FFPROBE=$PWD/.build/media-$APP_ARCH/Tools/ffprobe" >> "$GITHUB_ENV"
+      - name: Run Swift and installer tests in isolated scratch paths
+        run: |
+          swift test --arch "$APP_CPU" --scratch-path .build/ci-tests
+          npm ci --ignore-scripts
+          npm test
+          npm pack --dry-run
+      - name: Build and verify the signed Sandbox archive
+        run: |
+          bash scripts/build-app.sh "$APP_ARCH"
+          python3 scripts/verify-media-release.py --arch "$APP_ARCH"

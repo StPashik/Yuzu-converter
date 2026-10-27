@@ -14,19 +14,19 @@ Version 0.2.0 is the first release with this feature. Earlier versions need one 
 
 The dependency is pinned to Sparkle 2.10.1 in [Package.resolved](../Package.resolved). The app enables outgoing network access and the Installer launcher service, with the two required mach lookup exceptions. The rest of the application remains sandboxed. No Node.js runtime is bundled or required by the native updater.
 
-Current preview apps use ad-hoc signing. Their build disables library validation because an ad-hoc signature has no Team ID for loading a bundled dynamic framework. A Developer ID build retains library validation. Developer ID signing and Apple notarization are still absent from this preview; Ed25519 update signatures do not provide notarization.
+Current builds use ad-hoc signing. Their build disables library validation because an ad-hoc signature has no Team ID for loading a bundled dynamic framework. A Developer ID build retains library validation. Developer ID signing and Apple notarization are still absent from these builds; Ed25519 update signatures do not provide notarization.
 
 ## Signing and publishing a release
 
 The public Ed25519 key is embedded as `SUPublicEDKey`. The private key is in the owner's login Keychain under the Sparkle account `com.stpashik.yuzu-converter`. It was generated for this project and was never exported or committed. Keep a secure backup of the Keychain: losing this key prevents seamless updates of these ad-hoc-signed builds. Never put a private signing key in Git or release assets.
 
-1. Bump `package.json`, its lockfile, and `CFBundleShortVersionString`. Increase the integer `CFBundleVersion` on every release: Sparkle compares that build number.
-2. Run the tests, build arm64 and x64 separately, and run both signed apps' self-checks.
-3. Run `node scripts/prepare-npm.mjs dist`, then `node scripts/prepare-updates.mjs dist`.
-4. The update script signs both final ZIPs using Sparkle's Keychain tools, independently verifies those signatures against the embedded public key with Node's crypto API, and signs/verifies both XML feeds. It refuses stale archive hashes. Do not rebuild an archive after signing without regenerating its manifest, feeds, npm package, and checksums.
-5. Pack the npm installer, record final checksums, and follow GitFlow. Commit the feeds into the release so `main/updates/appcast-arm64.xml` and `appcast-x64.xml` advance together with the source. Upload those exact ZIPs and XML feeds to the new GitHub Release. Never rewrite a published tag or replace an old release's assets.
+Follow [Releasing.md](Releasing.md): feature PR → develop, release PR → main, tag the release-PR merge commit, draft/verify/publish as stable Latest, publish legacy bridge feeds by a separate PR, and merge the release branch back by PR. CI checks both native architectures without receiving the production signing key. Never push shared branches directly or install the release for the owner.
 
-The feeds are served over HTTPS from `raw.githubusercontent.com/StPashik/Yuzu-converter/main/updates/`; each build embeds its own architecture's URL. Downloads use immutable versioned GitHub Release URLs. A brief publication or cache delay may return an error until the new assets are available; retrying does not replace the installed app prematurely.
+`prepare-updates.mjs` writes signed appcasts into the artifact directory, not the live `updates/` directory. New apps use the architecture-specific appcast attached to `releases/latest`; its enclosure remains an immutable versioned GitHub ZIP URL. Publishing Latest therefore switches a complete public release. Normal releases do not use GitHub's prerelease flag; ad-hoc signing and absent notarization are disclosed separately.
+
+Versions through 0.4.0 still use `raw.githubusercontent.com/.../main/updates/`. Keep this compatibility bridge and advance its exact signed bytes through a PR only after the referenced assets are public. The first owner-initiated upgrade moves the installed app to the Latest-release feed. Do not replace the existing public update key during this migration.
+
+The owner chooses when to check, download, install, and restart. Verify releases using temporary homes and isolated information-only probes; do not run a global npm install, quit/relaunch, or replace either installed copy during publication. Signing verifies future updates and does not itself authorize installation.
 
 The npm archive guard permits only Sparkle's nine canonical, fixed-target framework symlinks. It rejects other links, duplicate paths, empty path components, and members below a symlink before extraction.
 

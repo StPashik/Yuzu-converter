@@ -58,11 +58,13 @@ Use Powerbox and security-scoped bookmarks in the Sandbox. Reuse and restore exi
 
 Provide a native `.app`, installable through `npm install -g`, and direct Apple Silicon/Intel app downloads. GitHub Releases contain the finished app archives, npm installer `.tgz`, SHA-256 checksums, and applicable dependency licenses. Installing the release `.tgz` URL is supported; do not assume an npm registry account.
 
+The owner installs updates personally through Check for Updates. Release work must not install globally, replace either installed copy, quit, or relaunch the owner's app. Use isolated installation fixtures. New clients use signed appcasts attached to the Latest release; older main/updates clients receive a signed bridge only after assets are public.
+
 Document reproducible build and installation steps. Release notes must describe verified routes, available backends, supported architectures, and remaining limits. Do not label unverified capabilities as supported. Describe signing and notarization according to the actual artifacts.
 
 ## Verification and release process
 
-The manager accepted [Architecture.md](Architecture.md). Shared Core/UI/Finder contracts belong to the manager. Use `feature/*` branches from `develop`, independent QA, and `merge --no-ff`; reserve `main` and tags for releases. Never force-push. Leave old checkouts and caches untouched.
+The manager accepted [Architecture.md](Architecture.md). Shared Core/UI/Finder contracts belong to the manager. Use GitHub PRs from `feature/*` to `develop`, then `release/<version>` to `main` and back to `develop`. Wait for CI and preserve merge commits. Tag the exact main release-PR merge commit. Do not push shared branches directly. Publish normal versions as stable Latest releases; prereleases require an explicit owner request. See [Releasing.md](Releasing.md). Never force-push. Leave old checkouts and caches untouched.
 
 Use separate scratch paths for automated tests. New manual checks requested from the owner remain deferred. Physical Finder drag, Sandbox grant/bookmark recovery, and integration with real system apps remain unverified until corresponding evidence exists. Passing builds and unit tests do not establish full parity or production readiness.
 

@@ -18,7 +18,8 @@
     "postinstall": "node npm/install.mjs",
     "prepack": "node npm/validate-release.mjs",
     "prepare:release": "node scripts/prepare-npm.mjs",
-    "test": "node --test Tests/npm/*.test.mjs",
+    "test": "node --test Tests/npm/*.test.mjs Tests/release/*.test.mjs",
+    "test:release": "node --test Tests/release/*.test.mjs",
     "test:installer": "node --test Tests/npm/*.test.mjs"
   }
 }
