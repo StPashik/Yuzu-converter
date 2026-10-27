@@ -21,6 +21,7 @@ public struct ConversionEngine: Sendable {
     /// Native media support is conditional on the asset rather than a filename or enum case.
     public func availability(from source: FileFormat, to target: FileFormat) -> ConversionAvailability {
         guard source != target, candidates(source).contains(target) else { return .unavailable }
+        if source.category == "Video", target == .mp3, supported(source, target) { return .dependsOnFile }
         if supported(source, target) { return .available }
         if source.category == "Audio", [.wav, .aiff, .m4a].contains(target) { return .dependsOnFile }
         if source.category == "Video", source != .gif, [.mov, .mp4].contains(target) { return .dependsOnFile }
@@ -52,8 +53,9 @@ public struct ConversionEngine: Sendable {
                 try NativeDocuments.image(source.url, to: target, output: output, options: options)
             } else { try media(source, to: target, output: output, options: options) }
         } else if source.format.category == "Audio" || source.format.category == "Video" {
-            if supported(source.format, target) { try media(source, to: target, output: output, options: options) }
-            else { try await NativeMedia.convert(source, to: target, output: output, options: options) }
+            // Keep existing native export semantics (including PCM precision and playback gain) when supported.
+            if NativeMedia.supports(source, to: target) { try await NativeMedia.convert(source, to: target, output: output, options: options) }
+            else { try media(source, to: target, output: output, options: options) }
         } else if source.format.category == "Subtitles" {
             let cues = try Subtitles.parse(TextFile.read(source.url), format: source.format)
             try Subtitles.write(cues, format: target).write(to: output, atomically: false, encoding: .utf8)
@@ -127,7 +129,15 @@ public struct ConversionEngine: Sendable {
     private static let imageWriters = Set((CGImageDestinationCopyTypeIdentifiers() as? [String]) ?? [])
     private static let encoderCache = EncoderCache()
     private func supported(_ source: SourceFile, _ target: FileFormat) -> Bool {
-        if supported(source.format, target) { return true }
+        if source.format.category == "Video", target == .mp3 {
+            guard let probe = tools.ffprobe,
+                  let streams = try? ProcessRunner.checked(probe, ["-v", "error", "-protocol_whitelist", "fd",
+                    "-select_streams", "a:0", "-show_entries", "stream=codec_type", "-of", "csv=p=0", "fd:"], input: source.url, timeout: 15),
+                  streams.split(whereSeparator: \.isWhitespace).contains("audio") else { return false }
+        }
+        if supported(source.format, target) {
+            return NativeMedia.supports(source, to: target) || NativeMedia.supportsFFmpegPlayback(source)
+        }
         // Native support varies with the actual asset, so the fallback cannot rely on its extension alone.
         guard source.format != target, candidates(source.format).contains(target), ["Audio", "Video"].contains(source.format.category) else { return false }
         return NativeMedia.supports(source, to: target)
@@ -145,7 +155,10 @@ public struct ConversionEngine: Sendable {
             guard tools.ffmpeg != nil else { return false }
             if let audio = Self.audioEncoders[target] { return encoder(audio) }
             if target == .webm { return encoder("libvpx-vp9") && (encoder("libopus") || encoder("libvorbis")) }
-            return encoder(target == .gif ? "gif" : target == .wmv ? "wmv2" : "mpeg4")
+            if target == .gif { return encoder("gif") }
+            // A video route also needs the audio encoder used by its command; a muxer alone is insufficient.
+            return encoder(target == .wmv ? "wmv2" : "mpeg4")
+                && encoder(target == .wmv ? "wmav2" : target == .avi ? "libmp3lame" : "aac")
         case "Subtitles", "Archives": return true
         case "Spreadsheets": return source != .xls || tools.office != nil
         default:
@@ -177,9 +190,16 @@ public struct ConversionEngine: Sendable {
     }
 
     private static let audioEncoders: [FileFormat: String] = [.mp3: "libmp3lame", .m4a: "aac", .wav: "pcm_s16le", .flac: "flac", .ogg: "libvorbis", .opus: "libopus", .aiff: "pcm_s16be", .wma: "wmav2"]
+    private static let mediaMuxers: [FileFormat: String] = [.mp4: "mp4", .mov: "mov", .mkv: "matroska",
+        .webm: "webm", .avi: "avi", .wmv: "asf", .gif: "gif", .mp3: "mp3", .m4a: "ipod",
+        .wav: "wav", .flac: "flac", .ogg: "ogg", .opus: "opus", .aiff: "aiff", .wma: "asf",
+        .webp: "webp", .avif: "avif"]
     private func media(_ source: SourceFile, to target: FileFormat, output: URL, options: ConversionOptions) throws {
         guard let ffmpeg = tools.ffmpeg else { throw ConversionError.unsupported("FFmpeg was not found.") }
-        var arguments = ["-hide_banner", "-nostdin", "-loglevel", "error", "-n", "-i", source.url.path]
+        guard let muxer = Self.mediaMuxers[target] else { throw ConversionError.unsupported("No media muxer for \(target.label).") }
+        // fd: preserves seeking for MOV/MP4 without giving the helper arbitrary path or network access.
+        var arguments = ["-hide_banner", "-nostdin", "-loglevel", "error", "-y",
+                         "-protocol_whitelist", "fd", "-i", "fd:"]
         if options.preserveMetadata { arguments += ["-map_metadata", "0"] }
         else {
             // Global metadata, stream tags, and chapters have independent automatic-copy rules in FFmpeg.
@@ -203,19 +223,24 @@ public struct ConversionEngine: Sendable {
             if target == .webp { arguments += ["-quality", String(Int(options.quality.imageQuality * 100))] }
             else { arguments += ["-crf", options.quality == .compact ? "40" : options.quality == .balanced ? "26" : "16", "-b:v", "0"] }
         } else if target == .gif {
-            arguments += ["-an", "-vf", "fps=\(options.gifFrameRate ?? 15),scale=min(iw\\,\(options.gifMaxWidth ?? 960)):-2", "-loop", "0"]
+            arguments += ["-map", "0:v:0", "-an", "-vf", "fps=\(options.gifFrameRate ?? 15),scale=min(iw\\,\(options.gifMaxWidth ?? 960)):-2", "-loop", "0"]
         } else if target == .webm {
             // WebM requires compatible video and audio encoders; container support alone is not enough.
-            arguments += ["-c:v", "libvpx-vp9", "-crf", options.quality == .compact ? "40" : options.quality == .balanced ? "30" : "20", "-b:v", "0", "-c:a", encoder("libopus") ? "libopus" : "libvorbis"]
+            // Palette/RGB GIF inputs otherwise select VP9's experimental alpha/RGB pixel formats.
+            arguments += ["-c:v", "libvpx-vp9", "-pix_fmt", "yuv420p", "-crf", options.quality == .compact ? "40" : options.quality == .balanced ? "30" : "20", "-b:v", "0", "-c:a", encoder("libopus") ? "libopus" : "libvorbis"]
             if let height = options.videoMaxHeight { arguments += ["-vf", "scale=-2:trunc(min(ih\\,\(height))/2)*2"] }
         } else {
             // Even dimensions and 4:2:0 pixels avoid encoder failures on odd-sized source frames.
             let scale = options.videoMaxHeight.map { "scale=-2:trunc(min(ih\\,\($0))/2)*2" }
                 ?? "scale=trunc(iw/2)*2:trunc(ih/2)*2"
-            arguments += ["-c:v", target == .wmv ? "wmv2" : "mpeg4", "-q:v", options.quality == .compact ? "8" : options.quality == .balanced ? "3" : "1", "-pix_fmt", "yuv420p", "-vf", scale, "-c:a", target == .wmv ? "wmav2" : target == .avi ? "mp3" : "aac"]
+            arguments += ["-c:v", target == .wmv ? "wmv2" : "mpeg4", "-q:v", options.quality == .compact ? "8" : options.quality == .balanced ? "3" : "1", "-pix_fmt", "yuv420p", "-vf", scale, "-c:a", target == .wmv ? "wmav2" : target == .avi ? "libmp3lame" : "aac"]
         }
-        arguments.append(output.path)
-        _ = try ProcessRunner.checked(ffmpeg, arguments)
+        if source.format.category == "Video", target != .gif, Self.audioEncoders[target] == nil {
+            arguments += ["-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn"]
+        }
+        arguments += ["-f", muxer, "fd:"]
+        // Real videos can take longer than a probe's five-minute limit; user cancellation still stops the child.
+        _ = try ProcessRunner.checked(ffmpeg, arguments, input: source.url, output: output, timeout: .infinity)
     }
 }
 

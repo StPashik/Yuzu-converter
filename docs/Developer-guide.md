@@ -79,6 +79,7 @@ swift test --scratch-path .build/verification
 
 The armed-wheel regression test uses the public WindowServer hit-test API. Run the App tests in a logged-in graphical macOS session; they do not simulate an end-to-end Finder drag.
 
+- Build the pinned media engines with `python3 scripts/build-media.py arm64` and `x64`; follow [Bundled media](Bundled-media.md). Rebuild them whenever the recipe or source manifest changes. Run Swift tests with the matching `YUZU_FFMPEG`, `YUZU_FFPROBE`, and `YUZU_MEDIA_REQUIRED=1`; the release video fixtures must not skip. Package the complete corresponding media source with `python3 scripts/package-media-sources.py`.
 - Build the archives sequentially, run the signed Sandbox app's `--self-check`, and verify signature/architecture/version and installation into temporary homes. Then pin the final archives and pack the installer:
 
 ```sh

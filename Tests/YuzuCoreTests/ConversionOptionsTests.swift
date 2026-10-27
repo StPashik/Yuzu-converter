@@ -245,6 +245,8 @@ final class ConversionOptionsTests: XCTestCase {
             XCTAssertEqual(originalAudioTracks.count, 2)
             XCTAssertEqual(originalAudioTracks.filter(\.isEnabled).count, 1)
             XCTAssertEqual(originalAudio.preferredVolume, volume)
+            XCTAssertFalse(NativeMedia.supportsFFmpegPlayback(try SourceFile(url: input)))
+            XCTAssertFalse(ConversionEngine().targets(for: [try SourceFile(url: input)]).contains(.mkv))
             let sourcePeak = try audioPeak(asset, track: originalAudio)
             XCTAssertEqual(sourcePeak, 0.25, accuracy: 0.001, "The fixture contains a quarter-scale sine wave")
 

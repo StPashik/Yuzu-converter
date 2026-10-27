@@ -1,37 +1,35 @@
 # Conversion matrix: target inventory and preview support
 
-Updated October 27, 2026. The target remains Tangerine’s 46-case format inventory. Version 0.1.0 implemented part of that scope; v0.1.1 carries the behavior forward with five selectable UI languages and English project documentation. Limits do not remove the remaining requirements. All 46 candidate rows and their evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory).
-
-Implementation references: `Sources/YuzuCore/ConversionEngine.swift`, `NativeMedia.swift`, `NativeDocuments.swift`, `EPUB.swift`, `Spreadsheet.swift`, `SourceFile.swift`, and `Archive.swift`. Fresh v0.1.1 checks passed 29/29 Swift tests on native arm64 and x86_64 under Rosetta, 13/13 Node tests, both signed Sandbox self-checks, and installation of both final ZIPs. An `implemented` route is not a claim that every file, codec, or macOS version was verified. See [Validation.md](Validation.md).
+Updated October 27, 2026 for v0.4.0. The target remains Tangerine's 46-case format inventory. Missing capabilities remain requirements; they are not removed to match a backend. All candidate rows and research evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory). Version-specific build/test results and remaining physical gates are in [Validation.md](Validation.md).
 
 ## Packaged Sandbox app and developer runs
 
-The macOS 13+ Sandbox app has separate arm64/x64 archives. It neither bundles nor launches external FFmpeg/FFprobe/LibreOffice. It uses macOS frameworks, system libarchive, and system `textutil`/`zip`/`tar`.
+The macOS 13+ Sandbox app has separate arm64/x64 archives. Both include pinned FFmpeg/FFprobe 9.0.2 with libvpx, Opus, and LAME. No external installation is needed for the media routes below. System frameworks and system `textutil`/`zip`/`tar` remain in use. LibreOffice is not bundled. [Bundled-media.md](Bundled-media.md) explains codecs, Sandbox descriptors, complete corresponding source, licenses, and rebuild instructions.
 
-An unsandboxed `swift run` can find separately installed FFmpeg/FFprobe/LibreOffice and enable extra routes where the required encoder exists. Those are developer-only capabilities, not packaged-release support. Missing tools hide their targets. Decoder/writer availability is separate from the candidate catalog; damaged inputs or unsupported profiles can still fail during conversion.
+Unsandboxed developer runs may discover separately installed FFmpeg/FFprobe/LibreOffice. They can expose additional encoders, but do not establish packaged support. Packaged apps use only their own signed helpers. Missing encoder targets are hidden; actual codec/profile decoding and damaged-input failures remain possible.
 
 ## Implemented routes and gaps
 
-The current format is hidden. Mixed inputs in one internal category receive only the intersection of available routes for every file. The following describes the v0.1.0 behavior retained for v0.1.1; it does not claim a new verification run.
+The current format is hidden. Mixed inputs in one category receive only routes available to every file. Container names do not guarantee every codec/profile or lossless preservation. The media matrix fixture exercises real streams and output decoding; it does not prove every possible file.
 
 | Group and target inputs | Implemented preview routes | Limits and remaining targets |
 | --- | --- | --- |
-| Images: JPG, PNG, WebP, HEIC, TIFF, SVG, AVIF, BMP | System reader → JPG/PNG/HEIC/TIFF/BMP/PDF, plus WebP/AVIF where ImageIO provides a writer | Reader/writer support depends on macOS and the file. SVG input requires system decoding; SVG export is absent. For multiple frames, PDF/TIFF process the frames while other raster outputs use the first frame. Developer-only WebP/AVIF encoding may use FFmpeg |
-| Audio: MP3, M4A, WAV, FLAC, OGG, Opus, AIFF, WMA | macOS-decodable input → WAV/AIFF/M4A, gated by AVAudioFile/AVFoundation | MP3/FLAC/OGG/Opus/WMA export is unavailable in the packaged app. ASF/WMA identification requires FFprobe. An enum case does not imply an available system decoder |
-| Video: MP4, MOV, MKV, WebM, AVI, WMV, GIF | AVFoundation-exportable video → MP4/MOV | Baseline fixtures cover MOV ↔ MP4. Other inputs depend on decoder/export support. GIF input has no native route; MKV/WebM/AVI/WMV/GIF output and MP3 extraction require developer-only FFmpeg. ASF/WMV identification requires FFprobe |
-| PDF | Every page → JPG/PNG at 300 DPI; existing text layer → TXT/MD | No OCR. PDF → DOCX/PAGES/PPTX/XLSX/EPUB is unavailable. Images and text extraction are not presented as editable reconstruction |
-| Documents: DOCX, PAGES, MD, RTF, RTFD, textClipping, TXT, HTML | DOCX/MD/RTF/RTFD/TXT → DOCX/PDF/TXT/MD/HTML/EPUB/JPG/PNG | DOCX uses system rich-text readers/writers without guaranteeing Office layout or objects. MD output is plain text with a `.md` extension. PAGES input/output and textClipping are unavailable. HTML export exists, but there is no HTML input wheel |
-| EPUB | Text chapters → PDF/DOCX/TXT/MD/HTML; simple EPUB output from documents | Simple reflow; the writer creates one chapter. Styles, images, assets, and original layout are not preserved. EPUB → PAGES is unavailable |
-| Slides: PPT, PPTX | Unavailable in the Sandbox app | Target: PDF/JPG/PNG. Developer runs need separately installed LibreOffice. PDF → slides is absent |
-| Spreadsheets: XLSX, XLS, ODS, CSV, TSV | XLSX/ODS/CSV/TSV → XLSX/ODS/CSV/TSV/PDF, all sheets | Values become strings. Formulas, types, styles, charts, and assets are not preserved. CSV/TSV produces one file per sheet in a folder; PDF is a text representation. Legacy XLS needs developer-only LibreOffice |
-| Subtitles: SRT, VTT | SRT ↔ VTT; SRT/VTT → TXT | Cue text and timing; metadata, positioning, and full WebVTT styling are not preserved |
-| Archives: ZIP, TAR, GZIP, RAR | ZIP/TAR/TAR.GZ → another of those formats; RAR input where system libarchive supports it | GZIP means TAR.GZ, not a standalone gzip stream. Links, unsafe/colliding paths, and limit violations are rejected. Original archive metadata/permissions are not guaranteed. Archive tools are not added |
+| Images: JPG, PNG, WebP, HEIC, TIFF, SVG, AVIF, BMP | System reader → JPG/PNG/HEIC/TIFF/BMP/PDF, plus WebP/AVIF where ImageIO provides a writer | Reader/writer support depends on macOS and the file. SVG export is absent. PDF/TIFF process multiple frames; other raster outputs use the first frame. The bundled FFmpeg has no libwebp/libaom encoder; developer builds may supply them |
+| Audio: MP3, M4A, WAV, FLAC, OGG, Opus, AIFF, WMA | Native compatible input → WAV/AIFF/M4A; bundled FFmpeg adds MP3/FLAC/Opus/WMA and decoding fallback | OGG/Vorbis output remains unavailable without a developer encoder. ASF/WMA identification uses bundled FFprobe. Input codec availability still matters |
+| Video: MP4, MOV, MKV, WebM, AVI, WMV, GIF | Other video containers, animated GIF, and MP3 extraction; GIF input → MP4/MOV/MKV/WebM/AVI/WMV | Native MP4/MOV stays preferred when compatible. FFmpeg selects first video/optional first audio, discards subtitles/attachments/extra streams. MP3 is hidden for silent inputs. GIF is silent. DRM and uncommon codecs/profiles may fail. Known disabled/non-unit-volume QuickTime tracks hide FFmpeg routes to avoid exposing hidden/muted content |
+| PDF | Every page → JPG/PNG at 300 DPI; existing text layer → TXT/MD | No OCR or editable PDF → DOCX/PAGES/PPTX/XLSX/EPUB reconstruction |
+| Documents: DOCX, PAGES, MD, RTF, RTFD, textClipping, TXT, HTML | DOCX/MD/RTF/RTFD/TXT → DOCX/PDF/TXT/MD/HTML/EPUB/JPG/PNG | Office layout/objects are not guaranteed. MD output is plain text with `.md`. PAGES/textClipping are unavailable. HTML export exists; no HTML input wheel |
+| EPUB | Text chapters → PDF/DOCX/TXT/MD/HTML; simple reflowable document EPUB output | One text chapter; styles/images/assets/original layout not preserved. EPUB → PAGES unavailable |
+| Slides: PPT, PPTX | Unavailable in packaged app | Target PDF/JPG/PNG; developer runs need LibreOffice. PDF → slides absent |
+| Spreadsheets: XLSX, XLS, ODS, CSV, TSV | XLSX/ODS/CSV/TSV → XLSX/ODS/CSV/TSV/PDF, all sheets | String values; formulas/types/styles/charts/assets not preserved. CSV/TSV gives one file per sheet; PDF is text. XLS needs developer LibreOffice |
+| Subtitles: SRT, VTT | SRT ↔ VTT; SRT/VTT → TXT | Cue text/timing, without full WebVTT styling/positioning/metadata |
+| Archives: ZIP, TAR, GZIP, RAR | ZIP/TAR/TAR.GZ conversion; RAR input where system libarchive supports it | GZIP means TAR.GZ. Links/unsafe paths/collisions/limit violations rejected. Original metadata/permissions not guaranteed |
 
 ## Output quality and safety
 
 Output-format profiles now configure actual quality/metadata, native media size/bitrate/PCM depth, ZIP/TAR.GZ compression, and EPUB 2/3 reflow. [Settings.md](Settings.md) lists exact encoder mappings and supported fields. Plain TAR has no compression level; native PCM metadata removal, original-page EPUB, and PDF-to-Office reconstruction remain unavailable. Exposing their limitations does not remove those capability requirements. Settings' compatibility tables distinguish format-level support from media pairs requiring a compatible actual file; they are not a full candidate inventory or proof of every file/profile.
 
-The metadata-off image path applies orientation to pixels, retains color, and drops descriptive source tags. Native media and developer FFmpeg have separate metadata policies; the latter removes global/stream tags and chapters. Generated raster pages retain 300-DPI metadata. Match-source PCM rejects unsupported depths rather than silently convert them. Native video Balanced uses the system Medium preset; High selects Highest. See version-specific validation rather than assuming older fixture passes verify these new options.
+The metadata-off image path applies orientation to pixels, retains color, and drops descriptive source tags. Native media and bundled FFmpeg have separate metadata policies; the latter removes global/stream tags and chapters. Generated raster pages retain 300-DPI metadata. Match-source PCM rejects unsupported depths rather than silently convert them. Native video Balanced uses the system Medium preset; High selects Highest. See version-specific validation rather than assuming older fixture passes verify these new options.
 
 - PDF → JPG/PNG puts all pages in a separate folder at an actual 300 DPI. Pages exceeding 32,768 pixels per side or 64 megapixels are rejected rather than silently downscaled. Fixtures check page count, pixel dimensions, and DPI.
 - DOCX contains editable text rather than a faithful copy of complex Office layout. PDF → TXT/MD extracts existing text. Raster images are not labeled editable Office output.
@@ -55,7 +53,9 @@ The named fixtures in [ConversionTests.swift](../Tests/YuzuCoreTests/ConversionT
 | `testArchiveRoundTripAndRejectsSymlink` | ZIP → TAR.GZ, contents, link/traversal rejection, and standalone-GZIP rejection |
 | `testNativeAudioBaselineWithoutExternalTools` | WAV → AIFF/M4A and AIFF → WAV, readability/frame count without external engines |
 | `testNativeVideoBaselineWithoutExternalTools` | MOV → MP4 → MOV and a readable video stream without external engines |
-| `testFFmpegWAVToFLACWhenAvailable` | Developer-only WAV → FLAC; skipped if the tool/encoder is absent |
+| `testFFmpegWAVToFLACWhenAvailable` | WAV → FLAC with an available engine; v0.4.0 release checks use the bundled build and do not skip |
+| `MediaTests.testEveryVideoInputAndOutputWithRealStreams` | 48 real directed video/MP3 routes, frame/stream checks, full decoding, and unchanged source bytes |
+| `MediaTests` descriptor/silent/damaged fixtures | Seekable inherited files, exclusive output creation, silent MP3 filtering, and no partial publication |
 | Cancellation/FileOperations fixtures | No published result after cancellation, subprocess termination, available names, move deduplication/ancestor filtering, and recursive-destination rejection |
 
 Even a passing suite does not establish every candidate pair, codec/profile, or physical Sandbox interaction. An x64 cross-build does not prove execution on Intel hardware.

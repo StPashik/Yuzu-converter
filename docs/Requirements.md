@@ -24,6 +24,8 @@ Save results beside the originals under available names. Never overwrite sources
 
 Read files, convert content, and perform file operations off the main thread. Support cancellation, useful errors, and cleanup of incomplete results.
 
+Packaged video conversion must include pinned, architecture-matched FFmpeg/FFprobe helpers and required codec libraries. Support MP4/MOV/MKV/WebM/AVI/WMV output, animated GIF, and MP3 extraction without external installation, subject to actual streams and documented playback/codec limits. Preserve native routes where compatible. Sign helpers to inherit the Sandbox, pass already-open files, disable network protocols, and distribute corresponding source, build instructions, and licenses with the release.
+
 ## Actions
 
 The researched set is `airDrop`, `float` (the floating shelf), `copy`, `move`, `copyPath`, and `openTerminal`. Confirm order, parameters, and exact semantics through REA before claiming behavioral parity. Errors and cancellation must not lose source data.

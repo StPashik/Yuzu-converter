@@ -13,6 +13,7 @@ enum AppSelfCheck {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let engine = ConversionEngine()
+        try await MediaSelfCheck.run(in: root)
         // Exercise a real output profile inside the signed Sandbox, including descriptive metadata removal.
         let tagged = root.appendingPathComponent("tagged.tiff")
         guard let pixels = CGContext(data: nil, width: 8, height: 4, bitsPerComponent: 8, bytesPerRow: 0,

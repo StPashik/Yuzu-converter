@@ -167,5 +167,9 @@
 "This format has no adjustable conversion settings." = "This format has no adjustable conversion settings.";
 "Restore Defaults" = "Restore Defaults";
 "This output is unavailable with the current app backends. Its settings remain visible for reference." = "This output is unavailable with the current app backends. Its settings remain visible for reference.";
-"GIF encoding requires an external encoder and is unavailable in the packaged Sandbox app." = "GIF encoding requires an external encoder and is unavailable in the packaged Sandbox app.";
 "Automatic bitrate follows quality. An explicit bitrate overrides the quality preset." = "Automatic bitrate follows quality. An explicit bitrate overrides the quality preset.";
+
+// Bundled media engine notices.
+"GIF exports are animated and contain no audio." = "GIF exports are animated and contain no audio.";
+"Media conversion uses FFmpeg under LGPL 2.1 or later." = "Media conversion uses FFmpeg under LGPL 2.1 or later.";
+"Media engine source and licenses" = "Media engine source and licenses";

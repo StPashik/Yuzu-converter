@@ -87,7 +87,8 @@ public struct SourceFile: Sendable {
         if starts([0x1A, 0x45, 0xDF, 0xA3]) { format = head.range(of: Data("webm".utf8)) != nil ? .webm : .mkv; return }
         if starts([0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11]) {
             guard let probe = Tools().ffprobe else { throw ConversionError.unsupported("FFprobe is required to identify ASF files.") }
-            let output = try ProcessRunner.checked(probe, ["-v", "error", "-show_entries", "stream=codec_type", "-of", "csv=p=0", url.path])
+            let output = try ProcessRunner.checked(probe, ["-v", "error", "-protocol_whitelist", "fd",
+                "-show_entries", "stream=codec_type", "-of", "csv=p=0", "fd:"], input: url, timeout: 15)
             format = output.contains("video") ? .wmv : .wma; return
         }
         if starts([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]) {

@@ -4,14 +4,16 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.3.0 brings a complete five-tab Settings screen.** Choose wheel style and shortcuts, manage output-folder access, select your terminal, and save real conversion defaults for each output format. Quality, metadata policy, media size/bitrate/depth, archive compression, and EPUB version now reach the encoders. File tools remain outside the scope.
+**v0.4.0 includes FFmpeg and FFprobe for video conversion out of the box.** Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available. File tools remain outside the scope.
 
 ## Download
 
 Requires **macOS 13 or later**. Choose your Mac:
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/Yuzu-Converter-0.3.0-arm64.zip)
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/Yuzu-Converter-0.3.0-x64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-arm64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-x64.zip)
+
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-FFmpeg-Sources-0.4.0.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -40,21 +42,21 @@ See the [wheel design notes](docs/Wheel-design.md) for the visual reference and 
 | Area | Preview support |
 | --- | --- |
 | Images and PDF | System image readers/writers; every PDF page to JPG/PNG at 300 DPI; existing PDF text to TXT/MD |
-| Audio and video | Inputs supported by macOS to WAV/AIFF/M4A or MP4/MOV |
+| Audio and video | Native WAV/AIFF/M4A and MP4/MOV, plus bundled FFmpeg video, GIF, MP3/FLAC/Opus/WMA routes |
 | Documents and EPUB | Text and rich-text DOCX, PDF/HTML/image export, and simple text-based EPUB reflow |
 | Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; text-based PDF output |
 | Subtitles and archives | SRT/VTT/TXT and ZIP/TAR/TAR.GZ; RAR input where system libarchive supports it |
 
-The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. The preview does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF, or GIF conversion in the packaged app. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
+The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. The preview does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
 
-The Sandbox app does not include or launch external FFmpeg/FFprobe/LibreOffice. Those tools are optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
+FFmpeg and FFprobe are included for both architectures; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
 
 ## Install with npm
 
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/stpashik-yuzu-converter-0.3.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -72,14 +74,17 @@ swift test --scratch-path .build/verification
 swift run --scratch-path .build/development YuzuApp
 ```
 
-Build the two archives sequentially, then pin their final checksums and package the installer:
+Build the pinned media engines and the two app archives, then pin their final checksums and package the installer. Build prerequisites and LGPL source obligations are in the [media guide](docs/Bundled-media.md):
 
 ```sh
+python3 scripts/build-media.py arm64
+python3 scripts/build-media.py x64
 bash scripts/build-app.sh arm64
 bash scripts/build-app.sh x64
 node scripts/prepare-npm.mjs dist
 node scripts/prepare-updates.mjs dist
 npm pack --pack-destination dist
+python3 scripts/package-media-sources.py
 ```
 
 Rebuilding an app archive requires rerunning `prepare-npm` and `npm pack`. Developer tool overrides are `YUZU_FFMPEG`, `YUZU_FFPROBE`, and `YUZU_LIBREOFFICE`; they do not extend the packaged Sandbox app. Read the [developer guide](docs/Developer-guide.md) for entry points, file-access ownership, cancellation, localization, and the release checklist.
