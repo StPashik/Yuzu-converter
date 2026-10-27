@@ -254,6 +254,10 @@ struct SettingsView: View {
                     Link(L10n.text("Releases"), destination: URL(string: "https://github.com/StPashik/Yuzu-converter/releases")!)
                 }
                 .padding(.top, 8)
+                Text(L10n.text("Media conversion uses FFmpeg under LGPL 2.1 or later."))
+                    .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Link(L10n.text("Media engine source and licenses"), destination: URL(string: "https://github.com/StPashik/Yuzu-converter/blob/main/docs/Bundled-media.md")!)
+                    .font(.caption)
             }
             .frame(maxWidth: .infinity).padding(32).padding(.top, 40)
         }
@@ -454,7 +458,7 @@ private struct FormatSettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             if format == .gif {
-                Text(L10n.text("GIF encoding requires an external encoder and is unavailable in the packaged Sandbox app."))
+                Text(L10n.text("GIF exports are animated and contain no audio."))
                     .font(.caption).foregroundStyle(.secondary)
             }
             if [.xlsx, .ods, .csv, .tsv].contains(format) {

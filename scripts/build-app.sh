@@ -31,6 +31,18 @@ cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
 cp Resources/YuzuAppIcon.icns "$app/Contents/Resources/Yuzu.icns"
 cp Sources/YuzuApp/Resources/YuzuMenuBar.pdf "$app/Contents/Resources/YuzuMenuBar.pdf"
 cp -R Sources/YuzuApp/Resources/*.lproj "$app/Contents/Resources/"
+media="$project_root/.build/media-$app_arch/Tools"
+test -x "$media/ffmpeg" && test -x "$media/ffprobe" || python3 scripts/build-media.py "$app_arch"
+mkdir -p "$app/Contents/Helpers" "$app/Contents/Resources/Media-Licenses"
+cp "$media/ffmpeg" "$media/ffprobe" "$app/Contents/Helpers/"
+cp Resources/Media-sources.json "$app/Contents/Resources/"
+cp docs/licenses/FFmpeg-* docs/licenses/LAME-* docs/licenses/libvpx-* docs/licenses/Opus-* "$app/Contents/Resources/Media-Licenses/"
+# Helpers inherit only the parent Sandbox; selected files travel as open descriptors.
+for tool in ffmpeg ffprobe; do
+  /usr/bin/lipo "$app/Contents/Helpers/$tool" -verify_arch "$swift_arch"
+  /usr/bin/codesign --force --sign "${YUZU_SIGN_IDENTITY:--}" --options runtime \
+    --identifier "com.stpashik.yuzu-converter.$tool" --entitlements Resources/MediaHelper.entitlements "$app/Contents/Helpers/$tool"
+done
 sparkle_source="$build_path/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 sparkle="$app/Contents/Frameworks/Sparkle.framework"
 /usr/bin/ditto "$sparkle_source" "$sparkle"

@@ -4,6 +4,13 @@ import AVFoundation
 /// Dependency-free media fallback: AVAudioFile encodes audio, while AVFoundation remuxes M4A and exports video.
 /// These routes depend on system decoders and presets; they are not equivalent to the broader FFmpeg routes.
 enum NativeMedia {
+    static func supportsFFmpegPlayback(_ source: SourceFile) -> Bool {
+        guard source.format.category == "Video", source.format != .gif else { return true }
+        // FFmpeg does not preserve QuickTime's disabled-track/volume flags. Never reveal muted or hidden content.
+        let tracks = AVURLAsset(url: source.url).tracks.filter { $0.mediaType == .video || $0.mediaType == .audio }
+        return tracks.allSatisfy { $0.isEnabled && ($0.mediaType != .audio || $0.preferredVolume == 1) }
+    }
+
     /// Probes the actual input and compatible export types. Synchronous asset inspection belongs off the main thread.
     static func supports(_ source: SourceFile, to target: FileFormat) -> Bool {
         if source.format.category == "Audio", target == .wav || target == .aiff || target == .m4a {

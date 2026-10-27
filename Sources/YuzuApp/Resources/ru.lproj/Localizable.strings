@@ -167,5 +167,9 @@
 "This format has no adjustable conversion settings." = "У этого формата нет настраиваемых параметров конвертации.";
 "Restore Defaults" = "Восстановить по умолчанию";
 "This output is unavailable with the current app backends. Its settings remain visible for reference." = "Текущие движки приложения не поддерживают этот формат вывода. Его настройки показаны для справки.";
-"GIF encoding requires an external encoder and is unavailable in the packaged Sandbox app." = "Для создания GIF нужен внешний кодировщик. В готовом приложении с Sandbox он недоступен.";
 "Automatic bitrate follows quality. An explicit bitrate overrides the quality preset." = "Автоматический битрейт зависит от качества. Явно заданный битрейт имеет приоритет перед настройкой качества.";
+
+// Bundled media engine notices.
+"GIF exports are animated and contain no audio." = "GIF сохраняет анимацию и не содержит звука.";
+"Media conversion uses FFmpeg under LGPL 2.1 or later." = "Для конвертации используется FFmpeg под лицензией LGPL 2.1 или более поздней версии.";
+"Media engine source and licenses" = "Исходники и лицензии медиадвижка";
