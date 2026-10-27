@@ -23,17 +23,34 @@ binary_path=$(swift build -c release --arch "$swift_arch" --scratch-path "$build
 stage="$project_root/dist/stage-$app_arch"
 rm -rf "$stage"
 app="$stage/Yuzu Converter.app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Frameworks"
 cp "$binary_path/YuzuApp" "$app/Contents/MacOS/YuzuApp"
 cp Resources/Info.plist "$app/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :SUFeedURL https://raw.githubusercontent.com/StPashik/Yuzu-converter/main/updates/appcast-$app_arch.xml" "$app/Contents/Info.plist"
 cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
 cp Resources/YuzuAppIcon.icns "$app/Contents/Resources/Yuzu.icns"
 cp Sources/YuzuApp/Resources/YuzuMenuBar.pdf "$app/Contents/Resources/YuzuMenuBar.pdf"
 cp -R Sources/YuzuApp/Resources/*.lproj "$app/Contents/Resources/"
+sparkle_source="$build_path/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+sparkle="$app/Contents/Frameworks/Sparkle.framework"
+/usr/bin/ditto "$sparkle_source" "$sparkle"
+cp "$build_path/artifacts/sparkle/Sparkle/LICENSE" "$app/Contents/Resources/Sparkle-LICENSE.txt"
+# Sign nested tools before their enclosing framework; --deep would lose service-specific entitlements.
+for component in XPCServices/Installer.xpc XPCServices/Downloader.xpc Autoupdate Updater.app; do
+  /usr/bin/codesign --force --sign "${YUZU_SIGN_IDENTITY:--}" --options runtime \
+    --preserve-metadata=entitlements "$sparkle/Versions/B/$component"
+done
+/usr/bin/codesign --force --sign "${YUZU_SIGN_IDENTITY:--}" --options runtime "$sparkle"
+app_entitlements="$build_path/Yuzu.entitlements"
+cp Resources/Yuzu.entitlements "$app_entitlements"
+if [ "${YUZU_SIGN_IDENTITY:--}" = '-' ]; then
+  # Ad-hoc signatures have no Team ID for dynamic-framework library validation.
+  /usr/libexec/PlistBuddy -c 'Add :com.apple.security.cs.disable-library-validation bool true' "$app_entitlements"
+fi
 /usr/bin/plutil -lint "$app/Contents/Info.plist"
 /usr/bin/codesign --force --sign "${YUZU_SIGN_IDENTITY:--}" --options runtime \
-  --entitlements Resources/Yuzu.entitlements "$app"
-/usr/bin/codesign --verify --strict --verbose=2 "$app"
+  --entitlements "$app_entitlements" "$app"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
 /usr/bin/lipo "$app/Contents/MacOS/YuzuApp" -verify_arch "$swift_arch"
 /usr/bin/ditto -c -k --norsrc --keepParent "$app" "dist/Yuzu-Converter-$app_version-$app_arch.zip"
 echo "Built dist/Yuzu-Converter-$app_version-$app_arch.zip"

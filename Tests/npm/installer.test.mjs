@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
-import { applicationPath, install, selectAsset, validateArchivePaths, validateDownloadURL, verifyChecksum } from '../../npm/install.mjs';
+import { applicationPath, install, selectAsset, validateArchivePaths, validateSparkleLinks, validateDownloadURL, verifyChecksum } from '../../npm/install.mjs';
 import { validateRelease } from '../../npm/validate-release.mjs';
 
 const run = promisify(execFile);
@@ -16,8 +16,8 @@ const silent = () => {};
 function manifestFor(bytes) {
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   return {
-    version: '0.1.2', repository: 'StPashik/Yuzu-converter',
-    assets: Object.fromEntries(['arm64', 'x64'].map(arch => [arch, { name: `Yuzu-Converter-0.1.2-${arch}.zip`, sha256 }]))
+    version: '0.2.0', repository: 'StPashik/Yuzu-converter',
+    assets: Object.fromEntries(['arm64', 'x64'].map(arch => [arch, { name: `Yuzu-Converter-0.2.0-${arch}.zip`, sha256 }]))
   };
 }
 
@@ -27,17 +27,18 @@ async function scratch(t) {
   return path;
 }
 
-async function fixtureApp(path, version = '0.1.2', id = 'com.stpashik.yuzu-converter') {
+async function fixtureApp(path, version = '0.2.0', id = 'com.stpashik.yuzu-converter') {
   await mkdir(join(path, 'Contents', 'MacOS'), { recursive: true });
   await writeFile(join(path, 'Contents', 'Info.plist'), `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>CFBundleIdentifier</key><string>${id}</string><key>CFBundleExecutable</key><string>YuzuApp</string><key>CFBundleShortVersionString</key><string>${version}</string></dict></plist>\n`);
   await writeFile(join(path, 'Contents', 'MacOS', 'YuzuApp'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
 }
 
-async function archiveApp(t, { id, symlinkTarget } = {}) {
+async function archiveApp(t, { id, symlinkTarget, configure } = {}) {
   const directory = await scratch(t);
   const app = join(directory, 'Yuzu Converter.app');
-  await fixtureApp(app, '0.1.2', id);
+  await fixtureApp(app, '0.2.0', id);
   if (symlinkTarget) await symlink(symlinkTarget, join(app, 'escape'));
+  await configure?.(app);
   const archive = join(directory, 'app.zip');
   await run('/usr/bin/ditto', ['-c', '-k', '--norsrc', '--keepParent', app, archive]);
   return { archive, manifest: manifestFor(await readFile(archive)) };
@@ -54,7 +55,7 @@ function installFixture(home, fixture) {
   return install({
     home, manifest: fixture.manifest,
     fetchAsset: async (url, destination) => {
-      assert.match(url, /^https:\/\/github\.com\/StPashik\/Yuzu-converter\/releases\/download\/v0\.1\.2\/Yuzu-Converter-0\.1\.2-(arm64|x64)\.zip$/);
+      assert.match(url, /^https:\/\/github\.com\/StPashik\/Yuzu-converter\/releases\/download\/v0\.2\.0\/Yuzu-Converter-0\.2\.0-(arm64|x64)\.zip$/);
       await copyFile(fixture.archive, destination);
     },
     log: silent
@@ -63,11 +64,11 @@ function installFixture(home, fixture) {
 
 test('release assets are version-pinned for supported macOS architectures', () => {
   const manifest = manifestFor(Buffer.from('fixture'));
-  assert.equal(selectAsset(manifest, 'darwin', 'arm64').name, 'Yuzu-Converter-0.1.2-arm64.zip');
-  assert.equal(selectAsset(manifest, 'darwin', 'x64').name, 'Yuzu-Converter-0.1.2-x64.zip');
+  assert.equal(selectAsset(manifest, 'darwin', 'arm64').name, 'Yuzu-Converter-0.2.0-arm64.zip');
+  assert.equal(selectAsset(manifest, 'darwin', 'x64').name, 'Yuzu-Converter-0.2.0-x64.zip');
   assert.throws(() => selectAsset(manifest, 'linux', 'x64'), /macOS/);
   assert.throws(() => selectAsset(manifest, 'darwin', 'ia32'), /architecture/);
-  assert.throws(() => validateRelease({ ...manifest, version: '0.2.0' }), /match/);
+  assert.throws(() => validateRelease({ ...manifest, version: '0.3.0' }), /match/);
   assert.throws(() => validateRelease({ ...manifest, version: '0.1.0' }), /match/);
   assert.throws(() => validateRelease({ ...manifest, assets: { ...manifest.assets, arm64: { ...manifest.assets.arm64, sha256: null } } }), /pinned arm64/);
   assert.throws(() => validateRelease({ ...manifest, assets: { arm64: manifest.assets.arm64 } }), /pinned x64/);
@@ -96,6 +97,32 @@ test('archive paths cannot leave the application root', () => {
     assert.throws(() => validateArchivePaths([name]), /Unsafe/);
   }
   assert.throws(() => validateArchivePaths([]), /count/);
+  assert.throws(() => validateArchivePaths(['Yuzu Converter.app/Contents/Frameworks/Sparkle.framework//Resources/payload']), /Unsafe/);
+  assert.throws(() => validateArchivePaths(['Yuzu Converter.app/A', 'Yuzu Converter.app/a']), /Duplicate/);
+});
+
+test('only fixed Sparkle aliases are accepted and no member can write through them', () => {
+  const link = 'Yuzu Converter.app/Contents/Frameworks/Sparkle.framework/Resources';
+  validateSparkleLinks([link], new Map([[link, 'Versions/Current/Resources']]));
+  for (const target of ['/tmp', '../../outside', 'Versions/Current/Resources\n']) {
+    assert.throws(() => validateSparkleLinks([link], new Map([[link, target]])), /canonical Sparkle/);
+  }
+  assert.throws(() => validateSparkleLinks([link, link + '/payload'], new Map([[link, 'Versions/Current/Resources']])), /descends/);
+});
+
+test('a real archive preserves the approved framework links during installation', native, async t => {
+  const fixture = await archiveApp(t, { configure: async app => {
+    const framework = join(app, 'Contents/Frameworks/Sparkle.framework');
+    await mkdir(join(framework, 'Versions/B'), { recursive: true });
+    await writeFile(join(framework, 'Versions/B/Sparkle'), 'fixture');
+    await symlink('B', join(framework, 'Versions/Current'));
+    await symlink('Versions/Current/Sparkle', join(framework, 'Sparkle'));
+  }});
+  const home = await testHome(t);
+  await installFixture(home, fixture);
+  const link = join(applicationPath(home), 'Contents/Frameworks/Sparkle.framework/Sparkle');
+  assert.equal(await readlink(link), 'Versions/Current/Sparkle');
+  assert.equal(await readFile(link, 'utf8'), 'fixture');
 });
 
 test('a verified archive installs a complete app without launching it', native, async t => {
@@ -108,16 +135,25 @@ test('a verified archive installs a complete app without launching it', native, 
 });
 
 test('an installed release is idempotent and does not download again', native, async t => {
-  const home = await testHome(t, '0.1.2');
+  const home = await testHome(t, '0.2.0');
   await install({ home, manifest: manifestFor(Buffer.from('unused')), log: silent, fetchAsset: () => assert.fail('must not download') });
   assert.deepEqual(await readdir(join(home, 'Applications')), ['Yuzu Converter.app']);
 });
 
-test('an upgrade from 0.1.1 publishes 0.1.2 and removes its own staging directory', native, async t => {
+test('an older npm launcher preserves a newer in-app update', native, async t => {
+  for (const version of ['0.2.1', '0.10.0', '1.0.0']) {
+    const home = await testHome(t, version);
+    const oldPlist = await readFile(join(applicationPath(home), 'Contents/Info.plist'));
+    await install({ home, manifest: manifestFor(Buffer.from('unused')), log: silent, fetchAsset: () => assert.fail('must not downgrade') });
+    assert.deepEqual(await readFile(join(applicationPath(home), 'Contents/Info.plist')), oldPlist);
+  }
+});
+
+test('an upgrade from 0.1.2 publishes 0.2.0 and removes its own staging directory', native, async t => {
   const fixture = await archiveApp(t);
-  const home = await testHome(t, '0.1.1');
+  const home = await testHome(t, '0.1.2');
   await installFixture(home, fixture);
-  assert.match(await readFile(join(applicationPath(home), 'Contents', 'Info.plist'), 'utf8'), /0\.1\.2/);
+  assert.match(await readFile(join(applicationPath(home), 'Contents', 'Info.plist'), 'utf8'), /0\.2\.0/);
   assert.deepEqual(await readdir(join(home, 'Applications')), ['Yuzu Converter.app']);
 });
 
@@ -154,7 +190,7 @@ test('an archive symlink is rejected before extraction', native, async t => {
   await writeFile(join(outside, 'sentinel'), 'keep');
   const fixture = await archiveApp(t, { symlinkTarget: outside });
   const home = await testHome(t);
-  await assert.rejects(installFixture(home, fixture), /regular files and directories/);
+  await assert.rejects(installFixture(home, fixture), /symbolic links/);
   assert.equal(await readFile(join(outside, 'sentinel'), 'utf8'), 'keep');
   assert.deepEqual(await readdir(join(home, 'Applications')), []);
 });

@@ -56,3 +56,6 @@
 "Copy full file paths, one per line." = "Copy full file paths, one per line.";
 "Open Terminal in the selected folder or the file’s parent folder." = "Open Terminal in the selected folder or the file’s parent folder.";
 "Create one ZIP beside the first selected item. Originals stay in place." = "Create one ZIP beside the first selected item. Originals stay in place.";
+"Check for Updates…" = "Check for Updates…";
+"The update will install when file operations finish." = "The update will install when file operations finish.";
+"Updates are checked only when you ask. Installation requires your confirmation." = "Updates are checked only when you ask. Installation requires your confirmation.";

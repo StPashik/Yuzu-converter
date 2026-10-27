@@ -56,3 +56,6 @@
 "Copy full file paths, one per line." = "Copiar las rutas completas de los archivos, una por línea.";
 "Open Terminal in the selected folder or the file’s parent folder." = "Abrir Terminal en la carpeta seleccionada o en la carpeta que contiene el archivo.";
 "Create one ZIP beside the first selected item. Originals stay in place." = "Crear un único ZIP junto al primer elemento seleccionado. Los originales permanecen en su lugar.";
+"Check for Updates…" = "Buscar actualizaciones…";
+"The update will install when file operations finish." = "La actualización se instalará al finalizar las operaciones con archivos.";
+"Updates are checked only when you ask. Installation requires your confirmation." = "Las actualizaciones se buscan solo cuando lo solicitas. La instalación requiere tu confirmación.";
