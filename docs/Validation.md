@@ -22,6 +22,11 @@ Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Update signing | Both final archive signatures independently verified; both appcasts signed and verified with build 6 / version 0.3.0 |
 | Final artifacts | Both final ZIPs installed into temporary homes; native version 0.3.0 and codesign passed; manifest hashes, build/feed/key, license copies, and all five resource tables matched the archives |
 | npm package | Prepack passed against final hashes; 7 files, no dependencies; final artifact checksums recorded in Release-checksums-0.3.0.txt |
+| Public release | English preview published with all eight assets; GitHub-reported sizes and SHA-256 digests matched the reviewed local files |
+| Live feed bytes | Both public HTTPS feeds matched the final signed XML byte for byte |
+| Live Sparkle checks | Real arm64/x86_64 production-key probes: build 5 found build 6 available, and build 6 reported current; no update archive was downloaded or installed by the probes |
+| Public npm installation | npm 12.2.1 installed the published package; CLI and home app report 0.3.0, and the home app passed deep strict codesign |
+| Primary application | The primary copy was not running; the verified installer upgraded `/Applications`, then the app launched and remained running as one instance. Both installed copies report 0.3.0 / build 6, pass deep strict codesign, and the saved Russian language remained selected |
 
 The first targeted Settings suite passed 6/6. A later full native run passed 59/60 and exposed a real native-video metadata leak: assigning an empty export metadata array still retained the source title. A fresh media-only composition fixed that path; the unchanged assertion was strengthened for unresized MOV as well as resized MP4. The targeted regression then passed, followed by both complete 60/60 suites before the final playback-state audit. Assertions were not weakened.
 
@@ -30,6 +35,8 @@ A final independent audit found that rebuilt tracks could become enabled, and th
 Independent QA also found and fixed Int32 precision loss through Float32 processing and incomplete developer FFmpeg metadata removal. Regression fixtures compare actual nonzero low-bit PCM samples and tagged global/stream/chapter output. UI review corrected clipped search placeholders, inherited XCTest version text, About icon corners, duplicate login errors, and status refresh after returning from System Settings. General scrolling and inactive native-control coloring are intentional; the development preview does not establish active-window Glass compositing or VoiceOver behavior.
 
 The five Tangerine pages were observed separately through REA; [Tangerine-settings.md](Tangerine-settings.md) preserves evidence IDs and unknowns. No original preference values, grants, artwork, sounds, pseudocode, binaries, or source were imported. [Settings.md](Settings.md) explains Yuzu's own numeric mappings and route-dependent limits. Physical Finder/Powerbox/bookmark recovery, ancestor child-scope derivation, login-item approval, real terminal/AirDrop use, haptics/VoiceOver, Intel hardware, macOS 13, and a full interactive Sparkle install/relaunch remain unverified. The preview remains ad-hoc signed without notarization.
+
+The installed upgrade used the public npm installer and its normal verification/staging path, not an interactive Sparkle installation. The v0.3.0 release tag and its assets remain unchanged; this later publication record is maintained on develop.
 
 ## v0.2.1 — Yuzu wheel appearance
 
