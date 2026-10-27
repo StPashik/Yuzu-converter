@@ -8,7 +8,8 @@ import subprocess
 import tarfile
 
 root = Path(__file__).resolve().parent.parent
-version = json.loads((root / "package.json").read_text())["version"]
+package = json.loads((root / "package.json").read_text())
+version = package["version"]
 sources = json.loads((root / "Resources/Media-sources.json").read_text())
 destination = root / "dist" / f"Yuzu-FFmpeg-Sources-{version}.tar.xz"
 destination.parent.mkdir(exist_ok=True)
@@ -22,7 +23,7 @@ with tarfile.open(destination, "w:xz") as archive:
         if hashlib.sha256(path.read_bytes()).hexdigest() != source["sha256"]:
             raise SystemExit(f"Incorrect source archive: {path}")
         archive.add(path, arcname=relative)
-    for arch in ["arm64", "x64"]:
+    for arch in package["cpu"]:
         work = Path((root / f".build/media-{arch}/build-path.txt").read_text().strip())
         for relative in ["build-ffmpeg/config.h", "build-ffmpeg/config_components.h",
                          "build-ffmpeg/ffbuild/config.mak", "build-ffmpeg/ffbuild/config.log",

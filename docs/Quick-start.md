@@ -6,12 +6,13 @@ Yuzu Converter lives in your Mac's menu bar. Drag a file, hold a shortcut key, a
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-arm64.zip) |
-| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-x64.zip) |
+| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/Yuzu-Converter-0.4.1-arm64.zip) |
+
+Requires Apple Silicon and macOS 13+. Intel Macs can keep [0.4.0](https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0), the final Intel release. New releases and updates are arm64 only.
 
 Open the ZIP and move **Yuzu Converter.app** into your Applications folder. Open the app; its icon appears in the menu bar. There is no Dock icon or main window.
 
-This preview is signed ad hoc and has no Apple notarization. If macOS blocks the first launch, see [Apple's explanation of opening downloaded apps](https://support.apple.com/en-gb/102445). Yuzu's installer does not change Gatekeeper settings.
+This build is signed ad hoc and has no Apple notarization. If macOS blocks the first launch, see [Apple's explanation of opening downloaded apps](https://support.apple.com/en-gb/102445). Yuzu's installer does not change Gatekeeper settings.
 
 ### Install with npm
 
@@ -20,7 +21,7 @@ Node.js 20.11+ and npm are needed for installation and the launcher. The app its
 For npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/stpashik-yuzu-converter-0.4.1.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -28,7 +29,7 @@ yuzu-converter
 For npm 10/11:
 
 ```sh
-npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz
+npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/stpashik-yuzu-converter-0.4.1.tgz
 yuzu-converter
 ```
 
@@ -58,11 +59,11 @@ Hold **Control** while dragging files or folders:
 | Terminal | Open Terminal in the selected folder or the file's parent folder. |
 | ZIP | Create one ZIP beside the first selected item, preserving every original. |
 
-Removing an item from the shelf never deletes the file. Closing the shelf clears its references. ZIP creation rejects symbolic links and matching top-level filenames; rename those inputs first. Moving a folder between volumes is unavailable in this preview.
+Removing an item from the shelf never deletes the file. Closing the shelf clears its references. ZIP creation rejects symbolic links and matching top-level filenames; rename those inputs first. Moving a folder between volumes is currently unavailable.
 
 ## Choose your language
 
-Open **Settings… → Language** and choose English, Russian, German, French, or Spanish. The app defaults to English and remembers your choice. App-owned labels, menus, hints, and progress messages update immediately. Some system dialogs use the new language after restarting the app; detailed converter diagnostics remain English for support reports. Documentation and code comments stay English.
+Open **Settings… → General → Language** and choose English, Russian, German, French, or Spanish. The app defaults to English and remembers your choice. App-owned labels, menus, hints, and progress messages update immediately. Some system dialogs use the new language after restarting the app; detailed converter diagnostics remain English for support reports. Documentation and code comments stay English.
 
 ## Check for updates
 
@@ -76,14 +77,14 @@ Click the menu bar icon and choose **Settings…** to enable/disable wheels, swa
 
 During conversion or ZIP creation, use **Cancel** in the progress panel. Files already completed by an earlier item in a batch remain available.
 
-## Preview boundaries
+## Known boundaries
 
 Common image, native audio/video, PDF-page, text-document, values-only spreadsheet, subtitle, and archive routes are implemented. Check the [format support matrix](Conversion-matrix.md) before relying on complex documents. PAGES, PowerPoint, legacy XLS, OCR, PDF-to-editable-Office, and several media export formats are unavailable. Spreadsheet formulas and styling are not preserved.
 
-Automated checks cover file handling and conversion fixtures. Physical Finder drag, Powerbox recovery, VoiceOver during drag, AirDrop, Terminal, and shelf drag-out still need manual validation. These are preview limitations, not completed checks. Details are in [Validation.md](Validation.md).
+Automated checks cover file handling and conversion fixtures. Physical Finder drag, Powerbox recovery, VoiceOver during drag, AirDrop, Terminal, and shelf drag-out still need manual validation. These checks remain unverified. Details are in [Validation.md](Validation.md).
 
 For a useful bug report, include your macOS version, chip, input/output formats, and the error text. Use a small non-private sample if possible: [GitHub Issues](https://github.com/StPashik/Yuzu-converter/issues).
 
 ## Video conversion without extra setup
 
-Version 0.4.0 includes FFmpeg and FFprobe for both Mac architectures. Drag a supported video, hold Shift, and choose MP4, MOV, MKV, WebM, AVI, WMV, animated GIF, or MP3 audio. The current format and targets unavailable for the actual selection are hidden. MP3 requires sound; GIF exports are silent. See [codec limits, licenses, and complete corresponding source](Bundled-media.md). This software uses FFmpeg under LGPL 2.1 or later.
+The current Apple Silicon release includes FFmpeg and FFprobe. Drag a supported video, hold Shift, and choose MP4, MOV, MKV, WebM, AVI, WMV, animated GIF, or MP3 audio. The current format and targets unavailable for the actual selection are hidden. MP3 requires sound; GIF exports are silent. See [codec limits, licenses, and complete corresponding source](Bundled-media.md). This software uses FFmpeg under LGPL 2.1 or later.

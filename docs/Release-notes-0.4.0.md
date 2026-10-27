@@ -55,7 +55,7 @@ The helpers are signed to inherit the app Sandbox and receive already-open, seek
 
 ## Known limits
 
-FFmpeg outputs use the first video and optional first audio stream. Additional streams, subtitles, attachments, and video transparency are not preserved. These are encoded conversions, not a promise of lossless remuxing. Known disabled/non-unit-volume QuickTime tracks hide FFmpeg routes so muted or hidden content is not exposed; compatible native routes remain available. Playback flags in containers macOS cannot read are not reconstructed. DRM, damaged files, and uncommon codec profiles may fail. Intel WebM encoding uses portable C and may be slower than an assembly-optimized build.
+FFmpeg outputs use the first video and optional first audio stream. Additional streams, subtitles, attachments, and video transparency are not preserved. These are encoded conversions, not a promise of lossless remuxing. Known disabled/non-unit-volume QuickTime tracks hide FFmpeg routes so muted or hidden content is not exposed; compatible native routes remain available. Playback flags in containers macOS cannot read are not reconstructed. AV1 software decoding is not included; native decoding, when available for the actual file, depends on the Mac. DRM, damaged files, and other unsupported codec profiles may fail. Intel WebM encoding uses portable C and may be slower than an assembly-optimized build.
 
 The existing document/Office limitations remain in the [format matrix](https://github.com/StPashik/Yuzu-converter/blob/v0.4.0/docs/Conversion-matrix.md). File tools remain outside scope.
 

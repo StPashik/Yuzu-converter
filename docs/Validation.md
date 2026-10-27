@@ -2,6 +2,32 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.4.1 — Stable Apple Silicon releases and manual updates
+
+Fresh preparation on October 27, 2026. Starting with this version, the owner requested Apple Silicon (arm64) only. Existing Intel 0.4.0 tags, binaries, and the exact signed legacy x64 feed remain unchanged. There is no universal or new Intel app in this release.
+
+| Check | Recorded result |
+| --- | --- |
+| GitFlow feature review | [PR #1](https://github.com/StPashik/Yuzu-converter/pull/1) merged into develop with a merge commit after [independent CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40561703972) passed |
+| Native CI | macOS 26 arm64: 64 Swift tests passed, zero failures; all 48 media routes and 64 settings renders ran |
+| Installer/feed tests | 21 Node tests passed, zero skips; unsupported Intel installation is rejected before downloading or modifying an existing app |
+| Version/CPU metadata | Package, lockfile, final executable, and app plist agree on 0.4.1 / build 8; package CPU is arm64 only |
+| Final signed ZIP | Deep strict signatures, exact arm64 main/helper slices, helper entitlements, minimum macOS 13, system runtime dependencies, five language tables, and exact media license/manifest bytes passed |
+| Sandbox | The final ZIP's app passed bundled media targets, probe/decode/return conversions, image metadata removal, documents, spreadsheets, and archives without developer tools |
+| Isolated installation | Final ZIP installed into a temporary home; executable version and code signature passed; the temporary home was removed |
+| Update authentication | Final archive signature independently verified against the production key; arm64 XML signed and independently verified for build 8 |
+| Sparkle HTTP fixtures | Available/current/tampered/HTTP-500 cases passed with real requests and isolated app identities; no download or installation |
+| Corresponding source | All four exact upstream archive hashes and recipe/manifest/guide bytes matched; actual arm64 build configurations are included |
+| npm package | Packed files match the tested source, version, CPU declaration, and pinned arm64 archive hash |
+| Release staging | Seven assets staged; six payload SHA-256 values recorded in [Release-checksums-0.4.1.txt](Release-checksums-0.4.1.txt) |
+| Owner installations | Both installed copies remain 0.4.0 / build 7 with their original executable hashes; no global npm install, quit, or relaunch was performed |
+
+The release PR must pass CI before its exact main merge commit is tagged and published. Public asset/feed checks are recorded after publication. The arm64 legacy bridge advances only after the signed downloads are public; the x64 bridge stays on 0.4.0.
+
+Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, and a complete interactive Sparkle installation/relaunch remain unverified. Signing is ad hoc, without Developer ID or Apple notarization. Conversion/stream/codec limitations remain in [Conversion-matrix.md](Conversion-matrix.md) and [Bundled-media.md](Bundled-media.md).
+
+Historical Intel follow-up: native macOS 15 CI passed 64 Swift tests, but the signed Sandbox self-check failed with a generic operation error; the published 0.4.0 archive reproduced that failure. Its cause was not established. macOS 26 Intel UI-test preparation also did not complete in hosted CI. Those checks do not establish Intel runtime compatibility, and no new Intel support is claimed here.
+
 ## v0.4.0 — Bundled video engines
 
 Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
@@ -22,6 +48,10 @@ Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Update signing | Both final archive signatures independently verified against the embedded production public key; both appcasts signed and verified with build 7 / version 0.4.0 |
 | Sparkle HTTP fixtures | Available/current, tampered signed-feed rejection, and HTTP 500 checks reached the local server and passed with an isolated temporary key |
 | npm package | Prepack accepted the final archive hashes; seven files, no dependencies, version-pinned GitHub installation |
+| Public publication | English preview with nine assets; every GitHub-reported SHA-256/size matched local staging, and all nine unauthenticated public downloads passed the same digest/size checks |
+| Live feed bytes and Sparkle | Both public main feeds matched the signed XML; real arm64/x86_64 production-key probes found build 7 from build 6 and reported build 7 current, without a Sparkle download/install |
+| Public npm installation | npm 12.2.1 installed the published package; CLI and home app report 0.4.0; both bundled media helpers are present |
+| Primary installation | Existing app quit normally; the verified public installer upgraded `/Applications`, and the primary app launched as one instance. Both installed copies report 0.4.0 / build 7 and pass deep strict codesign; the saved Russian interface preference remained selected |
 
 The real-file matrix exposed a GIF-to-WebM failure because FFmpeg selected an experimental RGB/alpha VP9 pixel format. Explicit YUV 4:2:0 fixed it; the original round-trip assertion remains. The playback guard initially included chapter text tracks and skipped the metadata fixture. It now checks only audio/video playback state, and the final suites ran that fixture without skips. A cross-compiled test bundle rejected by an arm64 loader was not counted as an Intel test run; the recorded Intel result used the actual Rosetta XCTest process.
 
@@ -30,6 +60,8 @@ Final archive QA is a separate check through `scripts/verify-media-release.py`, 
 FFmpeg and codec source archives are unmodified and their corresponding configurations/build recipe accompany the release. The seven upstream media license/notice files are copied exactly into each app. Helpers use inherited seekable file descriptors for user content; they have no network protocols or physical capture/output devices. The internal filter input is present for fixtures. The application and installer remain MIT.
 
 Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, real Intel hardware, macOS 13, and a full interactive Sparkle installation remain unverified. Advanced FFmpeg outputs select the first video and optional first audio, dropping extra streams/subtitles/attachments and transparency. Uncommon codecs/DRM can fail; playback flags in containers macOS cannot read are not reconstructed. Intel libvpx uses portable C and may encode more slowly. The preview remains ad-hoc signed without Developer ID or notarization.
+
+The final decoder audit also confirmed that this build has no AV1 software decoder. Native decoding, if available for the actual asset, depends on the Mac. This is explicit in the published English notes and the current conversion matrix. The v0.4.0 tag and its nine assets remain immutable; these publication results and the decoder clarification are maintained on develop. The installed upgrade used the verified npm installer, not a full interactive Sparkle installation.
 
 ## v0.3.0 — Settings and output profiles
 

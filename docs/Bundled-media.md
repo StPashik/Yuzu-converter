@@ -1,10 +1,12 @@
 # Bundled video conversion
 
-Yuzu Converter 0.4.0 includes FFmpeg and FFprobe for Apple Silicon and Intel. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
+Starting with 0.4.1, Yuzu Converter includes FFmpeg and FFprobe for Apple Silicon only. Version 0.4.0 remains the final Intel release. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
 
 ## What appears in the wheel
 
 Drop a supported MP4, MOV, MKV, WebM, AVI, or WMV file to convert to another of those formats, animated GIF, or MP3 audio. The current format is hidden. MP3 appears only when the input has an audio stream. Animated GIF input can become MP4, MOV, MKV, WebM, AVI, or WMV; it has no audio to extract. For multiple files, the wheel offers the intersection of their available outputs.
+
+AV1 software decoding is not included in this build. A native AVFoundation route, when available for the actual asset, depends on the Mac.
 
 Format names identify containers. The actual codec, damaged data, encryption/DRM, and unusual stream layouts can still prevent conversion. Preserve originals. FFmpeg exports select the first video stream and optional first audio stream; subtitles, attachments, and additional streams are not carried into these outputs. GIF is animated and silent. Its settings control frame rate and maximum width.
 
@@ -29,21 +31,20 @@ Outputs are written exclusively into private staging, validated, and published u
 | Opus | 1.6.1 | BSD license and upstream patent notices |
 | LAME | 3.100 | LGPL 2 or later |
 
-This software uses code from [FFmpeg](https://ffmpeg.org/) under LGPL 2.1 or later. [Download the complete corresponding media source package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-FFmpeg-Sources-0.4.0.tar.xz). The same GitHub Release hosts the application binaries and source. The package includes the exact upstream archives, checksums, build script, manifest, build configurations, and this guide. No upstream source patches are applied. License/notice copies are in [docs/licenses](licenses) and inside the app's `Contents/Resources/Media-Licenses` folder. Yuzu's own code and npm installer remain MIT; they invoke separate executables rather than link FFmpeg libraries into the application.
+This software uses code from [FFmpeg](https://ffmpeg.org/) under LGPL 2.1 or later. [Download the complete corresponding media source package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/Yuzu-FFmpeg-Sources-0.4.1.tar.xz). The same GitHub Release hosts the application binaries and source. The package includes the exact upstream archives, checksums, build script, manifest, build configurations, and this guide. No upstream source patches are applied. License/notice copies are in [docs/licenses](licenses) and inside the app's `Contents/Resources/Media-Licenses` folder. Yuzu's own code and npm installer remain MIT; they invoke separate executables rather than link FFmpeg libraries into the application.
 
 The helper executables statically link these codec libraries and have only macOS system runtime dependencies. Source and build instructions are provided so the helpers can be rebuilt, modified, and relinked. There is no restriction on reverse engineering needed to debug modifications to LGPL components. Replacing signed app contents requires signing the modified bundle again; the application build script supports an ad-hoc development signature. A rebuilt helper is not a production update and cannot use the owner's private update-signing key.
 
 ## Build from source
 
-Install Xcode command-line tools, Python 3.12+, `make`, `pkg-config`, and `xz`. The build uses the macOS SDK and targets macOS 13.0. The script downloads only the pinned upstream archives and refuses a SHA-256 mismatch. It disables automatic third-party library discovery, preventing accidental Homebrew linkage. Build directories use a temporary path without spaces because upstream makefiles cannot reliably handle spaces. Apple Silicon libvpx uses its ARM target; Intel uses portable C code and does not require NASM. Intel WebM encoding may be slower than an assembly-optimized build.
+Install Xcode command-line tools, Python 3.12+, `make`, `pkg-config`, and `xz`. The build uses the macOS SDK and targets macOS 13.0. The script downloads only the pinned upstream archives and refuses a SHA-256 mismatch. It disables automatic third-party library discovery, preventing accidental Homebrew linkage. Build directories use a temporary path without spaces because upstream makefiles cannot reliably handle spaces. Apple Silicon libvpx uses its ARM target. The build script retains the historical Intel recipe for reproducing 0.4.0; current releases do not package or test new Intel binaries.
 
 From the Yuzu repository, or the source package's root:
 
 ```sh
 python3 scripts/build-media.py arm64
-python3 scripts/build-media.py x64
 ```
 
-The source package includes `.build/media-sources` with the four exact archives for an offline rebuild. Generated helpers are placed in `.build/media-arm64/Tools` and `.build/media-x64/Tools`. Re-run the media build after changing its source manifest or recipe; remove stale generated tools before packaging. In the full Yuzu repository, `bash scripts/build-app.sh arm64` or `x64` copies and signs the matching helpers. The native app has no Python, pkg-config, or Node runtime dependency.
+The source package includes `.build/media-sources` with the four exact archives for an offline rebuild. Current release helpers are placed in `.build/media-arm64/Tools`. Re-run the media build after changing its source manifest or recipe; remove stale generated tools before packaging. In the full Yuzu repository, `bash scripts/build-app.sh arm64` copies and signs the matching helpers. The native app has no Python, pkg-config, or Node runtime dependency.
 
 For release verification, point `YUZU_FFMPEG`/`YUZU_FFPROBE` at the matching newly built tools and set `YUZU_MEDIA_REQUIRED=1` while running Swift tests in an isolated scratch path. The video matrix fixture must run, not skip. Then run each signed app's `--self-check`: this resolves only bundled helpers inside the real Sandbox. [Validation](Validation.md) records actual results and the remaining physical/hardware limits.

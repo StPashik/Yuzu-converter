@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Independently inspect final ZIPs and execute their signed apps without developer media overrides."""
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,9 @@ import tempfile
 import zipfile
 
 root = Path(__file__).resolve().parent.parent
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--arch", choices=["arm64"], help="Verify the Apple Silicon release archive.")
+selected_arch = parser.parse_args().arch
 version = json.loads((root / "package.json").read_text())["version"]
 build = plistlib.loads((root / "Resources/Info.plist").read_bytes())["CFBundleVersion"]
 environment = dict(os.environ, PATH="/usr/bin:/bin:/usr/sbin:/sbin",
@@ -18,11 +22,17 @@ environment = dict(os.environ, PATH="/usr/bin:/bin:/usr/sbin:/sbin",
 
 
 def run(arguments, timeout=180):
-    return subprocess.check_output(list(map(str, arguments)), env=environment, stderr=subprocess.STDOUT,
-                                   text=True, timeout=timeout)
+    try:
+        return subprocess.check_output(list(map(str, arguments)), env=environment, stderr=subprocess.STDOUT,
+                                       text=True, timeout=timeout)
+    except subprocess.CalledProcessError as error:
+        print(error.output, flush=True)
+        raise
 
 
-for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
+for arch, cpu in [("arm64", "arm64")]:
+    if selected_arch and arch != selected_arch:
+        continue
     path = root / f"dist/Yuzu-Converter-{version}-{arch}.zip"
     with zipfile.ZipFile(path) as archive:
         assert all(name.startswith("Yuzu Converter.app/") for name in archive.namelist())
@@ -33,6 +43,10 @@ for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
         plist = plistlib.loads((contents / "Info.plist").read_bytes())
         assert plist["CFBundleShortVersionString"] == version and plist["CFBundleVersion"] == build
         assert plist["YuzuSandboxed"] is True
+        assert plist["SUFeedURL"] == f"https://github.com/StPashik/Yuzu-converter/releases/latest/download/appcast-{arch}.xml"
+        for setting in ["SUEnableAutomaticChecks", "SUAutomaticallyUpdate", "SUAllowsAutomaticUpdates", "SUEnableSystemProfiling"]:
+            assert plist[setting] is False, setting
+        assert plist["SUVerifyUpdateBeforeExtraction"] is True and plist["SURequireSignedFeed"] is True
         run(["/usr/bin/codesign", "--verify", "--deep", "--strict", app])
         for tool in ["ffmpeg", "ffprobe"]:
             helper = contents / "Helpers" / tool
@@ -53,9 +67,8 @@ for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
             assert (contents / f"Resources/{language}.lproj/Localizable.strings").read_bytes() == (
                 root / f"Sources/YuzuApp/Resources/{language}.lproj/Localizable.strings").read_bytes()
         executable = contents / "MacOS/YuzuApp"
-        prefix = ["/usr/bin/arch", "-x86_64"] if arch == "x64" else []
-        assert run([*prefix, executable, "--version"]).strip() == version
-        result = run([*prefix, executable, "--self-check"])
+        assert run([executable, "--version"]).strip() == version
+        result = run([executable, "--self-check"])
         assert "Sandbox self-check passed" in result, result
         print(result.strip(), flush=True)
         print(f"{arch}: final ZIP, signatures, helper entitlements, macOS target, dependencies, resources, and Sandbox media passed", flush=True)
