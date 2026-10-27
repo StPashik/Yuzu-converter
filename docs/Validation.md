@@ -9,6 +9,7 @@ Fresh preparation on October 27, 2026. Starting with this version, the owner req
 | Check | Recorded result |
 | --- | --- |
 | GitFlow feature review | [PR #1](https://github.com/StPashik/Yuzu-converter/pull/1) merged into develop with a merge commit after [independent CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40561703972) passed |
+| Release PR/tag | [PR #2](https://github.com/StPashik/Yuzu-converter/pull/2) passed [CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40564312499); v0.4.1 tags its exact main merge commit `9a1a07e182cacee7bbbecd8ef4f4730443e8452f` |
 | Native CI | macOS 26 arm64: 64 Swift tests passed, zero failures; all 48 media routes and 64 settings renders ran |
 | Installer/feed tests | 21 Node tests passed, zero skips; unsupported Intel installation is rejected before downloading or modifying an existing app |
 | Version/CPU metadata | Package, lockfile, final executable, and app plist agree on 0.4.1 / build 8; package CPU is arm64 only |
@@ -20,9 +21,11 @@ Fresh preparation on October 27, 2026. Starting with this version, the owner req
 | Corresponding source | All four exact upstream archive hashes and recipe/manifest/guide bytes matched; actual arm64 build configurations are included |
 | npm package | Packed files match the tested source, version, CPU declaration, and pinned arm64 archive hash |
 | Release staging | Seven assets staged; six payload SHA-256 values recorded in [Release-checksums-0.4.1.txt](Release-checksums-0.4.1.txt) |
+| Public release | Stable Latest v0.4.1, draft=false/prerelease=false; all seven uploaded digests/sizes and unauthenticated public downloads match staging |
+| Latest feed/Sparkle | Public Latest XML is byte-identical to the signed asset; real production-key probes found build 8 from build 7 and reported build 8 current without installing |
 | Owner installations | Both installed copies remain 0.4.0 / build 7 with their original executable hashes; no global npm install, quit, or relaunch was performed |
 
-The release PR must pass CI before its exact main merge commit is tagged and published. Public asset/feed checks are recorded after publication. The arm64 legacy bridge advances only after the signed downloads are public; the x64 bridge stays on 0.4.0.
+The release PR passed before its exact main merge commit was tagged and published. The arm64 legacy bridge copies the exact public signed feed through a separate publication PR; its downloads are already public. The x64 bridge stays on 0.4.0. Live legacy-client checks follow that PR merge; publication never installs or restarts an owner app.
 
 Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, and a complete interactive Sparkle installation/relaunch remain unverified. Signing is ad hoc, without Developer ID or Apple notarization. Conversion/stream/codec limitations remain in [Conversion-matrix.md](Conversion-matrix.md) and [Bundled-media.md](Bundled-media.md).
 
