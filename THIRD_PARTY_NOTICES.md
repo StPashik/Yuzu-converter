@@ -1,21 +1,11 @@
-# Компоненты
+# Components and notices
 
-Yuzu Converter и npm-установщик распространяются по MIT; текст в LICENSE.
+Yuzu Converter and its npm installer are distributed under the MIT license; see [LICENSE](LICENSE).
 
-Иконка приложения и векторный значок menu bar перенесены из собственного
-Yuzu Mac App по прямому запросу владельца. Исходники того проекта не переносились.
+The app icon and vector menu bar icon were reused from the owner’s Yuzu Mac App under an explicit owner request. An app-icon PNG may also be reused only in documentation. No source code or Git history from that project was transferred.
 
-Готовая .app использует системные фреймворки Apple и системную libarchive
-из macOS; их копии не распространяются. Системные textutil/zip/tar вызываются
-из macOS. Нативные Swift runtime libraries поставляются операционной системой.
+The packaged app uses Apple system frameworks and macOS system libarchive; their copies are not redistributed. System `textutil`, `zip`, and `tar` are invoked from macOS. The operating system supplies the native Swift runtime libraries.
 
-В этом выпуске нет встроенных FFmpeg, LibreOffice, Java, Node, npm packages
-или ресурсов Tangerine. Node.js/npm необходимы только для установки и команды
-запуска и предоставляются пользователем отдельно. Установщик не имеет сторонних
-npm-зависимостей.
+This release does not bundle FFmpeg, LibreOffice, Java, Node, third-party npm packages, or Tangerine resources. Users supply Node.js/npm separately for installation and the launch command. The app itself does not require Node, and the installer has no third-party npm dependencies.
 
-При запуске из несандбоксированной developer-сборки можно использовать отдельно
-установленные FFmpeg/FFprobe/LibreOffice; их лицензии и обновления относятся к
-этим отдельным установкам. Sandbox .app из Releases не запускает внешние
-движки. Перед включением любого движка в архив нужны отдельные проверка
-лицензии, notices/source obligations и правильная подпись helper executables.
+Unsandboxed developer runs can use separately installed FFmpeg/FFprobe/LibreOffice. Their licenses and updates apply to those separate installations. The Sandbox app from Releases does not launch external engines. Bundling any engine later requires a separate license review, applicable notices/source obligations, and correctly signed helper executables.

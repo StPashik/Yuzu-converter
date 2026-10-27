@@ -14,6 +14,7 @@ final class ScopedFiles: @unchecked Sendable {
 }
 
 @MainActor
+/// System services stay on the main actor; only long-running file operations are sent to the job queue.
 final class ActionController: NSObject, NSSharingServiceDelegate {
     private let access: AccessStore
     private let settings: Settings
@@ -29,6 +30,8 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
         self.access = access
         self.settings = settings
     }
+
+    func refreshLanguage() { shelves.forEach { $0.refreshLanguage() } }
 
     func perform(_ action: FileAction, files: ScopedFiles) {
         do {
@@ -121,6 +124,8 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
     static func show(_ error: Error) {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert(error: error)
+        alert.messageText = L10n.text("Could not complete the operation")
+        alert.informativeText = error.localizedDescription
         alert.runModal()
     }
 }
@@ -129,9 +134,9 @@ private enum ActionError: LocalizedError {
     case airDropUnavailable, sharingInProgress, terminalUnavailable
     var errorDescription: String? {
         switch self {
-        case .airDropUnavailable: return "AirDrop недоступен для этих файлов на этом Mac."
-        case .sharingInProgress: return "Дождитесь завершения текущей отправки AirDrop."
-        case .terminalUnavailable: return "Приложение Terminal не найдено."
+        case .airDropUnavailable: return L10n.text("AirDrop is not available for these files on this Mac.")
+        case .sharingInProgress: return L10n.text("Wait for the current AirDrop transfer to finish.")
+        case .terminalUnavailable: return L10n.text("Terminal could not be found.")
         }
     }
 }
@@ -139,6 +144,7 @@ private enum ActionError: LocalizedError {
 @MainActor
 private final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate,
                                      NSWindowDelegate {
+    // The shelf retains URLs and their grants for this session; it never owns or deletes the files.
     private let table = NSTableView()
     private var files: [URL] = []
     private var leases: [ScopedFiles] = []
@@ -147,7 +153,7 @@ private final class ShelfController: NSWindowController, NSTableViewDataSource, 
         let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 310, height: 260),
                             styleMask: [.titled, .closable, .resizable, .utilityWindow],
                             backing: .buffered, defer: false)
-        panel.title = "Полка Yuzu"
+        panel.title = L10n.text("Yuzu Shelf")
         panel.level = .floating
         panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -162,9 +168,9 @@ private final class ShelfController: NSWindowController, NSTableViewDataSource, 
         table.dataSource = self
         table.delegate = self
         table.setDraggingSourceOperationMask(.copy, forLocal: false)
-        table.setAccessibilityLabel("Файлы на полке. Перетащите в другое приложение.")
+        table.setAccessibilityLabel(L10n.text("Files on the floating shelf. Drag them into another app."))
         let menu = NSMenu()
-        let remove = menu.addItem(withTitle: "Убрать с полки", action: #selector(removeSelected), keyEquivalent: "")
+        let remove = menu.addItem(withTitle: L10n.text("Remove from Shelf"), action: #selector(removeSelected), keyEquivalent: "")
         remove.target = self
         table.menu = menu
         let scroll = NSScrollView(frame: panel.contentView!.bounds)
@@ -175,6 +181,12 @@ private final class ShelfController: NSWindowController, NSTableViewDataSource, 
         panel.center()
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+
+    func refreshLanguage() {
+        window?.title = L10n.text("Yuzu Shelf")
+        table.setAccessibilityLabel(L10n.text("Files on the floating shelf. Drag them into another app."))
+        table.menu?.items.first?.title = L10n.text("Remove from Shelf")
+    }
 
     func add(_ incoming: ScopedFiles) {
         files.append(contentsOf: incoming.urls.filter { !files.contains($0) })

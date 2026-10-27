@@ -29,6 +29,7 @@ cp Resources/Info.plist "$app/Contents/Info.plist"
 cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
 cp Resources/YuzuAppIcon.icns "$app/Contents/Resources/Yuzu.icns"
 cp Sources/YuzuApp/Resources/YuzuMenuBar.pdf "$app/Contents/Resources/YuzuMenuBar.pdf"
+cp -R Sources/YuzuApp/Resources/*.lproj "$app/Contents/Resources/"
 /usr/bin/plutil -lint "$app/Contents/Info.plist"
 /usr/bin/codesign --force --sign "${YUZU_SIGN_IDENTITY:--}" --options runtime \
   --entitlements Resources/Yuzu.entitlements "$app"
