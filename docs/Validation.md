@@ -23,9 +23,11 @@ Fresh preparation on October 27, 2026. Starting with this version, the owner req
 | Release staging | Seven assets staged; six payload SHA-256 values recorded in [Release-checksums-0.4.1.txt](Release-checksums-0.4.1.txt) |
 | Public release | Stable Latest v0.4.1, draft=false/prerelease=false; all seven uploaded digests/sizes and unauthenticated public downloads match staging |
 | Latest feed/Sparkle | Public Latest XML is byte-identical to the signed asset; real production-key probes found build 8 from build 7 and reported build 8 current without installing |
-| Owner installations | Both installed copies remain 0.4.0 / build 7 with their original executable hashes; no global npm install, quit, or relaunch was performed |
+| Legacy feed/Sparkle | [PR #3](https://github.com/StPashik/Yuzu-converter/pull/3) passed feed-only CI and merged; public XML bytes matched, arm64 build 7 found build 8, build 8 was current, and Intel build 7 remained current; no installation |
+| Historical preservation | The v0.4.0 tag, prerelease status, and all nine original asset sizes/SHA-256 digests remain unchanged |
+| Owner installations | Before publication, both copies were still 0.4.0 / build 7 with their original executable hashes; no global npm install, quit, or relaunch was performed |
 
-The release PR passed before its exact main merge commit was tagged and published. The arm64 legacy bridge copies the exact public signed feed through a separate publication PR; its downloads are already public. The x64 bridge stays on 0.4.0. Live legacy-client checks follow that PR merge; publication never installs or restarts an owner app.
+The release PR passed before its exact main merge commit was tagged and published. The arm64 legacy bridge copied the exact public signed feed through a separate publication PR after its downloads were public. Initial Sparkle requests briefly saw the prior cached feed; repeated information-only checks then passed against the normal URL. The x64 bridge stays on 0.4.0. The release branch follows the same CI/merge-commit requirement when returning to develop. Publication never installs or restarts an owner app.
 
 Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, and a complete interactive Sparkle installation/relaunch remain unverified. Signing is ad hoc, without Developer ID or Apple notarization. Conversion/stream/codec limitations remain in [Conversion-matrix.md](Conversion-matrix.md) and [Bundled-media.md](Bundled-media.md).
 
