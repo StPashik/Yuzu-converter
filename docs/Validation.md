@@ -2,6 +2,35 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.4.0 — Bundled video engines
+
+Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
+
+| Check | Recorded result |
+| --- | --- |
+| Native arm64 Swift tests | 64 passed, 0 failed, 0 skipped: 40 Core and 24 App tests |
+| Intel XCTest under Rosetta | 64 passed, 0 failed, 0 skipped using the separately built x86_64 bundle and explicit x86_64 XCTest launcher |
+| Video matrix | 48 directed routes across MP4/MOV/MKV/WebM/AVI/WMV/GIF and MP3 extraction; real stream/frame counts, full output decoding, content-based format detection, and unchanged original bytes |
+| Stream and failure gates | Silent-video MP3 hidden; video-to-MP3 catalogue is file-dependent; damaged input publishes nothing; descriptor copy retains seeking and refuses existing destinations |
+| Playback and metadata | Known disabled/non-unit-volume audio/video tracks hide FFmpeg routes; native mute/half-gain and global/stream/chapter metadata-removal regressions ran and passed |
+| Settings/localization | 170 matching keys in each of five tables; five-tab/format-editor render regression, shortcut/access/updater tests, and placeholders passed |
+| Node installer tests | 16 passed, 0 failed, 0 skipped; fixtures follow the package version, including 0.3.0 upgrade and newer-version preservation |
+| Engine builds | FFmpeg/FFprobe 9.0.2, libvpx 1.17.0, Opus 1.6.1, LAME 3.100; pinned upstream archive hashes; GPL/version3/nonfree disabled; only system runtime dependencies |
+| Final ZIP inspection | Both exact archives passed deep strict codesign, expected CPU and macOS 13 load target, exactly two helper Sandbox/inherit entitlements, manifest/license bytes, and all five localization copies |
+| Packaged Sandbox media | Both extracted signed apps passed with invalid external tool overrides and system-only PATH; all seven MOV targets, reverse video conversion, actual probe/decode, profiles, original preservation, and earlier document/archive checks passed |
+| Final installation | Both final ZIPs installed into temporary homes; actual native version 0.4.0 and code signatures passed |
+| Update signing | Both final archive signatures independently verified against the embedded production public key; both appcasts signed and verified with build 7 / version 0.4.0 |
+| Sparkle HTTP fixtures | Available/current, tampered signed-feed rejection, and HTTP 500 checks reached the local server and passed with an isolated temporary key |
+| npm package | Prepack accepted the final archive hashes; seven files, no dependencies, version-pinned GitHub installation |
+
+The real-file matrix exposed a GIF-to-WebM failure because FFmpeg selected an experimental RGB/alpha VP9 pixel format. Explicit YUV 4:2:0 fixed it; the original round-trip assertion remains. The playback guard initially included chapter text tracks and skipped the metadata fixture. It now checks only audio/video playback state, and the final suites ran that fixture without skips. A cross-compiled test bundle rejected by an arm64 loader was not counted as an Intel test run; the recorded Intel result used the actual Rosetta XCTest process.
+
+Final archive QA is a separate check through `scripts/verify-media-release.py`, outside the Swift unit-test build. It unpacks the distributable ZIPs and runs the actual signed apps, rather than launching developer tools or treating candidate names as proof of conversion. This establishes the private-container Sandbox path; it does not prove a physical Finder/Powerbox interaction. No new manual gates were performed.
+
+FFmpeg and codec source archives are unmodified and their corresponding configurations/build recipe accompany the release. The seven upstream media license/notice files are copied exactly into each app. Helpers use inherited seekable file descriptors for user content; they have no network protocols or physical capture/output devices. The internal filter input is present for fixtures. The application and installer remain MIT.
+
+Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, real Intel hardware, macOS 13, and a full interactive Sparkle installation remain unverified. Advanced FFmpeg outputs select the first video and optional first audio, dropping extra streams/subtitles/attachments and transparency. Uncommon codecs/DRM can fail; playback flags in containers macOS cannot read are not reconstructed. Intel libvpx uses portable C and may encode more slowly. The preview remains ad-hoc signed without Developer ID or notarization.
+
 ## v0.3.0 — Settings and output profiles
 
 Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
