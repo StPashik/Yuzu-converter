@@ -51,8 +51,8 @@ jobs:
           fi
       - name: Verify signed legacy feeds and release metadata tests
         run: |
-          npm ci --ignore-scripts
-          npm run test:release
+          # These checks use Node built-ins; the macOS-only installer is not installed on Linux.
+          node --test Tests/release/*.test.mjs
           node scripts/verify-update-feeds.mjs updates
 
   native:
