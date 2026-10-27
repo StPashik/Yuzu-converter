@@ -6,8 +6,8 @@ Yuzu Converter lives in your Mac's menu bar. Drag a file, hold a shortcut key, a
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/Yuzu-Converter-0.3.0-arm64.zip) |
-| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/Yuzu-Converter-0.3.0-x64.zip) |
+| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-arm64.zip) |
+| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-x64.zip) |
 
 Open the ZIP and move **Yuzu Converter.app** into your Applications folder. Open the app; its icon appears in the menu bar. There is no Dock icon or main window.
 
@@ -20,7 +20,7 @@ Node.js 20.11+ and npm are needed for installation and the launcher. The app its
 For npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/stpashik-yuzu-converter-0.3.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -28,7 +28,7 @@ yuzu-converter
 For npm 10/11:
 
 ```sh
-npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/stpashik-yuzu-converter-0.3.0.tgz
+npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz
 yuzu-converter
 ```
 
@@ -83,3 +83,7 @@ Common image, native audio/video, PDF-page, text-document, values-only spreadshe
 Automated checks cover file handling and conversion fixtures. Physical Finder drag, Powerbox recovery, VoiceOver during drag, AirDrop, Terminal, and shelf drag-out still need manual validation. These are preview limitations, not completed checks. Details are in [Validation.md](Validation.md).
 
 For a useful bug report, include your macOS version, chip, input/output formats, and the error text. Use a small non-private sample if possible: [GitHub Issues](https://github.com/StPashik/Yuzu-converter/issues).
+
+## Video conversion without extra setup
+
+Version 0.4.0 includes FFmpeg and FFprobe for both Mac architectures. Drag a supported video, hold Shift, and choose MP4, MOV, MKV, WebM, AVI, WMV, animated GIF, or MP3 audio. The current format and targets unavailable for the actual selection are hidden. MP3 requires sound; GIF exports are silent. See [codec limits, licenses, and complete corresponding source](Bundled-media.md). This software uses FFmpeg under LGPL 2.1 or later.

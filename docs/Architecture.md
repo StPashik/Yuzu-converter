@@ -31,7 +31,7 @@ One catalog feeds the UI, backend selection, and fixtures. Distinguish researche
 
 Prefer system ImageIO, PDFKit, and AVFoundation. Do not assume that they support every pair. Record a third-party engine’s version, architecture, license, and actual capabilities before distribution. Never take FFmpeg or other backends from Tangerine. Office/EPUB/Slides/Spreadsheets/Archives need real routes; QuickLook or text extraction does not replace editable reconstruction.
 
-Identify content and handle read failures. Invoke processes with argument arrays rather than shell interpolation. Bound logs and propagate errors and cancellation to the UI. The packaged Sandbox app uses system tools and frameworks; external FFmpeg/FFprobe/LibreOffice discovery is limited to unsandboxed developer runs.
+Identify content and handle read failures. Invoke processes with argument arrays rather than shell interpolation. Bound logs and propagate errors and cancellation to the UI. The packaged Sandbox app includes architecture-matched FFmpeg/FFprobe in `Contents/Helpers`, signed with only app-sandbox and inherit entitlements. Native media routes remain preferred when compatible. Media helpers receive seekable open-file descriptors; runtime media protocols are restricted to `fd`, so a child does not reopen a Powerbox-selected path or follow sidecar/network URLs. Full media encodes remain cancellable without the probe timeout. Externally installed FFmpeg/FFprobe/LibreOffice discovery is limited to unsandboxed developer runs. [Bundled-media.md](Bundled-media.md) records pinned codec builds, licenses, source distribution, and stream/playback limits.
 
 ## Files and jobs
 

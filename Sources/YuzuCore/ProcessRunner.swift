@@ -12,7 +12,8 @@ struct ProcessResult {
 enum ProcessRunner {
     /// Drains output while waiting so a verbose tool cannot fill its pipe and deadlock the conversion.
     /// Cancellation observed while polling throws CancellationError; timeouts throw; nonzero exits remain inspectable.
-    static func run(_ executable: URL, _ arguments: [String], directory: URL? = nil, timeout: TimeInterval = 300) throws -> ProcessResult {
+    static func run(_ executable: URL, _ arguments: [String], directory: URL? = nil, timeout: TimeInterval = 300,
+                    input: URL? = nil, output: URL? = nil) throws -> ProcessResult {
         try Task.checkCancellation()
         let process = Process()
         process.executableURL = executable
@@ -22,10 +23,20 @@ enum ProcessRunner {
         // Backend diagnostics stay English even when the application UI uses a different language.
         environment["LC_ALL"] = "en_US.UTF-8"
         process.environment = environment
+        // Inherited Sandbox rights exclude later Powerbox grants; pass open files instead of reopening paths.
+        let inputHandle = try input.map { try FileHandle(forReadingFrom: $0) }
+        defer { try? inputHandle?.close() }
+        let outputHandle: FileHandle?
+        if let output {
+            let descriptor = open(output.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
+            guard descriptor >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+            outputHandle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
+        } else { outputHandle = nil }
+        defer { try? outputHandle?.close() }
         let pipe = Pipe()
-        process.standardOutput = pipe
+        process.standardOutput = outputHandle ?? pipe.fileHandleForWriting
         process.standardError = pipe
-        process.standardInput = FileHandle.nullDevice
+        process.standardInput = inputHandle ?? FileHandle.nullDevice
         let buffer = ProcessBuffer()
         pipe.fileHandleForReading.readabilityHandler = { handle in buffer.append(handle.availableData) }
         try process.run()
@@ -52,8 +63,9 @@ enum ProcessRunner {
     }
 
     /// Converts a nonzero exit into a concise diagnostic; successful output is still the bounded merged log tail.
-    static func checked(_ executable: URL, _ arguments: [String], directory: URL? = nil) throws -> String {
-        let result = try run(executable, arguments, directory: directory)
+    static func checked(_ executable: URL, _ arguments: [String], directory: URL? = nil,
+                        input: URL? = nil, output: URL? = nil, timeout: TimeInterval = 300) throws -> String {
+        let result = try run(executable, arguments, directory: directory, timeout: timeout, input: input, output: output)
         guard result.status == 0 else {
             throw ConversionError.failed("\(executable.lastPathComponent): \(result.output.suffix(2000))")
         }
@@ -89,9 +101,9 @@ struct Tools: Sendable {
     }
     private static func find(_ name: String, environment: String, extra: [String] = []) -> URL? {
         let env = ProcessInfo.processInfo.environment
-        let resource = Bundle.main.resourceURL?.appendingPathComponent("Tools/" + name).path
+        let resource = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/" + name).path
         if Bundle.main.object(forInfoDictionaryKey: "YuzuSandboxed") as? Bool == true {
-            return resource.flatMap { FileManager.default.isExecutableFile(atPath: $0) ? URL(fileURLWithPath: $0) : nil }
+            return FileManager.default.isExecutableFile(atPath: resource) ? URL(fileURLWithPath: resource) : nil
         }
         let paths = [env[environment], resource].compactMap { $0 } + extra + ["/opt/homebrew/bin/" + name, "/usr/local/bin/" + name] + (env["PATH"] ?? "").split(separator: ":").map { String($0) + "/" + name }
         return paths.first { FileManager.default.isExecutableFile(atPath: $0) }.map { URL(fileURLWithPath: $0) }

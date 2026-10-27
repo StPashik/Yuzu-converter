@@ -29,11 +29,13 @@ This is a native development render with an inactive window. Backend availabilit
 | PNG, TIFF, BMP | Supported descriptive metadata policy; no lossy-quality selector |
 | M4A | Quality, automatic or explicit audio bitrate, metadata policy |
 | WAV, AIFF | Match-source PCM depth or explicit 16/24/32-bit integer and 32-bit float |
-| MP4, MOV | Quality preset, maximum displayed video height, metadata policy |
+| MP4, MOV, MKV, WebM, AVI, WMV | Quality preset, maximum displayed video height, metadata policy |
 | ZIP, TAR.GZ | Fast/Balanced/Maximum compression |
 | EPUB | Reflowable EPUB 2 or EPUB 3 |
-| Developer-only encoded media | Applicable existing FFmpeg routes receive the same profile options |
-| Developer-only GIF | Frame rate and maximum width; packaged GIF encoding remains unavailable |
+| MP3, FLAC, Opus, WMA | Bundled FFmpeg; applicable quality/bitrate and descriptive metadata policy |
+| Animated GIF | Frame rate and maximum width; silent output, using bundled FFmpeg |
+
+[Bundled media](Bundled-media.md) describes the exact video codecs and stream-selection limits. OGG encoding still requires a developer-installed Vorbis encoder; no unsupported encoder is implied by the sidebar.
 
 A format's presence in the sidebar is not a support claim. Unavailable outputs and original-page EPUB/PDF-to-Office layouts are visibly explained. They do not become enabled conversions. The [conversion matrix](Conversion-matrix.md) preserves the remaining requirements.
 
@@ -46,8 +48,10 @@ The metadata policy covers supported descriptive tags, not every binary property
 | Image quality | Compact 0.65; Balanced 0.9; High 1.0 |
 | Automatic compressed-audio bitrate | 96 / 192 / 256 kbit/s according to quality |
 | Native video | macOS Low / Medium / Highest quality presets |
+| FFmpeg MPEG-4/WMV video | Quantizer 8 / 3 / 1 |
+| FFmpeg VP9/WebM | CRF 40 / 30 / 20, YUV 4:2:0 pixels |
 | Archive compression | Levels 1 / 6 / 9 |
-| GIF automatic settings | 15 frames/s, maximum width 960 pixels in developer runs |
+| GIF automatic settings | 15 frames/s, maximum width 960 pixels |
 | EPUB default | Version 2 |
 
 An explicit audio bitrate overrides its quality preset. Native video Balanced now uses Medium rather than the earlier fixed Highest preset; select High for the highest system preset. A height/width cap never deliberately enlarges a smaller source. System presets can also affect resolution and codec characteristics.
