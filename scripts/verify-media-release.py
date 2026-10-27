@@ -22,8 +22,12 @@ environment = dict(os.environ, PATH="/usr/bin:/bin:/usr/sbin:/sbin",
 
 
 def run(arguments, timeout=180):
-    return subprocess.check_output(list(map(str, arguments)), env=environment, stderr=subprocess.STDOUT,
-                                   text=True, timeout=timeout)
+    try:
+        return subprocess.check_output(list(map(str, arguments)), env=environment, stderr=subprocess.STDOUT,
+                                       text=True, timeout=timeout)
+    except subprocess.CalledProcessError as error:
+        print(error.output, flush=True)
+        raise
 
 
 for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
