@@ -44,6 +44,7 @@ enum MediaSelfCheck {
             throw ConversionError.failed("The shipped video wheel is missing a required target.")
         }
         for target in engine.targets(for: [source]) {
+            print("Bundled media: MOV → \(target.label), converting")
             let options: ConversionOptions = target == .gif ? .init(gifFrameRate: 5, gifMaxWidth: 80)
                 : target == .mp3 ? .init(preserveMetadata: false, audioBitrate: 128)
                 : .init(quality: .high, preserveMetadata: false, videoMaxHeight: 72)
