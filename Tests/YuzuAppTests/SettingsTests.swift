@@ -112,6 +112,7 @@ final class SettingsTests: XCTestCase {
 
     @MainActor
     func testSettingsRenderEverySectionLanguageAndRelevantFormatEditor() throws {
+        fputs("Settings previews: initializing AppKit\n", stderr)
         _ = NSApplication.shared
         let previousLanguage = UserDefaults.standard.object(forKey: "appLanguage")
         let previousSystemLanguage = UserDefaults.standard.object(forKey: "AppleLanguages")
@@ -134,7 +135,9 @@ final class SettingsTests: XCTestCase {
         let settings = Settings(defaults: defaults)
         let access = AccessStore(defaults: defaults)
         let updater = AppUpdater()
+        fputs("Settings previews: discovering format routes\n", stderr)
         let catalog = try SettingsView.makeCatalog()
+        fputs("Settings previews: format routes ready\n", stderr)
 
         func render(_ name: String, format: FileFormat = .jpg, appearance: NSAppearance.Name) throws {
             fputs("Settings preview \(name): starting\n", stderr)
