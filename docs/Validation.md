@@ -19,10 +19,15 @@ Fresh local checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | npm package | Prepack passed with final pinned ZIP hashes; 7 files, no npm dependencies |
 | Sparkle HTTP fixtures | Real probing checks reached the local HTTP server: available update, current version, tampered-feed rejection, and HTTP 500 handling all passed with an isolated ephemeral test key |
 | Production signatures | Sparkle signed and verified both feeds; Node independently verified both feed and archive Ed25519 signatures against the public key embedded in Info.plist, and both archive SHA-256 values matched the npm manifest |
+| Published release | The English body matched the reviewed notes; all eight GitHub-reported asset digests matched local artifacts |
+| Live feed bytes | Both public HTTPS feeds matched the signed local XML byte for byte |
+| Live Sparkle checks | Real arm64 and x86_64 Sparkle probes accepted the production feeds/public key: build 3 found build 4 available, and build 4 reported current on both architectures; no update was downloaded or installed by these probes |
+| Public npm upgrade | npm 12.2.1 installed the published 0.2.0 package; the CLI and native app report 0.2.0 |
+| Installed application upgrade | Both `~/Applications` and `/Applications` were updated from the public release; deep strict codesign and executable versions passed for both. The `/Applications` copy was launched and its process stayed running; the saved Russian language remained selected |
 
 Independent source review covered the shared controller, optional delegate contracts, abort recovery, busy queue/restart handling, Sandbox configuration, signing order, archive aliases, and prevention of npm downgrades. Reported issues were fixed before final builds/tests.
 
-Production signing completed after the initial background Keychain access wait. The private release signing key stayed in the login Keychain, not Git or release assets; HTTP fixtures used a separate temporary key and did not install anything. Live feed, public release, and installed-upgrade results are recorded after publication. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
+Production signing completed after the initial background Keychain access wait. The private release signing key stayed in the login Keychain, not Git or release assets; HTTP fixtures used a separate temporary key and did not install anything. The installed upgrade used the verified npm installer, not an interactive Sparkle installation. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
 
 ## v0.1.2 — wheel input fix
 
