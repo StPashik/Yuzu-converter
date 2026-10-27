@@ -105,7 +105,11 @@ struct Tools: Sendable {
         if Bundle.main.object(forInfoDictionaryKey: "YuzuSandboxed") as? Bool == true {
             return FileManager.default.isExecutableFile(atPath: resource) ? URL(fileURLWithPath: resource) : nil
         }
-        let paths = [env[environment], resource].compactMap { $0 } + extra + ["/opt/homebrew/bin/" + name, "/usr/local/bin/" + name] + (env["PATH"] ?? "").split(separator: ":").map { String($0) + "/" + name }
+        // Separate concatenations keep discovery compatible with older Swift compilers.
+        var paths: [String] = [env[environment], resource].compactMap { $0 }
+        paths += extra
+        paths += ["/opt/homebrew/bin/" + name, "/usr/local/bin/" + name]
+        paths += (env["PATH"] ?? "").split(separator: ":").map { String($0) + "/" + name }
         return paths.first { FileManager.default.isExecutableFile(atPath: $0) }.map { URL(fileURLWithPath: $0) }
     }
 }
