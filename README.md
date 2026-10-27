@@ -4,14 +4,14 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.1.2 fixes the wheel not appearing during file drags.** It retains five interface languages, conversion, and seven Actions. File tools are outside the scope of this release.
+**v0.2.0 adds in-app updates.** Check from the menu bar or Settings, then confirm download and installation. It retains five interface languages, conversion, and seven Actions. File tools are outside the scope of this release.
 
 ## Download
 
 Requires **macOS 13 or later**. Choose your Mac:
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.2/Yuzu-Converter-0.1.2-arm64.zip)
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.2/Yuzu-Converter-0.1.2-x64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.0/Yuzu-Converter-0.2.0-arm64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.0/Yuzu-Converter-0.2.0-x64.zip)
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -28,6 +28,10 @@ Open **Settings…** from the menu bar to swap the keys or choose whether new fi
 Choose the interface language in Settings: **English** (default), **Russian**, **German**, **French**, or **Spanish**. App-owned UI updates live; some system dialogs use the new language after an app restart. Your Mac's global language is unchanged. Technical converter diagnostics, project documentation, code comments, and releases remain English.
 
 Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
+
+## Keep the app up to date
+
+Choose **Check for Updates…** from the menu bar or Settings. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
 ## Format support
 
@@ -48,7 +52,7 @@ The Sandbox app does not include or launch external FFmpeg/FFprobe/LibreOffice. 
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.2/stpashik-yuzu-converter-0.1.2.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.0/stpashik-yuzu-converter-0.2.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -72,6 +76,7 @@ Build the two archives sequentially, then pin their final checksums and package 
 bash scripts/build-app.sh arm64
 bash scripts/build-app.sh x64
 node scripts/prepare-npm.mjs dist
+node scripts/prepare-updates.mjs dist
 npm pack --pack-destination dist
 ```
 

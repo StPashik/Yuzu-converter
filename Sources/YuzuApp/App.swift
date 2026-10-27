@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import Sparkle
 import YuzuCore
 
 @main
@@ -30,6 +31,7 @@ enum YuzuMain {
 /// Coordinates UI, grants, and a serial job queue; Core work always runs on a background task.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = Settings()
+    private let updater = AppUpdater()
     private let access = AccessStore()
     private lazy var monitor = WheelMonitor(settings: settings)
     private lazy var actions = ActionController(access: access, settings: settings)
@@ -41,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var jobs: [PendingJob] = []
     private var currentJob: Task<Void, Never>?
     private var terminating = false
+    private var installingUpdate = false
     private let progress = JobProgress()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -53,6 +56,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.image?.isTemplate = true
         let menu = NSMenu()
         menu.addItem(withTitle: L10n.text("Settings…"), action: #selector(showSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: L10n.text("Check for Updates…"),
+                     action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "").target = updater.controller
         menu.addItem(withTitle: L10n.text("Quit"), action: #selector(quit), keyEquivalent: "q").target = self
         item.menu = menu
         statusItem = item
@@ -73,6 +78,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.enqueue(PendingJob(files: files, kind: .compress, destinations: [folder]))
         }
         progress.onCancel = { [weak self] in self?.currentJob?.cancel() }
+        updater.canRestart = { [weak self] in self?.currentJob == nil && self?.jobs.isEmpty != false }
+        updater.onWillRestart = { [weak self] in
+            self?.installingUpdate = true
+            self?.monitor.stop()
+        }
+        updater.onUpdateCycleFinished = { [weak self] in
+            guard let self, installingUpdate, !terminating else { return }
+            installingUpdate = false
+            monitor.start()
+        }
+        updater.start()
         monitor.start()
     }
 
@@ -82,14 +98,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func refreshLanguage() {
         statusItem?.menu?.item(at: 0)?.title = L10n.text("Settings…")
-        statusItem?.menu?.item(at: 1)?.title = L10n.text("Quit")
+        statusItem?.menu?.item(at: 1)?.title = L10n.text("Check for Updates…")
+        statusItem?.menu?.item(at: 2)?.title = L10n.text("Quit")
         updateTooltip()
         settings.refreshLanguage()
         monitor.refreshLanguage()
         actions.refreshLanguage()
         progress.refreshLanguage()
     }
-    @objc private func showSettings() { settings.show() }
+    @objc private func showSettings() { settings.show(updater: updater) }
     @objc private func quit() { NSApp.terminate(nil) }
 
     private func updateSources(_ urls: [URL], view: WheelDragView) {
@@ -127,6 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// The drop has finished and its source grants are retained before any modal dialog is opened.
     private func handleDrop(_ files: ScopedFiles, option: WheelOption) {
+        guard !terminating, !installingUpdate else { return }
         detection?.cancel()
         let urls = files.urls
         switch option {
@@ -147,7 +165,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func enqueue(_ job: PendingJob) { jobs.append(job); startNextJob() }
+    private func enqueue(_ job: PendingJob) {
+        guard !terminating, !installingUpdate else {
+            job.destinations.forEach { $0.stopAccessingSecurityScopedResource() }
+            return
+        }
+        jobs.append(job)
+        startNextJob()
+    }
 
     private func startNextJob() {
         // Keep each batch ordered. Earlier published results survive a later item's error or cancellation.
@@ -187,12 +212,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             job.destinations.forEach { $0.stopAccessingSecurityScopedResource() }
             currentJob = nil
             if !terminating { startNextJob() }
+            updater.resumeInstallationIfReady()
         }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         terminating = true
-        monitor.dismiss()
+        monitor.stop()
         let detecting = detection
         detecting?.cancel()
         jobs.forEach { $0.destinations.forEach { $0.stopAccessingSecurityScopedResource() } }

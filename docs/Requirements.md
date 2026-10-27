@@ -34,7 +34,9 @@ Preview Move limit: cross-volume folder moves are refused before copying, preser
 
 ## UI and file access
 
-Run as a menu bar app without a Dock icon or main window. The menu contains only **Settings…** and **Quit**. Open settings and the shelf only in response to an explicit user action.
+Run as a menu bar app without a Dock icon or main window. The menu contains **Settings…**, **Check for Updates…**, and **Quit**. Open settings and the shelf only in response to an explicit user action.
+
+Provide the same update check in Settings. Checks are user-initiated, and downloading/installing a new version requires confirmation. Authenticate the feed and archives, select the correct architecture, and finish queued file work before restarting. A failed or cancelled installation must restore normal operation. A stale npm launcher must not downgrade an app updated in place. See [Updates.md](Updates.md).
 
 Shift selects conversion; Control selects Actions. Allow the keys to be swapped and an open wheel to switch modes. The tooltip must show the keys even when wheels are disabled. Escape cancels selection. An empty drag must not show the wheel.
 

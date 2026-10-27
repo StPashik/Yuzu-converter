@@ -2,6 +2,28 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.2.0 — in-app updates
+
+Fresh local checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
+
+| Check | Recorded result |
+| --- | --- |
+| Native arm64 Swift tests | 34 passed, 0 failed, 0 skipped: 22 Core and 12 App tests |
+| Intel XCTest under Rosetta | 34 passed, 0 failed, 0 skipped after a separate x86_64 build |
+| Updater lifecycle | Tests verify queue deferral, one-time resumption, cancellation cleanup, and the actual optional Sparkle delegate selectors |
+| Node installer tests | 16 passed, including approved framework symlinks, rejection of unsafe paths/links, 0.1.2-to-0.2.0 upgrade, and preservation of newer in-app updates |
+| Localization | All five tables have 60 matching keys and compatible placeholders; compact wheel captions still fit |
+| Release apps | Both architecture ZIPs passed Info.plist/lipo and deep strict codesign, including the Sparkle framework and nested helpers |
+| Signed Sandbox self-checks | Both apps loaded Sparkle and all five languages, then passed the existing conversion/ZIP self-checks |
+| Final ZIP installation | Both archives installed into temporary homes; native version 0.2.0 and codesign passed |
+| npm package | Prepack passed with final pinned ZIP hashes; 7 files, no npm dependencies |
+| Sparkle HTTP fixtures | Real probing checks reached the local HTTP server: available update, current version, tampered-feed rejection, and HTTP 500 handling all passed with an isolated ephemeral test key |
+| Production signatures | Sparkle signed and verified both feeds; Node independently verified both feed and archive Ed25519 signatures against the public key embedded in Info.plist, and both archive SHA-256 values matched the npm manifest |
+
+Independent source review covered the shared controller, optional delegate contracts, abort recovery, busy queue/restart handling, Sandbox configuration, signing order, archive aliases, and prevention of npm downgrades. Reported issues were fixed before final builds/tests.
+
+Production signing completed after the initial background Keychain access wait. The private release signing key stayed in the login Keychain, not Git or release assets; HTTP fixtures used a separate temporary key and did not install anything. Live feed, public release, and installed-upgrade results are recorded after publication. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
+
 ## v0.1.2 — wheel input fix
 
 The owner reported that neither wheel appeared during file dragging with Shift/Control. The running `/Applications/Yuzu Converter.app` was 0.1.1 and matched the npm-installed binary; wheels were enabled. An AppKit probe reproduced the cause on this Mac: an armed panel with a fully clear background was visible but absent from WindowServer hit-testing. The same panel with a 1% black background received the hit.
@@ -22,8 +44,12 @@ Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Signed Sandbox self-checks | Both architectures loaded all five languages and passed conversion and ZIP checks |
 | Installation of final ZIPs | Both architectures installed in temporary homes; strict codesign and native version 0.1.2 passed |
 | npm tarball | Prepack accepted both pinned hashes; 7 files and no dependencies |
+| Published release | English notes matched the reviewed file; GitHub-reported SHA-256 digests of all six assets matched local artifacts |
+| Public npm upgrade | npm 12.2.1 upgraded 0.1.1 to 0.1.2; installed CLI and native executable report 0.1.2 |
+| Active application upgrade | The old `/Applications` instance quit gracefully; the existing verified installer updated that location from the public release with rollback staging, and the new app was launched |
+| Installed application verification | `/Applications` and `~/Applications` native binaries matched the final arm64 build; both report 0.1.2, and strict codesign passed for the active application |
 
-Independent source/test review found no blocker; the shared arming path covers both wheel modes and retains file URL validation. Final hashes are in [Release-checksums-0.1.2.txt](Release-checksums-0.1.2.txt). Publication and installed-app upgrade results are recorded after completion. Physical Finder drag, Powerbox/bookmark recovery, VoiceOver, AirDrop, Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. The app is still an ad-hoc-signed preview without Apple notarization.
+Independent source/test review found no blocker; the shared arming path covers both wheel modes and retains file URL validation. Final hashes are in [Release-checksums-0.1.2.txt](Release-checksums-0.1.2.txt). Installation retained the app's existing language/settings container; no global npm or macOS security policy changed. Physical Finder drag, Powerbox/bookmark recovery, VoiceOver, AirDrop, Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. The app is still an ad-hoc-signed preview without Apple notarization.
 
 ## v0.1.1 — multilingual preview
 

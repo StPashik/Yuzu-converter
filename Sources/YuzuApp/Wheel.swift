@@ -262,6 +262,8 @@ final class WheelMonitor {
         if let timer { RunLoop.main.add(timer, forMode: .eventTracking) }
     }
 
+    func stop() { timer?.invalidate(); timer = nil; dismiss() }
+
     func dismiss() { panel?.orderOut(nil); panel = nil; view = nil; mode = nil }
 
     func refreshLanguage() {
