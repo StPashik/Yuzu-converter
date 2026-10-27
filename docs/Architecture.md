@@ -1,6 +1,6 @@
 # Yuzu Converter architecture
 
-Updated October 27, 2026. The manager accepted this architecture. It describes the design and intended contracts; it is not evidence that every capability has been verified. Version 0.1.1 adds English project documentation and five selectable UI languages; fresh build and runtime validation is pending.
+Updated October 27, 2026. The manager accepted this architecture. It describes the design and intended contracts; it is not evidence that every capability has been verified. Version 0.1.1 added English project documentation and five selectable UI languages. Version 0.1.2 corrects wheel hit-testing; see [Validation.md](Validation.md) for version-specific evidence.
 
 ## Structure
 
@@ -39,7 +39,7 @@ The job queue performs reading, encoding, and file work off the main thread. Upd
 
 ## Dragging, wheels, and Actions
 
-Accept data through `NSDraggingDestination.draggingEntered` / `draggingUpdated` and the corresponding `draggingPasteboard`. Do not read the global drag pasteboard. A temporary transparent drag destination may activate on the selected modifier, but draw the wheel only after a confirmed file drag. This approach still needs a physical Finder integration check.
+Accept data through `NSDraggingDestination.draggingEntered` / `draggingUpdated` and the corresponding `draggingPasteboard`. Do not read the global drag pasteboard. A temporary destination activates on the selected modifier with a 1% black background: WindowServer excludes fully transparent pixels from hit-testing, preventing drag entry before the wheel is drawn. Draw the wheel only after a confirmed file drag. The regression test checks the armed window's actual WindowServer hit; a physical Finder integration check remains open.
 
 Shift/Control switch the current wheel; Escape closes selection. Sectors expose system accessibility beyond visual hit testing. Open settings and the shelf only on explicit user action. The exact researched semantics and unknowns for `airDrop`, `float`, `copy`, `move`, `copyPath`, and `openTerminal` are recorded in [TangerineResearch.md](TangerineResearch.md).
 

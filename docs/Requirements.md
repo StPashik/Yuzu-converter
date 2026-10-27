@@ -12,7 +12,7 @@ Do not reuse old Yuzu source, binaries, resources, or Git history. The owner exp
 
 Project documentation, code comments, release titles, release notes, and technical converter diagnostics must be English. Communicate with the owner in Russian. The app-owned interface has a language picker for English (default), Russian, German, French, and Spanish; changing the selection updates the UI live. Some system dialogs apply the app-scoped language after restart; never change the Mac's global language. Deliberately translated values in localization resource tables are an explicit exception to the English project-text policy. Keep keys and English fallback text consistent across all five languages.
 
-Version 0.1.1 introduces the language picker and English project documentation. Its build and runtime checks remain pending until performed; historical v0.1.0 results must retain their version and scope. API and flow comments must explain consequential contracts and ownership in clear English, rather than narrate obvious code.
+Version 0.1.1 introduced the language picker and English project documentation; version 0.1.2 corrects the armed wheel window's input handling. Version-specific checks are recorded in [Validation.md](Validation.md). API and flow comments must explain consequential contracts and ownership in clear English, rather than narrate obvious code.
 
 ## Conversion
 
@@ -39,6 +39,8 @@ Run as a menu bar app without a Dock icon or main window. The menu contains only
 Shift selects conversion; Control selects Actions. Allow the keys to be swapped and an open wheel to switch modes. The tooltip must show the keys even when wheels are disabled. Escape cancels selection. An empty drag must not show the wheel.
 
 Use real AppKit file dragging, including from an inactive Finder. Global drag-pasteboard polling, private APIs, or extra permissions are not substitutes for supported integration. Wheel sectors and settings must expose system accessibility.
+
+The armed destination must participate in WindowServer hit-testing before any file drag is confirmed. Keep the wheel itself hidden until AppKit supplies file URLs; a fully transparent window cannot bootstrap its own drag entry.
 
 Use Powerbox and security-scoped bookmarks in the Sandbox. Reuse and restore existing grants without repeated dialogs. Request initial output-folder access if the file drag did not provide it; access to a file does not imply access to its parent folder.
 

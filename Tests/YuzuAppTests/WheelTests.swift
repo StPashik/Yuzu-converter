@@ -1,7 +1,27 @@
+import AppKit
 import XCTest
 @testable import YuzuApp
 
 final class WheelTests: XCTestCase {
+    @MainActor
+    func testArmedWindowReceivesHitsBeforeAFileDragIsConfirmed() throws {
+        _ = NSApplication.shared
+        let monitor = WheelMonitor(settings: Settings())
+        monitor.arm(.conversion)
+        defer { monitor.dismiss() }
+
+        let panel = try XCTUnwrap(NSApp.windows.first { $0.contentView is WheelDragView })
+        let view = try XCTUnwrap(panel.contentView as? WheelDragView)
+        XCTAssertFalse(view.confirmed)
+        // Exercise WindowServer hit-testing without covering the desktop for the test.
+        let point = NSPoint(x: panel.frame.midX, y: panel.frame.midY)
+        panel.setFrame(NSRect(x: point.x - 40, y: point.y - 40, width: 80, height: 80), display: true)
+        panel.displayIfNeeded()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertEqual(NSWindow.windowNumber(at: point, belowWindowWithWindowNumber: 0), panel.windowNumber,
+                       "The armed window must receive drag input before it draws the wheel.")
+    }
+
     func testOutputGrantMustBelongToTheActualSourceParent() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
