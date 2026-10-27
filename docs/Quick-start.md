@@ -6,7 +6,7 @@ Yuzu Converter lives in your Mac's menu bar. Drag a file, hold a shortcut key, a
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-arm64.zip) |
+| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/Yuzu-Converter-0.4.1-arm64.zip) |
 
 Requires Apple Silicon and macOS 13+. Intel Macs can keep [0.4.0](https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0), the final Intel release. New releases and updates are arm64 only.
 
@@ -21,7 +21,7 @@ Node.js 20.11+ and npm are needed for installation and the launcher. The app its
 For npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/stpashik-yuzu-converter-0.4.1.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -29,7 +29,7 @@ yuzu-converter
 For npm 10/11:
 
 ```sh
-npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz
+npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/stpashik-yuzu-converter-0.4.1.tgz
 yuzu-converter
 ```
 

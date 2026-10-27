@@ -2,6 +2,37 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.4.1 — Stable Apple Silicon releases and manual updates
+
+Fresh preparation on October 27, 2026. Starting with this version, the owner requested Apple Silicon (arm64) only. Existing Intel 0.4.0 tags, binaries, and the exact signed legacy x64 feed remain unchanged. There is no universal or new Intel app in this release.
+
+| Check | Recorded result |
+| --- | --- |
+| GitFlow feature review | [PR #1](https://github.com/StPashik/Yuzu-converter/pull/1) merged into develop with a merge commit after [independent CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40561703972) passed |
+| Release PR/tag | [PR #2](https://github.com/StPashik/Yuzu-converter/pull/2) passed [CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40564312499); v0.4.1 tags its exact main merge commit `9a1a07e182cacee7bbbecd8ef4f4730443e8452f` |
+| Native CI | macOS 26 arm64: 64 Swift tests passed, zero failures; all 48 media routes and 64 settings renders ran |
+| Installer/feed tests | 21 Node tests passed, zero skips; unsupported Intel installation is rejected before downloading or modifying an existing app |
+| Version/CPU metadata | Package, lockfile, final executable, and app plist agree on 0.4.1 / build 8; package CPU is arm64 only |
+| Final signed ZIP | Deep strict signatures, exact arm64 main/helper slices, helper entitlements, minimum macOS 13, system runtime dependencies, five language tables, and exact media license/manifest bytes passed |
+| Sandbox | The final ZIP's app passed bundled media targets, probe/decode/return conversions, image metadata removal, documents, spreadsheets, and archives without developer tools |
+| Isolated installation | Final ZIP installed into a temporary home; executable version and code signature passed; the temporary home was removed |
+| Update authentication | Final archive signature independently verified against the production key; arm64 XML signed and independently verified for build 8 |
+| Sparkle HTTP fixtures | Available/current/tampered/HTTP-500 cases passed with real requests and isolated app identities; no download or installation |
+| Corresponding source | All four exact upstream archive hashes and recipe/manifest/guide bytes matched; actual arm64 build configurations are included |
+| npm package | Packed files match the tested source, version, CPU declaration, and pinned arm64 archive hash |
+| Release staging | Seven assets staged; six payload SHA-256 values recorded in [Release-checksums-0.4.1.txt](Release-checksums-0.4.1.txt) |
+| Public release | Stable Latest v0.4.1, draft=false/prerelease=false; all seven uploaded digests/sizes and unauthenticated public downloads match staging |
+| Latest feed/Sparkle | Public Latest XML is byte-identical to the signed asset; real production-key probes found build 8 from build 7 and reported build 8 current without installing |
+| Legacy feed/Sparkle | [PR #3](https://github.com/StPashik/Yuzu-converter/pull/3) passed feed-only CI and merged; public XML bytes matched, arm64 build 7 found build 8, build 8 was current, and Intel build 7 remained current; no installation |
+| Historical preservation | The v0.4.0 tag, prerelease status, and all nine original asset sizes/SHA-256 digests remain unchanged |
+| Owner installations | Before publication, both copies were still 0.4.0 / build 7 with their original executable hashes; no global npm install, quit, or relaunch was performed |
+
+The release PR passed before its exact main merge commit was tagged and published. The arm64 legacy bridge copied the exact public signed feed through a separate publication PR after its downloads were public. Initial Sparkle requests briefly saw the prior cached feed; repeated information-only checks then passed against the normal URL. The x64 bridge stays on 0.4.0. The release branch follows the same CI/merge-commit requirement when returning to develop. Publication never installs or restarts an owner app.
+
+Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, and a complete interactive Sparkle installation/relaunch remain unverified. Signing is ad hoc, without Developer ID or Apple notarization. Conversion/stream/codec limitations remain in [Conversion-matrix.md](Conversion-matrix.md) and [Bundled-media.md](Bundled-media.md).
+
+Historical Intel follow-up: native macOS 15 CI passed 64 Swift tests, but the signed Sandbox self-check failed with a generic operation error; the published 0.4.0 archive reproduced that failure. Its cause was not established. macOS 26 Intel UI-test preparation also did not complete in hosted CI. Those checks do not establish Intel runtime compatibility, and no new Intel support is claimed here.
+
 ## v0.4.0 — Bundled video engines
 
 Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
