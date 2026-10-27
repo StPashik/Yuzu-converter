@@ -137,24 +137,29 @@ final class SettingsTests: XCTestCase {
         let catalog = try SettingsView.makeCatalog()
 
         func render(_ name: String, format: FileFormat = .jpg, appearance: NSAppearance.Name) throws {
-            let view = NSHostingView(rootView: SettingsView(settings: settings, updater: updater, access: access,
-                                                           selectedFormat: format, catalog: catalog))
-            let bounds = NSRect(x: 0, y: 0, width: 660, height: 640)
-            let window = NSWindow(contentRect: bounds, styleMask: [.borderless], backing: .buffered, defer: false)
-            window.isReleasedWhenClosed = false
-            defer { window.close() }
-            window.appearance = NSAppearance(named: appearance)
-            window.contentView = view
-            view.frame = bounds
-            view.layoutSubtreeIfNeeded()
-            RunLoop.current.run(until: Date().addingTimeInterval(0.04))
-            view.layoutSubtreeIfNeeded()
-            window.displayIfNeeded()
-            let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
-            view.cacheDisplay(in: view.bounds, to: bitmap)
-            let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
-            XCTAssertGreaterThan(png.count, 5000, name)
-            try png.write(to: directory.appendingPathComponent(name + ".png"))
+            fputs("Settings preview \(name): starting\n", stderr)
+            // Release offscreen SwiftUI trees between snapshots instead of retaining their drawing resources for the whole matrix.
+            try autoreleasepool {
+                let view = NSHostingView(rootView: SettingsView(settings: settings, updater: updater, access: access,
+                                                               selectedFormat: format, catalog: catalog))
+                let bounds = NSRect(x: 0, y: 0, width: 660, height: 640)
+                let window = NSWindow(contentRect: bounds, styleMask: [.borderless], backing: .buffered, defer: false)
+                window.isReleasedWhenClosed = false
+                defer { window.contentView = nil; window.close() }
+                window.appearance = NSAppearance(named: appearance)
+                window.contentView = view
+                view.frame = bounds
+                view.layoutSubtreeIfNeeded()
+                RunLoop.current.run(until: Date().addingTimeInterval(0.04))
+                view.layoutSubtreeIfNeeded()
+                window.displayIfNeeded()
+                let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+                view.cacheDisplay(in: view.bounds, to: bitmap)
+                let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                XCTAssertGreaterThan(png.count, 5000, name)
+                try png.write(to: directory.appendingPathComponent(name + ".png"))
+            }
+            fputs("Settings preview \(name): passed\n", stderr)
         }
 
         for (theme, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
