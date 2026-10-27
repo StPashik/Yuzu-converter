@@ -22,6 +22,10 @@ Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Update signing | Both final archive signatures independently verified against the embedded production public key; both appcasts signed and verified with build 7 / version 0.4.0 |
 | Sparkle HTTP fixtures | Available/current, tampered signed-feed rejection, and HTTP 500 checks reached the local server and passed with an isolated temporary key |
 | npm package | Prepack accepted the final archive hashes; seven files, no dependencies, version-pinned GitHub installation |
+| Public publication | English preview with nine assets; every GitHub-reported SHA-256/size matched local staging, and all nine unauthenticated public downloads passed the same digest/size checks |
+| Live feed bytes and Sparkle | Both public main feeds matched the signed XML; real arm64/x86_64 production-key probes found build 7 from build 6 and reported build 7 current, without a Sparkle download/install |
+| Public npm installation | npm 12.2.1 installed the published package; CLI and home app report 0.4.0; both bundled media helpers are present |
+| Primary installation | Existing app quit normally; the verified public installer upgraded `/Applications`, and the primary app launched as one instance. Both installed copies report 0.4.0 / build 7 and pass deep strict codesign; the saved Russian interface preference remained selected |
 
 The real-file matrix exposed a GIF-to-WebM failure because FFmpeg selected an experimental RGB/alpha VP9 pixel format. Explicit YUV 4:2:0 fixed it; the original round-trip assertion remains. The playback guard initially included chapter text tracks and skipped the metadata fixture. It now checks only audio/video playback state, and the final suites ran that fixture without skips. A cross-compiled test bundle rejected by an arm64 loader was not counted as an Intel test run; the recorded Intel result used the actual Rosetta XCTest process.
 
@@ -30,6 +34,8 @@ Final archive QA is a separate check through `scripts/verify-media-release.py`, 
 FFmpeg and codec source archives are unmodified and their corresponding configurations/build recipe accompany the release. The seven upstream media license/notice files are copied exactly into each app. Helpers use inherited seekable file descriptors for user content; they have no network protocols or physical capture/output devices. The internal filter input is present for fixtures. The application and installer remain MIT.
 
 Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, real Intel hardware, macOS 13, and a full interactive Sparkle installation remain unverified. Advanced FFmpeg outputs select the first video and optional first audio, dropping extra streams/subtitles/attachments and transparency. Uncommon codecs/DRM can fail; playback flags in containers macOS cannot read are not reconstructed. Intel libvpx uses portable C and may encode more slowly. The preview remains ad-hoc signed without Developer ID or notarization.
+
+The final decoder audit also confirmed that this build has no AV1 software decoder. Native decoding, if available for the actual asset, depends on the Mac. This is explicit in the published English notes and the current conversion matrix. The v0.4.0 tag and its nine assets remain immutable; these publication results and the decoder clarification are maintained on develop. The installed upgrade used the verified npm installer, not a full interactive Sparkle installation.
 
 ## v0.3.0 — Settings and output profiles
 
