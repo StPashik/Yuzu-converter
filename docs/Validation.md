@@ -16,10 +16,12 @@ Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Signed Sandbox self-checks | Both architectures loaded all five language bundles and passed DOCX/textutil, spreadsheet, ZIP/TAR, and Compress to ZIP operations |
 | Installation of final 0.1.1 ZIPs | Real arm64/x64 ZIPs installed in temporary homes; strict codesign and executable version 0.1.1 passed |
 | Final npm tarball | Prepack accepted both pinned app hashes; package contains 7 installer/README/license files and no dependencies |
+| Published GitHub Release | English release body matched the reviewed notes; GitHub-reported SHA-256 digests of all six assets matched local files |
+| Upgrade from the public npm package URL | npm 12.2.1 upgraded the existing 0.1.0 installation; CLI and native executable report 0.1.1, installed Info.plist lists all five languages, and strict codesign passed |
 
 Independent source review found no localization regression in persistence, live refresh wiring, format arguments, bundle lookup, or source/output grant ownership. English comments explain the API contracts and safeguards, and the [developer guide](Developer-guide.md) maps the implementation. Non-English values are confined to intentional localization resources; project documentation and comments remain English.
 
-Final artifact hashes are in [Release-checksums-0.1.1.txt](Release-checksums-0.1.1.txt). Published-download verification is recorded after release publication. Historical v0.1.0 artifacts/checksums remain unchanged. Physical UI/language switching, restart, VoiceOver, Finder/Powerbox, and external service checks remain unverified.
+Final artifact hashes are in [Release-checksums-0.1.1.txt](Release-checksums-0.1.1.txt). The public npm installation used a command-scoped remote allowance and permitted postinstall by the exact release URL; no global npm policy changed. The CLI is installed in `~/.local/bin` and the app in `~/Applications`. Historical v0.1.0 artifacts/checksums remain unchanged. Physical UI/language switching, restart, VoiceOver, Finder/Powerbox, and external service checks remain unverified.
 
 ## v0.1.0 — completed checks
 
