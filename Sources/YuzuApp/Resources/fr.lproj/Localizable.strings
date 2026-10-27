@@ -59,3 +59,5 @@
 "Check for Updates…" = "Rechercher des mises à jour…";
 "The update will install when file operations finish." = "La mise à jour sera installée à la fin des opérations sur les fichiers.";
 "Updates are checked only when you ask. Installation requires your confirmation." = "La recherche se fait uniquement à votre demande. Votre accord est requis pour installer.";
+"To %@" = "Vers %@";
+"Release file" = "Relâchez le fichier";

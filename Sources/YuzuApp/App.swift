@@ -114,26 +114,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         detection?.cancel()
         let identifier = UUID()
         detectionID = identifier
+        view.sourceCaption = urls.count == 1 ? urls[0].lastPathComponent : L10n.text("%ld files", urls.count)
         if view.mode == .actions {
             view.options = FileAction.allCases.map(WheelOption.action)
-            view.idleCaption = urls.count == 1 ? urls[0].lastPathComponent : L10n.text("%ld files", urls.count)
+            view.idleCaption = L10n.text("Actions")
             return
         }
         view.options = []
         view.idleCaption = L10n.text("Reading file…")
         let engine = engine
         detection = Task { [weak self, weak view] in
-            let worker = Task.detached(priority: .userInitiated) { () throws -> [FileFormat] in
+            let worker = Task.detached(priority: .userInitiated) { () throws -> (targets: [FileFormat], source: FileFormat?) in
                 let sources = try urls.map { try SourceFile(url: $0) }
                 try Task.checkCancellation()
-                return engine.targets(for: sources)
+                let format = sources.first?.format
+                return (engine.targets(for: sources), sources.allSatisfy { $0.format == format } ? format : nil)
             }
             do {
-                let targets = try await withTaskCancellationHandler(operation: { try await worker.value },
+                let result = try await withTaskCancellationHandler(operation: { try await worker.value },
                                                                     onCancel: { worker.cancel() })
                 guard !Task.isCancelled, self?.detectionID == identifier, let view else { return }
-                view.options = targets.map(WheelOption.conversion)
-                view.idleCaption = L10n.text(targets.isEmpty ? "No available formats" : "Convert")
+                view.options = result.targets.map(WheelOption.conversion)
+                if let format = result.source { view.sourceCaption = format.label }
+                view.idleCaption = L10n.text(result.targets.isEmpty ? "No available formats" : "Convert")
             } catch {
                 guard !Task.isCancelled, self?.detectionID == identifier else { return }
                 view?.options = []
