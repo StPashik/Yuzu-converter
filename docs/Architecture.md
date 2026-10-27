@@ -43,6 +43,8 @@ Accept data through `NSDraggingDestination.draggingEntered` / `draggingUpdated` 
 
 Shift/Control switch the current wheel; Escape closes selection. Sectors expose system accessibility beyond visual hit testing. Open settings and the shelf only on explicit user action. The exact researched semantics and unknowns for `airDrop`, `float`, `copy`, `move`, `copyPath`, and `openTerminal` are recorded in [TangerineResearch.md](TangerineResearch.md).
 
+Version 0.2.1 applies the owner-authorized Yuzu Mac App visual reference: rounded translucent petals, a separate three-line center, top-first ordering, orange/white selection, text-only format labels, and SF Symbols for Actions. Drawing and selection share the same rounded `CGPath`. The content fade respects Reduce Motion while the armed destination remains hit-testable. See [Wheel-design.md](Wheel-design.md) for dimensions and rendered previews.
+
 Compress to ZIP is an additional wheel Action. It neither introduces File tools nor changes the 46-case target conversion inventory.
 
 AppKit owns system sharing, pasteboard, workspace calls, and dialogs. Persist file access through scoped bookmarks. A file grant does not imply permission to write to its parent; use Powerbox when needed. Verify the distributed app’s signature, entitlements, and subprocess access rather than inferring them from developer runs.

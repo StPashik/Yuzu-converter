@@ -4,14 +4,14 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.2.0 adds in-app updates.** Check from the menu bar or Settings, then confirm download and installation. It retains five interface languages, conversion, and seven Actions. File tools are outside the scope of this release.
+**v0.2.1 brings the wheel design from Yuzu Mac App.** Rounded translucent petals, orange selection, larger format labels, and a three-line center keep the file context visible. Signed in-app updates, five interface languages, conversion, and seven Actions remain available. File tools are outside the scope of this release.
 
 ## Download
 
 Requires **macOS 13 or later**. Choose your Mac:
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.0/Yuzu-Converter-0.2.0-arm64.zip)
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.0/Yuzu-Converter-0.2.0-x64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.1/Yuzu-Converter-0.2.1-arm64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.1/Yuzu-Converter-0.2.1-x64.zip)
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -33,6 +33,8 @@ Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**,
 
 Choose **Check for Updates…** from the menu bar or Settings. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
+See the [wheel design notes](docs/Wheel-design.md) for the visual reference and native AppKit previews.
+
 ## Format support
 
 | Area | Preview support |
@@ -52,7 +54,7 @@ The Sandbox app does not include or launch external FFmpeg/FFprobe/LibreOffice. 
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.0/stpashik-yuzu-converter-0.2.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.1/stpashik-yuzu-converter-0.2.1.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```

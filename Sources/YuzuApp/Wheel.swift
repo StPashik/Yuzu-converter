@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 import YuzuCore
 
 enum WheelMode: Equatable { case conversion, actions }
@@ -20,12 +21,12 @@ enum FileAction: String, CaseIterable {
     var symbol: String {
         switch self {
         case .airDrop: return "airplayaudio"
-        case .float: return "square.stack.3d.up"
+        case .float: return "pin"
         case .copy: return "doc.on.doc"
         case .move: return "folder"
-        case .copyPath: return "link"
+        case .copyPath: return "doc.text"
         case .openTerminal: return "terminal"
-        case .compress: return "doc.zipper"
+        case .compress: return "archivebox"
         }
     }
 
@@ -53,9 +54,9 @@ enum WheelOption: Equatable {
         case .action(let action): return action.title
         }
     }
-    var symbol: String {
+    var symbol: String? {
         switch self {
-        case .conversion: return "arrow.triangle.2.circlepath"
+        case .conversion: return nil
         case .action(let action): return action.symbol
         }
     }
@@ -97,22 +98,39 @@ struct DragTrigger {
 }
 
 enum WheelGeometry {
-    static let inner: CGFloat = 48.64
-    static let outer: CGFloat = 119.52
+    static let inner: CGFloat = 64
+    static let outer: CGFloat = 144
+    static let centerRadius: CGFloat = 58
+    static let labelRadius: CGFloat = 104
+    static let gap: CGFloat = 6
+    static let corner: CGFloat = 8
 
     static func angle(_ index: Int, count: Int) -> CGFloat {
-        (count == 3 ? .pi : .pi / 2) - CGFloat(index) * 2 * .pi / CGFloat(count)
+        .pi / 2 - CGFloat(index) * 2 * .pi / CGFloat(count)
     }
 
     static func path(_ index: Int, count: Int, center: CGPoint) -> CGPath {
         let path = CGMutablePath()
         guard count > 0 else { return path }
-        let half = .pi / CGFloat(count) - 0.025
+        let half = .pi / CGFloat(count)
         let mid = angle(index, count: count)
-        path.addArc(center: center, radius: outer, startAngle: mid - half,
-                    endAngle: mid + half, clockwise: false)
-        path.addArc(center: center, radius: inner, startAngle: mid + half,
-                    endAngle: mid - half, clockwise: true)
+        let start = mid - half, end = mid + half
+        let outerTurn = asin((gap / 2 + corner) / (outer - corner))
+        let innerTurn = asin((gap / 2 + corner) / (inner + corner))
+        func point(_ radius: CGFloat, _ angle: CGFloat) -> CGPoint {
+            CGPoint(x: center.x + radius * cos(angle), y: center.y + radius * sin(angle))
+        }
+        // Tangent corner circles keep the six-point gap constant along each radial edge.
+        path.addArc(center: center, radius: outer, startAngle: start + outerTurn, endAngle: end - outerTurn, clockwise: false)
+        path.addArc(center: point(outer - corner, end - outerTurn), radius: corner,
+                    startAngle: end - outerTurn, endAngle: end + .pi / 2, clockwise: false)
+        path.addArc(center: point(inner + corner, end - innerTurn), radius: corner,
+                    startAngle: end + .pi / 2, endAngle: end - innerTurn + .pi, clockwise: false)
+        path.addArc(center: center, radius: inner, startAngle: end - innerTurn, endAngle: start + innerTurn, clockwise: true)
+        path.addArc(center: point(inner + corner, start + innerTurn), radius: corner,
+                    startAngle: start + innerTurn + .pi, endAngle: start + 3 * .pi / 2, clockwise: false)
+        path.addArc(center: point(outer - corner, start + outerTurn), radius: corner,
+                    startAngle: start - .pi / 2, endAngle: start + outerTurn, clockwise: false)
         path.closeSubpath()
         return path
     }
@@ -134,47 +152,94 @@ final class WheelDragView: NSView {
     var mode: WheelMode = .conversion
     private(set) var sources: [URL] = []
     private var centerPoint: CGPoint = .zero
-    private var selected: Int? { didSet { needsDisplay = true; updateCaption() } }
+    private var selected: Int? {
+        didSet {
+            guard oldValue != selected else { return }
+            needsDisplay = true
+            updateCaption()
+            updateLabels()
+        }
+    }
     private var labels: [NSButton] = []
-    private let caption = NSTextField(wrappingLabelWithString: "")
+    private let summary = NSTextField(labelWithString: "")
+    private let caption = NSTextField(labelWithString: "")
+    private let cancelHint = NSTextField(labelWithString: "⇧ / ⌃ · Esc")
+    var sourceCaption = "" { didSet { updateCaption() } }
     var idleCaption = "" { didSet { updateCaption() } }
     var options: [WheelOption] = [] { didSet { selected = nil; rebuildLabels() } }
     var confirmed = false {
-        didSet { needsDisplay = true; caption.isHidden = !confirmed; labels.forEach { $0.isHidden = !confirmed } }
+        didSet {
+            needsDisplay = true
+            [summary, caption, cancelHint].forEach { $0.isHidden = !confirmed }
+            labels.forEach { $0.isHidden = !confirmed }
+            guard oldValue != confirmed else { return }
+            layer?.removeAnimation(forKey: "wheelAppearance")
+            if confirmed, window?.isVisible == true, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                // Fade only the content; the armed window and its drag hit regions remain unchanged.
+                let fade = CABasicAnimation(keyPath: "opacity")
+                fade.fromValue = 0
+                fade.toValue = 1
+                fade.duration = 0.16
+                fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                layer?.add(fade, forKey: "wheelAppearance")
+            }
+        }
     }
 
     override init(frame: NSRect) {
         super.init(frame: frame)
+        wantsLayer = true
         registerForDraggedTypes([.fileURL])
+        summary.alignment = .center
+        summary.font = .systemFont(ofSize: 12, weight: .semibold)
+        summary.lineBreakMode = .byTruncatingMiddle
         caption.alignment = .center
-        caption.font = .systemFont(ofSize: 11, weight: .medium)
-        caption.maximumNumberOfLines = 3
-        caption.textColor = .labelColor
-        caption.isHidden = true
-        addSubview(caption)
+        caption.font = .systemFont(ofSize: 10)
+        caption.lineBreakMode = .byTruncatingTail
+        caption.textColor = .secondaryLabelColor
+        cancelHint.alignment = .center
+        cancelHint.font = .systemFont(ofSize: 9)
+        cancelHint.textColor = .secondaryLabelColor
+        for field in [summary, caption, cancelHint] { field.isHidden = true; addSubview(field) }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
     override func draw(_ dirtyRect: NSRect) {
         guard confirmed, let context = NSGraphicsContext.current?.cgContext else { return }
-        for i in options.indices {
-            context.addPath(WheelGeometry.path(i, count: options.count, center: centerPoint))
-            context.setFillColor((selected == i ? NSColor.systemOrange :
-                                  NSColor.windowBackgroundColor.withAlphaComponent(0.97)).cgColor)
-            context.setStrokeColor(NSColor.separatorColor.cgColor)
+        let radius = WheelGeometry.centerRadius
+        let circle = CGPath(ellipseIn: CGRect(x: centerPoint.x - radius, y: centerPoint.y - radius,
+                                             width: radius * 2, height: radius * 2), transform: nil)
+        let petals = options.indices.map { WheelGeometry.path($0, count: options.count, center: centerPoint) }
+        for path in [circle] + petals {
+            context.saveGState()
+            context.setShadow(offset: CGSize(width: 0, height: -2), blur: 8, color: NSColor.black.withAlphaComponent(0.13).cgColor)
+            context.addPath(path)
+            context.setFillColor(NSColor.windowBackgroundColor.withAlphaComponent(0.78).cgColor)
+            context.fillPath()
+            context.restoreGState()
+            context.addPath(path)
+            context.setStrokeColor(NSColor.separatorColor.withAlphaComponent(0.32).cgColor)
             context.setLineWidth(0.75)
+            context.strokePath()
+        }
+        if let selected, petals.indices.contains(selected) {
+            let orange = NSColor(srgbRed: 1, green: 0.32, blue: 0.02, alpha: 0.96).cgColor
+            context.addPath(petals[selected])
+            context.setFillColor(orange)
+            context.setStrokeColor(orange)
+            context.setLineWidth(1)
             context.drawPath(using: .fillStroke)
         }
-        context.setFillColor(NSColor.windowBackgroundColor.withAlphaComponent(0.97).cgColor)
-        context.fillEllipse(in: CGRect(x: centerPoint.x - 45, y: centerPoint.y - 45,
-                                       width: 90, height: 90))
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
         guard let urls = Self.fileURLs(sender) else { return [] }
         centerPoint = WheelGeometry.center(near: sender.draggingLocation, in: bounds)
-        caption.frame = NSRect(x: centerPoint.x - 40, y: centerPoint.y - 25, width: 80, height: 50)
+        summary.frame = NSRect(x: centerPoint.x - 51, y: centerPoint.y + 9, width: 102, height: 17)
+        caption.frame = NSRect(x: centerPoint.x - 55, y: centerPoint.y - 10, width: 110, height: 14)
+        cancelHint.frame = NSRect(x: centerPoint.x - 51, y: centerPoint.y - 27, width: 102, height: 12)
         sources = urls
+        sourceCaption = urls.count == 1 ? urls[0].lastPathComponent : L10n.text("%ld files", urls.count)
         confirmed = true
         idleCaption = L10n.text("Reading file…")
         onSources?(urls, self)
@@ -212,7 +277,15 @@ final class WheelDragView: NSView {
     }
 
     private func updateCaption() {
-        caption.stringValue = selected.map { options[$0].title } ?? idleCaption
+        summary.stringValue = sourceCaption
+        summary.toolTip = sourceCaption
+        if let selected {
+            switch options[selected] {
+            case .conversion(let format): caption.stringValue = L10n.text("To %@", format.label)
+            case .action: caption.stringValue = L10n.text("Release file")
+            }
+        } else { caption.stringValue = idleCaption }
+        caption.toolTip = caption.stringValue
     }
 
     private func rebuildLabels() {
@@ -220,20 +293,38 @@ final class WheelDragView: NSView {
         labels = options.enumerated().map { i, option in
             let angle = WheelGeometry.angle(i, count: options.count)
             let button = NSButton(title: option.title, target: self, action: #selector(activateOption(_:)))
-            button.image = NSImage(systemSymbolName: option.symbol, accessibilityDescription: nil)
-            button.imagePosition = .imageAbove
+            button.image = option.symbol.flatMap { NSImage(systemSymbolName: $0, accessibilityDescription: nil) }
+            button.imagePosition = option.symbol == nil ? .noImage : .imageAbove
+            button.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 21, weight: .medium)
+            button.imageScaling = .scaleProportionallyDown
             button.isBordered = false
-            button.font = .systemFont(ofSize: 11, weight: .semibold)
             button.tag = i
             button.setAccessibilityLabel(option.title)
             button.toolTip = option.help
             button.setAccessibilityHelp(option.help)
-            button.frame = NSRect(x: centerPoint.x + cos(angle) * 83 - 36,
-                                  y: centerPoint.y + sin(angle) * 83 - 23, width: 72, height: 46)
+            let size = option.symbol == nil ? NSSize(width: 60, height: 28) : NSSize(width: 82, height: 52)
+            button.frame = NSRect(x: centerPoint.x + cos(angle) * WheelGeometry.labelRadius - size.width / 2,
+                                  y: centerPoint.y + sin(angle) * WheelGeometry.labelRadius - size.height / 2,
+                                  width: size.width, height: size.height)
+            button.isHidden = !confirmed
             addSubview(button)
             return button
         }
+        updateLabels()
         needsDisplay = true
+    }
+
+    private func updateLabels() {
+        for button in labels {
+            guard options.indices.contains(button.tag) else { continue }
+            let color: NSColor = selected == button.tag ? .white : .labelColor
+            button.contentTintColor = color
+            button.attributedTitle = NSAttributedString(string: button.title, attributes: [
+                .font: NSFont.systemFont(ofSize: options[button.tag].symbol == nil ? 16 : 10,
+                                        weight: selected == button.tag ? .semibold : .medium),
+                .foregroundColor: color
+            ])
+        }
     }
 
     @objc private func activateOption(_ sender: NSButton) {
