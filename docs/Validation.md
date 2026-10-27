@@ -22,8 +22,12 @@ Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Signed Sandbox self-checks | Both architectures loaded all five languages and passed conversion and ZIP checks |
 | Installation of final ZIPs | Both architectures installed in temporary homes; strict codesign and native version 0.1.2 passed |
 | npm tarball | Prepack accepted both pinned hashes; 7 files and no dependencies |
+| Published release | English notes matched the reviewed file; GitHub-reported SHA-256 digests of all six assets matched local artifacts |
+| Public npm upgrade | npm 12.2.1 upgraded 0.1.1 to 0.1.2; installed CLI and native executable report 0.1.2 |
+| Active application upgrade | The old `/Applications` instance quit gracefully; the existing verified installer updated that location from the public release with rollback staging, and the new app was launched |
+| Installed application verification | `/Applications` and `~/Applications` native binaries matched the final arm64 build; both report 0.1.2, and strict codesign passed for the active application |
 
-Independent source/test review found no blocker; the shared arming path covers both wheel modes and retains file URL validation. Final hashes are in [Release-checksums-0.1.2.txt](Release-checksums-0.1.2.txt). Publication and installed-app upgrade results are recorded after completion. Physical Finder drag, Powerbox/bookmark recovery, VoiceOver, AirDrop, Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. The app is still an ad-hoc-signed preview without Apple notarization.
+Independent source/test review found no blocker; the shared arming path covers both wheel modes and retains file URL validation. Final hashes are in [Release-checksums-0.1.2.txt](Release-checksums-0.1.2.txt). Installation retained the app's existing language/settings container; no global npm or macOS security policy changed. Physical Finder drag, Powerbox/bookmark recovery, VoiceOver, AirDrop, Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. The app is still an ad-hoc-signed preview without Apple notarization.
 
 ## v0.1.1 — multilingual preview
 
