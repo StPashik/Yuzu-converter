@@ -11,7 +11,8 @@ Start with the [requirements](Requirements.md), [architecture](Architecture.md),
 | [AccessStore.swift](../Sources/YuzuApp/AccessStore.swift) and [Actions.swift](../Sources/YuzuApp/Actions.swift) | Powerbox/bookmarks, `ScopedFiles`, system Actions, clipboard leases, and the shelf |
 | [SourceFile.swift](../Sources/YuzuCore/SourceFile.swift), [FileFormat.swift](../Sources/YuzuCore/FileFormat.swift), and [ConversionEngine.swift](../Sources/YuzuCore/ConversionEngine.swift) | Content identification, format identity, available targets, dispatch, and output validation |
 | [FileOperations.swift](../Sources/YuzuCore/FileOperations.swift), [Archive.swift](../Sources/YuzuCore/Archive.swift), and [ProcessRunner.swift](../Sources/YuzuCore/ProcessRunner.swift) | Safe file publication, ZIP creation, archive validation, bounded subprocesses, and cancellation |
-| [Settings.swift](../Sources/YuzuApp/Settings.swift) and [Localization.swift](../Sources/YuzuApp/Localization.swift) | Preferences, the language picker, text lookup, and resource-bundle selection |
+| [Settings.swift](../Sources/YuzuApp/Settings.swift), [SettingsView.swift](../Sources/YuzuApp/SettingsView.swift), and [SystemPreferences.swift](../Sources/YuzuApp/SystemPreferences.swift) | Five-tab settings, per-output profiles, shortcut migration, folder access, and real login-item/terminal choices |
+| [ConversionOptions.swift](../Sources/YuzuCore/ConversionOptions.swift) and [Localization.swift](../Sources/YuzuApp/Localization.swift) | Validated encoding parameters and five-language UI lookup |
 | [Core tests](../Tests/YuzuCoreTests/ConversionTests.swift), [App tests](../Tests/YuzuAppTests/WheelTests.swift), and [npm tests](../Tests/npm/installer.test.mjs) | Executable examples and regression boundaries |
 
 Backend details live in `NativeDocuments.swift`, `NativeMedia.swift`, `Spreadsheet.swift`, `EPUB.swift`, and `TextFormats.swift` under `Sources/YuzuCore`.
@@ -33,6 +34,8 @@ Keep shared contracts small. Existing public entry points include `SourceFile(ur
 AirDrop retains source scopes until its sharing delegate completes. Clipboard Copy retains its lease until pasteboard `changeCount` changes. Shelves retain leases for their referenced files. These code paths do not replace the deferred physical Finder/Sandbox integration checks.
 
 ## Jobs, cancellation, and publication
+
+PendingJob also captures ConversionOptions by value. Read a profile for the selected output format before queueing, including ZIP Action compression. Do not read mutable preferences from background encoders. Keep UI applicability aligned with validation and actual backend execution; an unavailable layout must not become an enabled control that does nothing. [Settings.md](Settings.md) records the encoding choices and limits.
 
 `AppDelegate` queues `PendingJob` values for conversion, move, or compression. Work runs in `Task.detached`; `withTaskCancellationHandler` forwards UI cancellation to the worker. Format detection uses a generation identifier to discard stale results. Termination cancels queued/active work and waits for the current job and detection before answering AppKit.
 
