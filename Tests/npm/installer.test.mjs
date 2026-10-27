@@ -16,8 +16,8 @@ const silent = () => {};
 function manifestFor(bytes) {
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   return {
-    version: '0.1.1', repository: 'StPashik/Yuzu-converter',
-    assets: Object.fromEntries(['arm64', 'x64'].map(arch => [arch, { name: `Yuzu-Converter-0.1.1-${arch}.zip`, sha256 }]))
+    version: '0.1.2', repository: 'StPashik/Yuzu-converter',
+    assets: Object.fromEntries(['arm64', 'x64'].map(arch => [arch, { name: `Yuzu-Converter-0.1.2-${arch}.zip`, sha256 }]))
   };
 }
 
@@ -27,7 +27,7 @@ async function scratch(t) {
   return path;
 }
 
-async function fixtureApp(path, version = '0.1.1', id = 'com.stpashik.yuzu-converter') {
+async function fixtureApp(path, version = '0.1.2', id = 'com.stpashik.yuzu-converter') {
   await mkdir(join(path, 'Contents', 'MacOS'), { recursive: true });
   await writeFile(join(path, 'Contents', 'Info.plist'), `<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n<plist version="1.0"><dict><key>CFBundleIdentifier</key><string>${id}</string><key>CFBundleExecutable</key><string>YuzuApp</string><key>CFBundleShortVersionString</key><string>${version}</string></dict></plist>\n`);
   await writeFile(join(path, 'Contents', 'MacOS', 'YuzuApp'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
@@ -36,7 +36,7 @@ async function fixtureApp(path, version = '0.1.1', id = 'com.stpashik.yuzu-conve
 async function archiveApp(t, { id, symlinkTarget } = {}) {
   const directory = await scratch(t);
   const app = join(directory, 'Yuzu Converter.app');
-  await fixtureApp(app, '0.1.1', id);
+  await fixtureApp(app, '0.1.2', id);
   if (symlinkTarget) await symlink(symlinkTarget, join(app, 'escape'));
   const archive = join(directory, 'app.zip');
   await run('/usr/bin/ditto', ['-c', '-k', '--norsrc', '--keepParent', app, archive]);
@@ -54,7 +54,7 @@ function installFixture(home, fixture) {
   return install({
     home, manifest: fixture.manifest,
     fetchAsset: async (url, destination) => {
-      assert.match(url, /^https:\/\/github\.com\/StPashik\/Yuzu-converter\/releases\/download\/v0\.1\.1\/Yuzu-Converter-0\.1\.1-(arm64|x64)\.zip$/);
+      assert.match(url, /^https:\/\/github\.com\/StPashik\/Yuzu-converter\/releases\/download\/v0\.1\.2\/Yuzu-Converter-0\.1\.2-(arm64|x64)\.zip$/);
       await copyFile(fixture.archive, destination);
     },
     log: silent
@@ -63,8 +63,8 @@ function installFixture(home, fixture) {
 
 test('release assets are version-pinned for supported macOS architectures', () => {
   const manifest = manifestFor(Buffer.from('fixture'));
-  assert.equal(selectAsset(manifest, 'darwin', 'arm64').name, 'Yuzu-Converter-0.1.1-arm64.zip');
-  assert.equal(selectAsset(manifest, 'darwin', 'x64').name, 'Yuzu-Converter-0.1.1-x64.zip');
+  assert.equal(selectAsset(manifest, 'darwin', 'arm64').name, 'Yuzu-Converter-0.1.2-arm64.zip');
+  assert.equal(selectAsset(manifest, 'darwin', 'x64').name, 'Yuzu-Converter-0.1.2-x64.zip');
   assert.throws(() => selectAsset(manifest, 'linux', 'x64'), /macOS/);
   assert.throws(() => selectAsset(manifest, 'darwin', 'ia32'), /architecture/);
   assert.throws(() => validateRelease({ ...manifest, version: '0.2.0' }), /match/);
@@ -108,16 +108,16 @@ test('a verified archive installs a complete app without launching it', native, 
 });
 
 test('an installed release is idempotent and does not download again', native, async t => {
-  const home = await testHome(t, '0.1.1');
+  const home = await testHome(t, '0.1.2');
   await install({ home, manifest: manifestFor(Buffer.from('unused')), log: silent, fetchAsset: () => assert.fail('must not download') });
   assert.deepEqual(await readdir(join(home, 'Applications')), ['Yuzu Converter.app']);
 });
 
-test('an upgrade from 0.1.0 publishes 0.1.1 and removes its own staging directory', native, async t => {
+test('an upgrade from 0.1.1 publishes 0.1.2 and removes its own staging directory', native, async t => {
   const fixture = await archiveApp(t);
-  const home = await testHome(t, '0.1.0');
+  const home = await testHome(t, '0.1.1');
   await installFixture(home, fixture);
-  assert.match(await readFile(join(applicationPath(home), 'Contents', 'Info.plist'), 'utf8'), /0\.1\.1/);
+  assert.match(await readFile(join(applicationPath(home), 'Contents', 'Info.plist'), 'utf8'), /0\.1\.2/);
   assert.deepEqual(await readdir(join(home, 'Applications')), ['Yuzu Converter.app']);
 });
 

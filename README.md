@@ -4,14 +4,14 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.1.1 is the multilingual UI preview.** It adds five interface languages and developer documentation while retaining the conversion and Actions behavior of v0.1.0. File tools are outside the scope of this release.
+**v0.1.2 fixes the wheel not appearing during file drags.** It retains five interface languages, conversion, and seven Actions. File tools are outside the scope of this release.
 
 ## Download
 
 Requires **macOS 13 or later**. Choose your Mac:
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.1/Yuzu-Converter-0.1.1-arm64.zip)
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.1/Yuzu-Converter-0.1.1-x64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.2/Yuzu-Converter-0.1.2-arm64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.2/Yuzu-Converter-0.1.2-x64.zip)
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -48,7 +48,7 @@ The Sandbox app does not include or launch external FFmpeg/FFprobe/LibreOffice. 
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.1/stpashik-yuzu-converter-0.1.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.2/stpashik-yuzu-converter-0.1.2.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -81,4 +81,4 @@ Rebuilding an app archive requires rerunning `prepare-npm` and `npm pack`. Devel
 
 The code was written from scratch after [static Tangerine research with REA](docs/TangerineResearch.md). Compress to ZIP is a separate owner-requested feature. The owner authorized reuse of the app/menu bar icons from Yuzu Mac App and an app-icon PNG for documentation only; no old source or Git history was carried over. See [component notices](THIRD_PARTY_NOTICES.md).
 
-**v0.1.1 checks:** 29 Swift tests passed on native arm64 and x86_64 under Rosetta; 13 Node tests passed. Both signed Sandbox apps passed conversion/ZIP self-checks and loaded all five language tables. Localization tests check matching keys, format placeholders, user filenames, fallback, and compact wheel labels. Manual Finder drag, Powerbox/bookmark recovery, AirDrop, Terminal, VoiceOver, shelf drag-out, live language switching/restart, Intel hardware, and macOS 13 checks remain deferred. See [validation](docs/Validation.md), [app QA](docs/QA.md), and [installer QA](docs/NpmQA.md).
+The wheel regression test exercises real WindowServer hit-testing before a drag is confirmed: it fails with the old fully transparent window and passes with the corrected background. Fresh release checks are recorded in [validation](docs/Validation.md); [app QA](docs/QA.md) and [installer QA](docs/NpmQA.md) retain historical review results. Physical Finder drag, Powerbox/bookmark recovery, AirDrop, Terminal, VoiceOver, shelf drag-out, Intel hardware, and macOS 13 remain unverified.

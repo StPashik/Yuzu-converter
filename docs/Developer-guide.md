@@ -24,7 +24,7 @@ Keep shared contracts small. Existing public entry points include `SourceFile(ur
 
 ## Drag data and security scopes
 
-1. `WheelMonitor` observes mouse/modifier/Escape state to arm a transparent destination. It does not read the global drag pasteboard.
+1. `WheelMonitor` observes mouse/modifier/Escape state to arm a destination with a 1% black background. A fully transparent window is skipped by WindowServer hit-testing before drag entry. It does not read the global drag pasteboard.
 2. `WheelDragView` accepts file URLs from the actual `NSDraggingInfo.draggingPasteboard`. The wheel becomes visible only after a confirmed file drag; prepare/drop callbacks revalidate the source URLs.
 3. `AppDelegate` creates `ScopedFiles` before deferring drop handling to the next main-queue tick. This lets the AppKit drop finish before Powerbox or sharing UI opens.
 4. `ScopedFiles` retains the immutable URLs and only the grants successfully started; deinitialization balances those grants. Retain this object for the operation's full lifetime rather than retaining bare URLs alone.
@@ -71,6 +71,8 @@ npm ci --ignore-scripts
 npm test
 swift test --scratch-path .build/verification
 ```
+
+The armed-wheel regression test uses the public WindowServer hit-test API. Run the App tests in a logged-in graphical macOS session; they do not simulate an end-to-end Finder drag.
 
 - Build the archives sequentially, run the signed Sandbox app's `--self-check`, and verify signature/architecture/version and installation into temporary homes. Then pin the final archives and pack the installer:
 

@@ -2,6 +2,29 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.1.2 — wheel input fix
+
+The owner reported that neither wheel appeared during file dragging with Shift/Control. The running `/Applications/Yuzu Converter.app` was 0.1.1 and matched the npm-installed binary; wheels were enabled. An AppKit probe reproduced the cause on this Mac: an armed panel with a fully clear background was visible but absent from WindowServer hit-testing. The same panel with a 1% black background received the hit.
+
+The new `testArmedWindowReceivesHitsBeforeAFileDragIsConfirmed` exercises the actual monitor window and system hit-test, before any wheel is drawn. It failed against the original clear background and passed after the fix. This confirms the input-window regression; it does not establish an end-to-end Finder drop.
+
+The test uses Apple's public [window hit-test API](https://developer.apple.com/documentation/appkit/nswindow/windownumber%28at%3Abelowwindowwithwindownumber%3A%29) and requires a logged-in graphical WindowServer session. The armed full-screen destination now adds a 1% black wash while waiting for the drag; no wheel content is shown before file URLs are confirmed.
+
+Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
+
+| Check | Recorded result |
+| --- | --- |
+| Native arm64 Swift tests | 30 passed, 0 failed, 0 skipped: 22 Core and 8 App tests |
+| Intel XCTest under Rosetta | 30 passed, 0 failed, 0 skipped after a separate x86_64 build |
+| Armed-window regression | Old background failed; corrected background passed on both architectures |
+| npm 0.1.2 installer tests | 13 passed, including safe upgrade from 0.1.1 |
+| Signed arm64/x64 archives | Final 0.1.2 archives passed Info.plist, strict codesign, and lipo checks |
+| Signed Sandbox self-checks | Both architectures loaded all five languages and passed conversion and ZIP checks |
+| Installation of final ZIPs | Both architectures installed in temporary homes; strict codesign and native version 0.1.2 passed |
+| npm tarball | Prepack accepted both pinned hashes; 7 files and no dependencies |
+
+Independent source/test review found no blocker; the shared arming path covers both wheel modes and retains file URL validation. Final hashes are in [Release-checksums-0.1.2.txt](Release-checksums-0.1.2.txt). Publication and installed-app upgrade results are recorded after completion. Physical Finder drag, Powerbox/bookmark recovery, VoiceOver, AirDrop, Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. The app is still an ad-hoc-signed preview without Apple notarization.
+
 ## v0.1.1 — multilingual preview
 
 Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:

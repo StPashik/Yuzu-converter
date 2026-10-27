@@ -282,11 +282,12 @@ final class WheelMonitor {
         }
     }
 
-    private func arm(_ mode: WheelMode) {
+    func arm(_ mode: WheelMode) {
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) else { return }
         let panel = NSPanel(contentRect: screen.visibleFrame, styleMask: [.borderless, .nonactivatingPanel],
                             backing: .buffered, defer: false)
-        panel.backgroundColor = .clear
+        // WindowServer skips fully transparent pixels during hit-testing, before draggingEntered can draw the wheel.
+        panel.backgroundColor = NSColor.black.withAlphaComponent(0.01)
         panel.isOpaque = false
         panel.hasShadow = false
         panel.level = .popUpMenu
@@ -302,7 +303,7 @@ final class WheelMonitor {
         self.panel = panel
         self.view = view
         self.mode = mode
-        // The panel stays completely transparent until draggingEntered confirms file URLs.
+        // The wheel stays hidden until draggingEntered confirms file URLs.
         panel.orderFrontRegardless()
     }
 }
