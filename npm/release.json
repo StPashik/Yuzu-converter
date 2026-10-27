@@ -1,14 +1,14 @@
 {
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": "StPashik/Yuzu-converter",
   "assets": {
     "arm64": {
-      "name": "Yuzu-Converter-0.1.0-arm64.zip",
-      "sha256": "d6d3d66e82444ed958f988768a561f7edd4435ad592efeb3044594c781f4b56b"
+      "name": "Yuzu-Converter-0.1.1-arm64.zip",
+      "sha256": "0bf13d9ae69011bf96db24d1cb41764ab78c5b2e1843c3850e2f750c0ee0b59b"
     },
     "x64": {
-      "name": "Yuzu-Converter-0.1.0-x64.zip",
-      "sha256": "3b43fb46fd66df9eccc639d6193e15c56cddb2c5f1134e61c3e767927a88df13"
+      "name": "Yuzu-Converter-0.1.1-x64.zip",
+      "sha256": "18e04c2be1ac32f571e5f663e726c9870eb1ecfccc3e5dc33d98d5fb5910c2df"
     }
   }
 }

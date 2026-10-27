@@ -1,73 +1,73 @@
-# Матрица конвертации: цель и выпуск 0.1.0
+# Conversion matrix: target inventory and preview support
 
-Дата: 27 октября 2026. Цель проекта — инвентарь Tangerine из 46 enum cases; выпуск 0.1.0 покрывает часть этой цели и публикуется как prerelease. Ограничения реализации не удаляют оставшиеся требования. Полные 46 строк candidate targets и Evidence приведены в [TangerineResearch.md](TangerineResearch.md#полный-статический-candidate-inventory).
+Updated October 27, 2026. The target remains Tangerine’s 46-case format inventory. Version 0.1.0 implemented part of that scope; v0.1.1 carries the behavior forward with five selectable UI languages and English project documentation. Limits do not remove the remaining requirements. All 46 candidate rows and their evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory).
 
-Источник состояния реализации: `Sources/YuzuCore/ConversionEngine.swift`, `NativeMedia.swift`, `NativeDocuments.swift`, `EPUB.swift`, `Spreadsheet.swift`, `SourceFile.swift`, `Archive.swift`. Итоговый прогон: 26/26 Swift tests на arm64 и x86_64 через Rosetta, 13/13 Node tests. Таблица описывает существующие маршруты. Статус `implemented` не означает `verified` для всех файлов/кодеков/версий macOS; условия проверки перечислены в [Validation.md](Validation.md).
+Implementation references: `Sources/YuzuCore/ConversionEngine.swift`, `NativeMedia.swift`, `NativeDocuments.swift`, `EPUB.swift`, `Spreadsheet.swift`, `SourceFile.swift`, and `Archive.swift`. Fresh v0.1.1 checks passed 29/29 Swift tests on native arm64 and x86_64 under Rosetta, 13/13 Node tests, both signed Sandbox self-checks, and installation of both final ZIPs. An `implemented` route is not a claim that every file, codec, or macOS version was verified. See [Validation.md](Validation.md).
 
-## Sandbox release и developer launch
+## Packaged Sandbox app and developer runs
 
-Готовая `.app` Sandbox macOS 13+ выпускается отдельно для arm64/x64. Сторонние FFmpeg/FFprobe/LibreOffice в архивы не входят и из Sandbox `.app` не запускаются. Системные frameworks, libarchive и `textutil`/`zip`/`tar` используются из macOS.
+The macOS 13+ Sandbox app has separate arm64/x64 archives. It neither bundles nor launches external FFmpeg/FFprobe/LibreOffice. It uses macOS frameworks, system libarchive, and system `textutil`/`zip`/`tar`.
 
-Несандбоксированный `swift run` может обнаруживать отдельно установленные FFmpeg/FFprobe/LibreOffice и открывать дополнительные маршруты, если есть нужный encoder. Это developer-only возможности, а не поддержка готового релиза. Если инструмент отсутствует, его цели скрыты. Наличие decoder/writer проверяется отдельно от статического списка кандидатов; конвертация также может отклонить повреждённый или неподдерживаемый профиль входа.
+An unsandboxed `swift run` can find separately installed FFmpeg/FFprobe/LibreOffice and enable extra routes where the required encoder exists. Those are developer-only capabilities, not packaged-release support. Missing tools hide their targets. Decoder/writer availability is separate from the candidate catalog; damaged inputs or unsupported profiles can still fail during conversion.
 
-## Реализованные маршруты и пробелы
+## Implemented routes and gaps
 
-Во всех строках текущий формат скрывается. Для смешанного набора одной внутренней категории показывается пересечение доступных пар каждого input.
+The current format is hidden. Mixed inputs in one internal category receive only the intersection of available routes for every file. The following describes the v0.1.0 behavior retained for v0.1.1; it does not claim a new verification run.
 
-| Группа и целевые входы | Sandbox release 0.1.0 | Ограничения и остающаяся цель |
+| Group and target inputs | Implemented preview routes | Limits and remaining targets |
 | --- | --- | --- |
-| Images: JPG, PNG, WebP, HEIC, TIFF, SVG, AVIF, BMP | `implemented`: системный reader → JPG/PNG/HEIC/TIFF/BMP/PDF и доступный ImageIO writer WebP/AVIF | Reader/writer зависит от macOS и файла. SVG input требует системного декодирования, SVG output отсутствует. Для multi-frame input PDF/TIFF обрабатывает кадры; другие raster outputs берут первый кадр. Developer-only WebP/AVIF encoding может использовать FFmpeg |
-| Audio: MP3, M4A, WAV, FLAC, OGG, Opus, AIFF, WMA | `implemented`: декодируемый macOS input → WAV/AIFF/M4A; targets зависят от AVAudioFile/AVFoundation | FFmpeg export MP3/FLAC/OGG/Opus/WMA отсутствует в релизе. ASF/WMA identification требует FFprobe и без него unavailable. Факт наличия enum case не означает доступного системного decoder |
-| Video: MP4, MOV, MKV, WebM, AVI, WMV, GIF | `implemented`: AVFoundation-exportable video → MP4/MOV | Baseline fixtures — MOV ↔ MP4. Другие inputs зависят от decoder/export support. GIF input не проходит native route; MKV/WebM/AVI/WMV/GIF output и MP3 extraction — developer-only FFmpeg. ASF/WMV identification требует FFprobe |
-| PDF | `implemented`: JPG/PNG всех страниц при 300 DPI; текстовый слой → TXT/MD | OCR отсутствует. PDF → DOCX/PAGES/PPTX/XLSX/EPUB — `unavailable` в релизе, editable reconstruction не подменяется картинками или text extraction |
-| Documents: DOCX, PAGES, MD, RTF, RTFD, textClipping, TXT, HTML | `implemented`: DOCX/MD/RTF/RTFD/TXT → DOCX/PDF/TXT/MD/HTML/EPUB/JPG/PNG | DOCX — rich text через системные readers/writers, без гарантии Office layout/objects. MD writer сохраняет plain text с `.md`. PAGES input/output и textClipping — `unavailable`. HTML input wheel пуст, HTML export присутствует |
-| EPUB | `implemented`: текстовые главы → PDF/DOCX/TXT/MD/HTML; простой EPUB output из документов | Простой reflow, writer создаёт одну главу. Стили, изображения, assets и исходная вёрстка не сохраняются. EPUB → PAGES — `unavailable` |
-| Slides: PPT, PPTX | `unavailable` в Sandbox release | Цель: PDF/JPG/PNG. В developer launch нужен отдельно установленный LibreOffice; PDF→slides отсутствует |
-| Spreadsheets: XLSX, XLS, ODS, CSV, TSV | `implemented`: XLSX/ODS/CSV/TSV → XLSX/ODS/CSV/TSV/PDF, все листы | Только значения как строки. Формулы, типы, стили, charts/assets не сохраняются. CSV/TSV — файл на каждый лист в папке; PDF — текстовое представление. Legacy XLS — `unavailable` в Sandbox release, developer-only LibreOffice |
-| Subtitles: SRT, VTT | `implemented`: SRT ↔ VTT; SRT/VTT → TXT | Текст и тайминги cues; metadata, позиционирование и полное WebVTT оформление не сохраняются |
-| Archives: ZIP, TAR, GZIP, RAR | `implemented`: ZIP/TAR/TAR.GZ → другой из ZIP/TAR/TAR.GZ; RAR reader при поддержке системной libarchive | GZIP case означает TAR.GZ. Одиночный gzip stream не поддерживается. Symlinks/hardlinks, unsafe paths и превышение лимитов отклоняются; метаданные/permissions исходного архива не обещаются. Archive tools не добавлены |
+| Images: JPG, PNG, WebP, HEIC, TIFF, SVG, AVIF, BMP | System reader → JPG/PNG/HEIC/TIFF/BMP/PDF, plus WebP/AVIF where ImageIO provides a writer | Reader/writer support depends on macOS and the file. SVG input requires system decoding; SVG export is absent. For multiple frames, PDF/TIFF process the frames while other raster outputs use the first frame. Developer-only WebP/AVIF encoding may use FFmpeg |
+| Audio: MP3, M4A, WAV, FLAC, OGG, Opus, AIFF, WMA | macOS-decodable input → WAV/AIFF/M4A, gated by AVAudioFile/AVFoundation | MP3/FLAC/OGG/Opus/WMA export is unavailable in the packaged app. ASF/WMA identification requires FFprobe. An enum case does not imply an available system decoder |
+| Video: MP4, MOV, MKV, WebM, AVI, WMV, GIF | AVFoundation-exportable video → MP4/MOV | Baseline fixtures cover MOV ↔ MP4. Other inputs depend on decoder/export support. GIF input has no native route; MKV/WebM/AVI/WMV/GIF output and MP3 extraction require developer-only FFmpeg. ASF/WMV identification requires FFprobe |
+| PDF | Every page → JPG/PNG at 300 DPI; existing text layer → TXT/MD | No OCR. PDF → DOCX/PAGES/PPTX/XLSX/EPUB is unavailable. Images and text extraction are not presented as editable reconstruction |
+| Documents: DOCX, PAGES, MD, RTF, RTFD, textClipping, TXT, HTML | DOCX/MD/RTF/RTFD/TXT → DOCX/PDF/TXT/MD/HTML/EPUB/JPG/PNG | DOCX uses system rich-text readers/writers without guaranteeing Office layout or objects. MD output is plain text with a `.md` extension. PAGES input/output and textClipping are unavailable. HTML export exists, but there is no HTML input wheel |
+| EPUB | Text chapters → PDF/DOCX/TXT/MD/HTML; simple EPUB output from documents | Simple reflow; the writer creates one chapter. Styles, images, assets, and original layout are not preserved. EPUB → PAGES is unavailable |
+| Slides: PPT, PPTX | Unavailable in the Sandbox app | Target: PDF/JPG/PNG. Developer runs need separately installed LibreOffice. PDF → slides is absent |
+| Spreadsheets: XLSX, XLS, ODS, CSV, TSV | XLSX/ODS/CSV/TSV → XLSX/ODS/CSV/TSV/PDF, all sheets | Values become strings. Formulas, types, styles, charts, and assets are not preserved. CSV/TSV produces one file per sheet in a folder; PDF is a text representation. Legacy XLS needs developer-only LibreOffice |
+| Subtitles: SRT, VTT | SRT ↔ VTT; SRT/VTT → TXT | Cue text and timing; metadata, positioning, and full WebVTT styling are not preserved |
+| Archives: ZIP, TAR, GZIP, RAR | ZIP/TAR/TAR.GZ → another of those formats; RAR input where system libarchive supports it | GZIP means TAR.GZ, not a standalone gzip stream. Links, unsafe/colliding paths, and limit violations are rejected. Original archive metadata/permissions are not guaranteed. Archive tools are not added |
 
-## Качество и безопасность результата
+## Output quality and safety
 
-- PDF → JPG/PNG создаёт отдельную папку со всеми страницами. Масштаб — действительные 300 DPI. Страница больше 32 768 px по стороне либо 64 MP отклоняется; silent downscale отсутствует. Валидация fixtures проверяет число страниц, pixel dimensions и DPI.
-- DOCX остаётся редактируемым текстовым документом, но не точной копией сложного Office макета. PDF → TXT/MD обозначает извлечение имеющегося текста. Растр не объявляется editable Office.
-- XLSX/ODS переносят все листы и значения, записанные строковыми ячейками. Функции расчёта формул, style/assets round-trip и нативная табличная печать не реализованы.
-- Результаты сначала создаются в scratch, валидируются и публикуются под свободным именем. Исходники и прежние результаты не перезаписываются. Отмена и ошибка не публикуют незавершённую конвертацию.
-- Определение типа использует signatures/package contents; у текстовых форматов без уникальной сигнатуры остаются heuristics. Например Markdown может учитывать расширение `.md`. Неизвестный, пустой или неподдерживаемый input получает ошибку.
+- PDF → JPG/PNG puts all pages in a separate folder at an actual 300 DPI. Pages exceeding 32,768 pixels per side or 64 megapixels are rejected rather than silently downscaled. Fixtures check page count, pixel dimensions, and DPI.
+- DOCX contains editable text rather than a faithful copy of complex Office layout. PDF → TXT/MD extracts existing text. Raster images are not labeled editable Office output.
+- XLSX/ODS transfer all sheets and values as string cells. Formula calculation, style/asset round-tripping, and native spreadsheet printing are not implemented.
+- Write and validate results in scratch, then publish under available names. Preserve sources and existing results. Failure or cancellation must not publish incomplete conversion output.
+- Content detection uses signatures and package contents. Text formats without unique signatures still need heuristics; Markdown can also use the `.md` extension. Unknown, empty, or unsupported input produces an error.
 
-## Fixtures и подтверждение проверок
+## Fixtures and verification scope
 
-Все названные ниже проверки существуют в [ConversionTests.swift](../Tests/YuzuCoreTests/ConversionTests.swift) и входят в прошедшие 22 Core tests; также прошли 4 App tests и 13 Node tests. Регрессии покрывают ZIP Action, XML namespaces/overflow, архивные коллизии, CRLF и EXIF orientation. Проверка fixture не означает проверку каждой пары группы.
+The named fixtures in [ConversionTests.swift](../Tests/YuzuCoreTests/ConversionTests.swift) were part of the historical 22 Core tests, alongside 4 App tests and 13 Node tests. Regression coverage includes Compress to ZIP, XML namespaces/overflow, archive collisions, CRLF, and EXIF orientation. Those v0.1.0 passes are not new v0.1.1 runs, and a fixture does not verify every pair in its group.
 
-| Fixture | Что проверяет |
+| Fixture | What it checks |
 | --- | --- |
-| `testContentWinsOverMisleadingExtensionAndMixedTargetsIntersect` | PNG с чужим расширением, скрытие текущих форматов и пересечение/разные категории |
-| `testImageConversionDoesNotOverwriteExistingResult` | PNG → JPG, свободное имя и сохранность исходника/существующего результата |
-| `testPDFExportsEveryPageAt300DPI` | Двухстраничный PDF → PNG, обе страницы и фактические pixel dimensions/DPI |
-| `testUTF16ContentDetectionAndConversion` | UTF-16 → редактируемый DOCX с читаемым текстом |
-| `testEditableDOCXAndEPUBContainText` | TXT → DOCX/EPUB и проверка текстового содержимого |
-| `testQuotedDelimitedTableRoundTripThroughXLSXAndODS` | CSV с кавычками/newline → XLSX/ODS и значения после чтения |
-| `testSubtitlesRetainTimesAndTextAndRejectInvalidInput` | SRT → VTT, тайминги/текст и отказ на неправильном input |
-| `testArchiveRoundTripAndRejectsSymlink` | ZIP → TAR.GZ, содержимое, symlink/traversal и single-GZIP rejection |
-| `testNativeAudioBaselineWithoutExternalTools` | WAV → AIFF/M4A, AIFF → WAV, читаемость/число frames без внешних движков |
-| `testNativeVideoBaselineWithoutExternalTools` | MOV → MP4 → MOV, читаемый video stream без внешних движков |
-| `testFFmpegWAVToFLACWhenAvailable` | Developer-only WAV → FLAC; skip при отсутствии инструмента/encoder |
-| Cancellation/FileOperations fixtures | Отмена без published result, остановка процесса, свободные имена, move dedup/ancestor filtering и отказ на recursive destination |
+| `testContentWinsOverMisleadingExtensionAndMixedTargetsIntersect` | PNG with a misleading extension, hiding current formats, intersection, and incompatible categories |
+| `testImageConversionDoesNotOverwriteExistingResult` | PNG → JPG, an available name, and preservation of source/existing output |
+| `testPDFExportsEveryPageAt300DPI` | Two-page PDF → PNG, both pages, actual dimensions, and DPI |
+| `testUTF16ContentDetectionAndConversion` | UTF-16 → readable editable DOCX text |
+| `testEditableDOCXAndEPUBContainText` | TXT → DOCX/EPUB and inspection of textual content |
+| `testQuotedDelimitedTableRoundTripThroughXLSXAndODS` | CSV quotes/newlines → XLSX/ODS and values after reading |
+| `testSubtitlesRetainTimesAndTextAndRejectInvalidInput` | SRT → VTT, text/timing retention, and invalid-input rejection |
+| `testArchiveRoundTripAndRejectsSymlink` | ZIP → TAR.GZ, contents, link/traversal rejection, and standalone-GZIP rejection |
+| `testNativeAudioBaselineWithoutExternalTools` | WAV → AIFF/M4A and AIFF → WAV, readability/frame count without external engines |
+| `testNativeVideoBaselineWithoutExternalTools` | MOV → MP4 → MOV and a readable video stream without external engines |
+| `testFFmpegWAVToFLACWhenAvailable` | Developer-only WAV → FLAC; skipped if the tool/encoder is absent |
+| Cancellation/FileOperations fixtures | No published result after cancellation, subprocess termination, available names, move deduplication/ancestor filtering, and recursive-destination rejection |
 
-Даже успешный run этих fixtures не доказывает все candidate pairs, все codecs/профили или физическую Sandbox работу. Кросс-компиляция x64 не доказывает запуск на Intel.
+Even a passing suite does not establish every candidate pair, codec/profile, or physical Sandbox interaction. An x64 cross-build does not prove execution on Intel hardware.
 
 ## Actions
 
-Семантика REA и состояние собственной реализации различаются. Общий статический dispatch шести Actions и дополнительные границы описаны в [TangerineResearch.md](TangerineResearch.md#actions-dispatch-и-подтверждённая-семантика). «Сжать в ZIP» — отдельное седьмое Action Yuzu по запросу владельца; эта функция не приписывается Tangerine/REA и не добавляет File tools.
+The researched behavior and Yuzu’s implementation have separate evidence. [TangerineResearch.md](TangerineResearch.md#actions-dispatch-and-confirmed-semantics) records the six-action dispatch and unknowns. Compress to ZIP is a separate seventh owner-requested Yuzu Action, not a Tangerine/REA finding or an addition to File tools.
 
-| Action | Реализация 0.1.0 | Состояние проверки |
+| Action | Implemented behavior | Verification boundary |
 | --- | --- | --- |
-| `airDrop` | Системный NSSharingService, удержание scoped URLs до completion | Физический AirDrop gate отложен |
-| `float` | Полка ссылок, add к существующей или новая, drag-out copy, Remove/Close не удаляет оригиналы; без persistence между запусками | Модель/реальный drag-out и Sandbox взаимодействие требуют отдельного подтверждения |
-| `copy` | File URLs в NSPasteboard.general | Clipboard/Finder paste и scope lifetime в реальных приложениях — отложенный gate |
-| `move` | Выбор destination, очередь файловой операции, свободные имена, dedup/ancestor filtering. Файлы между томами: copy + verify перед удалением; каталоги между томами отклоняются до копирования | Есть Core fixtures; физический picker/Sandbox gate отложен; межтомное перемещение каталогов unavailable в prerelease |
-| `copyPath` | Текст путей через newline | Конкретные системные paste targets вручную не проверены |
-| `openTerminal` | NSWorkspace + Terminal, каталог либо parent файла/package, dedup | Folder-mapping fixture есть; фактический Terminal/Sandbox gate отложен |
-| «Сжать в ZIP» | Один архив из выбранных файлов/папок, рядом с первым input, свободное имя; оригиналы не изменяются | Собственная запрошенная функция; fixtures создания/отмены и Sandbox self-check прошли |
+| `airDrop` | System NSSharingService; retain scoped URLs until completion | Physical AirDrop check deferred |
+| `float` | File-reference shelf; add to an existing shelf or create a new one; drag-out copy; Remove/Close preserve originals; no persistence between launches | Physical drag-out and Sandbox integration remain unverified |
+| `copy` | File URLs in NSPasteboard.general | Real Clipboard/Finder paste and scope lifetime checks deferred |
+| `move` | Destination picker, queued operation, available names, deduplication/ancestor filtering. Cross-volume files compare source size/mtime before/after copying; folders are refused before copying | Core fixtures exist; physical picker/Sandbox checks deferred; no content-hash guarantee |
+| `copyPath` | Paths as newline-separated text | Real system paste targets not manually tested |
+| `openTerminal` | NSWorkspace + Terminal; the directory itself or a file/package’s parent; deduplicate folders | Folder-mapping fixture exists; real Terminal/Sandbox check deferred |
+| Compress to ZIP | One archive beside the first input, available name, originals preserved | Owner-requested feature; creation/cancellation fixtures and signed Sandbox self-check passed for v0.1.1 |
 
-Собственный порядок Actions выбран по enum; точный порядок лепестков оригинала и визуальная parity не установлены. Новые ручные Finder/Sandbox/AirDrop/Terminal проверки владельцем отложены. Эти gates остаются открытыми в prerelease.
+Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual parity are not established. The owner deferred new manual Finder/Sandbox/AirDrop/Terminal checks; those checks remain open in the preview.

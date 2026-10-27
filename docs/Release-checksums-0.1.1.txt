@@ -1,0 +1,3 @@
+0bf13d9ae69011bf96db24d1cb41764ab78c5b2e1843c3850e2f750c0ee0b59b  Yuzu-Converter-0.1.1-arm64.zip
+18e04c2be1ac32f571e5f663e726c9870eb1ecfccc3e5dc33d98d5fb5910c2df  Yuzu-Converter-0.1.1-x64.zip
+d05ec0f820587fea5f476c7f8e322715d7d0b17702f5339ca4b0c30d3f74f197  stpashik-yuzu-converter-0.1.1.tgz

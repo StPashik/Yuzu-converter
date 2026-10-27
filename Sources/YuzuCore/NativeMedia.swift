@@ -1,12 +1,16 @@
 import Foundation
 import AVFoundation
 
+/// Dependency-free media fallback: AVAudioFile streams PCM, while AVFoundation exports M4A/MOV/MP4.
+/// These routes depend on system decoders and presets; they are not equivalent to the broader FFmpeg routes.
 enum NativeMedia {
+    /// Probes the actual input and compatible export types. Synchronous asset inspection belongs off the main thread.
     static func supports(_ source: SourceFile, to target: FileFormat) -> Bool {
         if source.format.category == "Audio", target == .wav || target == .aiff {
             guard let input = try? AVAudioFile(forReading: source.url) else { return false }
             return input.processingFormat.channelCount > 0 && input.processingFormat.sampleRate > 0
         }
+        // Treating an animated GIF as one native image would silently discard its animation.
         guard source.format != .gif else { return false }
         let asset = AVURLAsset(url: source.url)
         if source.format.category == "Audio", target == .m4a {
@@ -18,6 +22,8 @@ enum NativeMedia {
         return false
     }
 
+    /// Writes a caller-owned staging path. PCM exports preserve rate/channels but use 16-bit samples;
+    /// M4A/video use system presets. Cancellation stops between PCM chunks or cancels the export session.
     static func convert(_ source: SourceFile, to target: FileFormat, output: URL) async throws {
         try Task.checkCancellation()
         if target == .wav || target == .aiff {
@@ -34,23 +40,24 @@ enum NativeMedia {
             ]
             let destination: AVAudioFile
             do { destination = try AVAudioFile(forWriting: output, settings: settings, commonFormat: format.commonFormat, interleaved: format.isInterleaved) }
-            catch { throw ConversionError.failed("Создание \(target.label) через AVAudioFile: \(error)") }
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 32_768) else { throw ConversionError.failed("Не удалось создать аудиобуфер.") }
+            catch { throw ConversionError.failed("Creating \(target.label) with AVAudioFile: \(error)") }
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 32_768) else { throw ConversionError.failed("Could not create an audio buffer.") }
             // A fixed-size buffer keeps long recordings independent of available RAM.
+            // Stop at the reported length: some decoders throw instead of returning an empty read at EOF.
             while input.framePosition < input.length {
                 try Task.checkCancellation()
                 let count = AVAudioFrameCount(min(AVAudioFramePosition(buffer.frameCapacity), input.length - input.framePosition))
                 do { try input.read(into: buffer, frameCount: count) }
-                catch { throw ConversionError.failed("Чтение аудио для \(target.label) на кадре \(input.framePosition): \(error)") }
-                guard buffer.frameLength > 0 else { throw ConversionError.failed("Аудиодвижок вернул пустой блок до конца файла.") }
+                catch { throw ConversionError.failed("Reading audio for \(target.label) at frame \(input.framePosition): \(error)") }
+                guard buffer.frameLength > 0 else { throw ConversionError.failed("The audio engine returned an empty buffer before the end of the file.") }
                 do { try destination.write(from: buffer) }
-                catch { throw ConversionError.failed("Запись \(target.label) через AVAudioFile: \(error)") }
+                catch { throw ConversionError.failed("Writing \(target.label) with AVAudioFile: \(error)") }
             }
             return
         }
         let asset = AVURLAsset(url: source.url)
         guard let export = session(asset, to: target), export.supportedFileTypes.contains(target == .m4a ? .m4a : target == .mov ? .mov : .mp4) else {
-            throw ConversionError.unsupported("Системный медиадвижок не поддерживает этот файл и контейнер.")
+            throw ConversionError.unsupported("The system media engine does not support this file and container.")
         }
         export.outputURL = output
         export.outputFileType = target == .m4a ? .m4a : target == .mov ? .mov : .mp4
@@ -69,6 +76,8 @@ enum NativeMedia {
     }
 }
 
+/// Serializes start/cancel so cancellation arriving before continuation registration is not lost.
+/// AVFoundation's completion handler resumes the continuation; the lock protects only lifecycle coordination.
 private final class NativeExport: @unchecked Sendable {
     private let lock = NSLock()
     private let session: AVAssetExportSession
@@ -80,7 +89,7 @@ private final class NativeExport: @unchecked Sendable {
         session.exportAsynchronously { [self] in
             if session.status == .completed { continuation.resume() }
             else if session.status == .cancelled { continuation.resume(throwing: CancellationError()) }
-            else { continuation.resume(throwing: session.error ?? ConversionError.failed("Системный медиадвижок не завершил экспорт.")) }
+            else { continuation.resume(throwing: session.error ?? ConversionError.failed("The system media engine did not complete the export.")) }
         }
     }
     func cancel() {

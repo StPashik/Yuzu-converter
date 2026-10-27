@@ -1,22 +1,24 @@
 import Foundation
 import Darwin
 
-// System libarchive reads ZIP/TAR/GZIP/RAR without shell parsing of filenames.
+/// A single-pass reader over the system libarchive API, shared by package detection and archive conversion.
+/// Each operation consumes the stream; create a new reader to inspect the same archive again.
 final class ArchiveReader {
     struct Entry { let path: String; let directory: Bool; let size: Int64 }
     private let api: ArchiveAPI
     private let archive: OpaquePointer
+    // Bound declared uncompressed data and entry count; a small compressed file can otherwise exhaust disk/RAM.
     private static let maximumBytes: Int64 = 512 * 1024 * 1024
     private static let maximumEntries = 10_000
 
     init(_ url: URL) throws {
         let api = try ArchiveAPI()
-        guard let handle = api.create() else { throw ConversionError.failed("Не удалось открыть архивный движок.") }
+        guard let handle = api.create() else { throw ConversionError.failed("Could not open the archive engine.") }
         _ = api.filters(handle)
         _ = api.formats(handle)
         let status = url.path.withCString { api.open(handle, $0, 65_536) }
         if status < 0 {
-            let message = api.message(handle).map { String(cString: $0) } ?? "Нечитаемый архив"
+            let message = api.message(handle).map { String(cString: $0) } ?? "The archive could not be read"
             _ = api.free(handle)
             throw ConversionError.invalid(message)
         }
@@ -26,6 +28,7 @@ final class ArchiveReader {
     deinit { _ = api.free(archive) }
     var isTar: Bool { api.format(archive) & 0xFF0000 == 0x30000 } // ARCHIVE_FORMAT_TAR family
 
+    /// Reads one bounded metadata entry. Validate untrusted package names with a separate entries() pass first.
     func file(named name: String, maximumBytes: Int = 65_536) throws -> Data? {
         var entry: OpaquePointer?
         while true {
@@ -34,7 +37,7 @@ final class ArchiveReader {
             guard status >= 0, let entry, let path = api.path(entry) else { throw failure() }
             guard String(cString: path) == name else { continue }
             let size = api.size(entry)
-            guard size >= 0, size <= maximumBytes else { throw ConversionError.invalid("Слишком большой элемент архива: \(name)") }
+            guard size >= 0, size <= maximumBytes else { throw ConversionError.invalid("The archive entry is too large: \(name)") }
             var bytes = [UInt8](repeating: 0, count: Int(size))
             var offset = 0
             while offset < bytes.count {
@@ -46,6 +49,9 @@ final class ArchiveReader {
         }
     }
 
+    /// Inventories safe names/types and optionally streams their payloads into a caller-owned private folder.
+    /// Links, special files, aliases, and resource-limit violations fail. Extraction can leave partial staging;
+    /// the caller must discard that folder on error rather than expose it as a completed conversion.
     func entries(extractingTo destination: URL? = nil) throws -> [Entry] {
         var result: [Entry] = []
         var total: Int64 = 0
@@ -58,7 +64,7 @@ final class ArchiveReader {
             let status = api.next(archive, &pointer)
             if status == 1 { break } // ARCHIVE_EOF
             guard status >= 0, let pointer, let name = api.path(pointer) else { throw failure() }
-            guard let path = String(validatingUTF8: name) else { throw ConversionError.invalid("Имя в архиве не является UTF-8.") }
+            guard let path = String(validatingUTF8: name) else { throw ConversionError.invalid("An archive entry name is not valid UTF-8.") }
             let rawComponents = path.split(separator: "/", omittingEmptySubsequences: true)
             let components = rawComponents.filter { $0 != "." }.map(String.init)
             let type = api.type(pointer) & 0o170000
@@ -69,11 +75,12 @@ final class ArchiveReader {
                   type == 0o100000 || type == 0o040000,
                   size >= 0, size <= Self.maximumBytes,
                   result.count < Self.maximumEntries, total <= Self.maximumBytes - size else {
-                throw ConversionError.invalid("Небезопасный путь, ссылка или слишком большой архив: \(path)")
+                throw ConversionError.invalid("The archive contains an unsafe path, a link, or exceeds the size limit: \(path)")
             }
             let directory = type == 0o040000
-            guard !components.isEmpty || directory else { throw ConversionError.invalid("Пустое имя файла в архиве.") }
+            guard !components.isEmpty || directory else { throw ConversionError.invalid("The archive contains an empty filename.") }
             // Reserve implicit parents too: "Folder/a" and "folder/b" alias on common Mac volumes.
+            // Canonical Unicode/case keys also prevent file/directory aliases before any filesystem write.
             for length in 0...components.count where length > 0 || components.isEmpty {
                 let spelling = components.prefix(length).joined(separator: "/").precomposedStringWithCanonicalMapping
                 let key = spelling.lowercased()
@@ -81,7 +88,7 @@ final class ArchiveReader {
                 let listed = length == components.count
                 if let previous = names[key] {
                     guard previous.spelling == spelling, previous.directory, isDirectory, !listed || !previous.listed else {
-                        throw ConversionError.invalid("Повторяющиеся или конфликтующие имена в архиве: \(path)")
+                        throw ConversionError.invalid("The archive contains duplicate or conflicting names: \(path)")
                     }
                     names[key] = (spelling, true, previous.listed || listed)
                 } else { names[key] = (spelling, isDirectory, listed) }
@@ -92,17 +99,18 @@ final class ArchiveReader {
             guard let destination else { continue }
             let output = destination.appendingPathComponent(components.joined(separator: "/")).standardizedFileURL
             guard output.path == destination.path || output.path.hasPrefix(destination.path + "/") else {
-                throw ConversionError.invalid("Путь архива выходит за папку распаковки.")
+                throw ConversionError.invalid("The archive path points outside the extraction folder.")
             }
-            guard output.resolvingSymlinksInPath().path == output.path else { throw ConversionError.invalid("Ссылка в папке распаковки: \(path)") }
+            guard output.resolvingSymlinksInPath().path == output.path else { throw ConversionError.invalid("A link was found in the extraction folder: \(path)") }
             if entry.directory {
                 try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                 continue
             }
             try FileManager.default.createDirectory(at: output.deletingLastPathComponent(), withIntermediateDirectories: true)
+            // The filesystem is the final guard: exclusive creation must never truncate an existing entry.
             let descriptor = output.path.withCString { Darwin.open($0, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, mode_t(0o600)) }
             guard descriptor >= 0 else {
-                throw ConversionError.invalid("Не удалось безопасно создать \(entry.path): \(String(cString: strerror(errno)))")
+                throw ConversionError.invalid("Could not safely create \(entry.path): \(String(cString: strerror(errno)))")
             }
             let file = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
             defer { try? file.close() }
@@ -115,16 +123,17 @@ final class ArchiveReader {
                 written += Int64(count)
                 try file.write(contentsOf: Data(buffer.prefix(count)))
             }
-            guard written == size else { throw ConversionError.invalid("Неполный файл в архиве: \(path)") }
+            guard written == size else { throw ConversionError.invalid("The archive contains an incomplete file: \(path)") }
         }
         return result
     }
 
     private func failure() -> ConversionError {
-        .invalid(api.message(archive).map { String(cString: $0) } ?? "Повреждённый или неподдерживаемый архив.")
+        .invalid(api.message(archive).map { String(cString: $0) } ?? "The archive is corrupted or unsupported.")
     }
 }
 
+/// Loads only the C functions needed from macOS's own library; no downloaded archive executable is required.
 private final class ArchiveAPI {
     let library: UnsafeMutableRawPointer
     let create: @convention(c) () -> OpaquePointer?
@@ -144,11 +153,11 @@ private final class ArchiveAPI {
 
     init() throws {
         guard let library = dlopen("/usr/lib/libarchive.2.dylib", RTLD_NOW | RTLD_LOCAL) else {
-            throw ConversionError.unsupported("Системная libarchive недоступна.")
+            throw ConversionError.unsupported("The system libarchive is unavailable.")
         }
         self.library = library
         func symbol<T>(_ name: String, _ type: T.Type) throws -> T {
-            guard let pointer = dlsym(library, name) else { throw ConversionError.unsupported("libarchive: отсутствует \(name)") }
+            guard let pointer = dlsym(library, name) else { throw ConversionError.unsupported("libarchive: missing \(name)") }
             return unsafeBitCast(pointer, to: type)
         }
         create = try symbol("archive_read_new", (@convention(c) () -> OpaquePointer?).self)

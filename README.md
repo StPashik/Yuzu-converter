@@ -1,57 +1,63 @@
 # Yuzu Converter
 
-Нативное приложение для macOS 13+: конвертация файлов и Actions из menu bar. Шесть Actions исследованы в Tangerine через REA; седьмое, «Сжать в ZIP», добавлено отдельно по запросу владельца. Проект написан с нуля. Версия 0.1.0 — предварительный выпуск с собственным интерфейсом и ограниченным набором конвертаций; полное совпадение с Tangerine не заявляется. File tools не входят в выпуск.
+<img src="docs/images/app-icon.png" width="112" alt="Yuzu Converter icon">
 
-Иконка приложения и значок menu bar взяты из собственного Yuzu Mac App по прямому запросу владельца. Это единственное исключение из разработки нового проекта с нуля: старый код и остальные ресурсы не переносились, ресурсы Tangerine не используются.
+File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-## Установка 0.1.0
+**v0.1.1 is the multilingual UI preview.** It adds five interface languages and developer documentation while retaining the conversion and Actions behavior of v0.1.0. File tools are outside the scope of this release.
 
-Нужны macOS 13+, Apple Silicon или Intel и Node.js 20.11+ с npm:
+## Download
+
+Requires **macOS 13 or later**. Choose your Mac:
+
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.1/Yuzu-Converter-0.1.1-arm64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.1/Yuzu-Converter-0.1.1-x64.zip)
+
+Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
+
+See the [quick start](docs/Quick-start.md) for installation, permissions, and npm options.
+
+## Use it
+
+1. Start dragging a file or a group of files.
+2. Hold **Shift** for conversion or **Control** for Actions.
+3. Drop onto a wheel sector. Press **Escape** to cancel, or hold the other modifier to switch wheels.
+
+Open **Settings…** from the menu bar to swap the keys or choose whether new files join an existing shelf. Converted files are saved beside their originals under an available name. The app may ask for access to that folder the first time.
+
+Choose the interface language in Settings: **English** (default), **Russian**, **German**, **French**, or **Spanish**. App-owned UI updates live; some system dialogs use the new language after an app restart. Your Mac's global language is unchanged. Technical converter diagnostics, project documentation, code comments, and releases remain English.
+
+Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
+
+## Format support
+
+| Area | Preview support |
+| --- | --- |
+| Images and PDF | System image readers/writers; every PDF page to JPG/PNG at 300 DPI; existing PDF text to TXT/MD |
+| Audio and video | Inputs supported by macOS to WAV/AIFF/M4A or MP4/MOV |
+| Documents and EPUB | Text and rich-text DOCX, PDF/HTML/image export, and simple text-based EPUB reflow |
+| Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; text-based PDF output |
+| Subtitles and archives | SRT/VTT/TXT and ZIP/TAR/TAR.GZ; RAR input where system libarchive supports it |
+
+The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. The preview does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF, or GIF conversion in the packaged app. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
+
+The Sandbox app does not include or launch external FFmpeg/FFprobe/LibreOffice. Those tools are optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
+
+## Install with npm
+
+Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.0/stpashik-yuzu-converter-0.1.0.tgz
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.1.1/stpashik-yuzu-converter-0.1.1.tgz"
+npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
 
-Установщик скачивает архив своей версии для `arm64` или `x64`, проверяет встроенный SHA-256 и помещает `Yuzu Converter.app` в `~/Applications`. Существующая установка сохраняется до готовности новой. Пакет распространяется через [GitHub Releases](https://github.com/StPashik/Yuzu-converter/releases), в npm registry он не публикуется. Node/npm нужны установщику и команде запуска; сама `.app` работает без Node.
+Older npm versions can use `npm install -g "$YUZU_PACKAGE_URL"` without those npm 12 options. No global permission settings need to change. The installer checks a pinned SHA-256 and installs the app in `~/Applications`; the package is distributed through GitHub Releases, not the npm registry. The app itself runs without Node.
 
-Можно скачать соответствующий `.zip` из Releases и установить находящуюся внутри `Yuzu Converter.app` вручную. Сборки 0.1.0 имеют ad-hoc подпись, без Developer ID и notarization. Gatekeeper может заблокировать первый запуск; ad-hoc подпись не подтверждает личность разработчика.
+## Development
 
-## Работа с файлами
-
-После запуска приложение находится в menu bar, без Dock и главного окна. Меню содержит «Настройки…» (`⌘,`) и «Выйти».
-
-Начните перетаскивать файл и удерживайте **Shift** для конвертации или **Control** для Actions. Наведите файл на сектор и отпустите. Другой модификатор переключает колесо, Escape отменяет выбор. В настройках можно поменять Shift/Control местами и выбрать добавление к существующей полке.
-
-Actions: **AirDrop**, **Полка**, **Копировать**, **Переместить**, **Путь**, **Terminal**, **Сжать в ZIP**. «Копировать» помещает файловые URL в clipboard; «Путь» — пути через перевод строки. «Переместить» запрашивает папку назначения. Terminal получает выбранный каталог либо родителя файла/package. Полка хранит ссылки до закрытия, позволяет перетаскивать их в другое приложение; удаление с полки не удаляет оригинал.
-
-«Сжать в ZIP» создаёт один архив из выбранных файлов и папок рядом с первым выбранным input. Используется свободное имя, оригиналы сохраняются. Ссылки и совпадающие корневые имена отклоняются. В prerelease перемещение каталогов между томами отклоняется до копирования; при переносе файлов сравниваются размер и время изменения исходника до/после копирования. Изменённый исходник не удаляется; это проверка метаданных, без хеширования содержимого.
-
-Результаты конвертации сохраняются рядом с оригиналом под свободным именем. Для первой записи в папку Sandbox может запросить доступ; выбор запоминается через scoped bookmark. Текущий формат скрывается, для смешанного набора показывается пересечение доступных целей. Finder после конвертации автоматически не открывается.
-
-## Возможности и ограничения
-
-Доступные цели зависят от содержимого файла и системных decoder/writer. Таблица описывает реализованные маршруты, а не гарантию работы каждого профиля формата.
-
-| Область | Выпуск 0.1.0 |
-| --- | --- |
-| Изображения | ImageIO/AppKit → JPG, PNG, HEIC, TIFF, BMP, PDF; WebP/AVIF доступны как цели только при наличии системного writer. SVG читается через системный decoder, SVG export отсутствует |
-| Аудио | Декодируемые macOS входы → WAV, AIFF, M4A; текущий формат скрывается. MP3/FLAC/OGG/Opus/WMA export в Sandbox-сборке отсутствует |
-| Видео | Экспортируемые AVFoundation входы → MP4/MOV. Другие контейнеры, GIF и извлечение MP3 требуют внешнего backend и в Sandbox-сборке недоступны |
-| PDF | Все страницы → JPG/PNG при 300 DPI, либо имеющийся текст → TXT/MD. OCR и PDF → editable Office отсутствуют. Страницы больше 32 768 px по стороне или 64 MP отклоняются, DPI не понижается |
-| Документы | TXT/MD/RTF/RTFD/DOCX → текстовые DOCX, PDF, TXT/MD, HTML, EPUB, JPG/PNG в пределах системных readers. DOCX содержит редактируемый rich text; точный макет и все Office objects не сохраняются. MD export — обычный текст с расширением `.md` |
-| EPUB | Простой reflow: текстовые главы → PDF/DOCX/TXT/MD/HTML; создание EPUB с одной текстовой главой. Исходные стили, изображения и сложная вёрстка не сохраняются |
-| Таблицы | CSV/TSV/XLSX/ODS → XLSX/ODS/CSV/TSV/PDF. Все листы, только значения строковыми ячейками: формулы, типы, стили, графики и assets не сохраняются. CSV/TSV каждого листа создаётся в отдельной папке, PDF — текстовое представление |
-| Субтитры | SRT ↔ VTT и экспорт текста в TXT. Полное оформление WebVTT и cue metadata не сохраняются |
-| Архивы | ZIP/TAR/TAR.GZ → другой из этих форматов; RAR читается при поддержке системной libarchive. Ссылки и небезопасные paths отклоняются. Одиночный GZIP без TAR не поддерживается |
-
-PAGES, PPT/PPTX, legacy XLS и textClipping в готовой Sandbox `.app` недоступны. HTML встречается как выход; отдельного HTML input wheel нет. Собственные стили и геометрия колеса приближённые. Полный целевой инвентарь из 46 cases и расхождения с выпуском сохранены в [матрице](docs/Conversion-matrix.md), подробные статические наблюдения — в [разборе Tangerine](docs/TangerineResearch.md).
-
-Готовый Sandbox release не запускает сторонние FFmpeg/FFprobe/LibreOffice из системы и не содержит их копий. Дополнительные маршруты доступны только разработчику при несандбоксированном `swift run`, наличии отдельно установленного инструмента и нужного encoder. Системные `textutil`, `zip`, `tar` и libarchive используются из macOS. Лицензии и состав: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-## Разработка и сборка
-
-Нужны macOS, Xcode/Swift 5.9+ и Node/npm. Из корня репозитория:
+Use macOS, Xcode/Swift 5.9+, and Node/npm:
 
 ```sh
 npm ci --ignore-scripts
@@ -60,9 +66,7 @@ swift test --scratch-path .build/verification
 swift run --scratch-path .build/development YuzuApp
 ```
 
-`--ignore-scripts` отключает установку опубликованной `.app` при подготовке исходников. Developer launch не является Sandbox release. Для отдельно установленных движков предусмотрены `YUZU_FFMPEG`, `YUZU_FFPROBE`, `YUZU_LIBREOFFICE`; также проверяются обычные системные пути. Их присутствие не расширяет возможности готовой Sandbox `.app`.
-
-Соберите обе архитектуры последовательно, затем зафиксируйте checksum окончательных архивов и упакуйте установщик:
+Build the two archives sequentially, then pin their final checksums and package the installer:
 
 ```sh
 bash scripts/build-app.sh arm64
@@ -71,10 +75,10 @@ node scripts/prepare-npm.mjs dist
 npm pack --pack-destination dist
 ```
 
-Получатся `dist/Yuzu-Converter-0.1.0-arm64.zip`, `dist/Yuzu-Converter-0.1.0-x64.zip` и `dist/stpashik-yuzu-converter-0.1.0.tgz`. После пересборки любого `.zip` необходимо повторить `prepare-npm` и `npm pack`. По умолчанию build script использует ad-hoc подпись; наличие иной `YUZU_SIGN_IDENTITY` само по себе не выполняет notarization.
+Rebuilding an app archive requires rerunning `prepare-npm` and `npm pack`. Developer tool overrides are `YUZU_FFMPEG`, `YUZU_FFPROBE`, and `YUZU_LIBREOFFICE`; they do not extend the packaged Sandbox app. Read the [developer guide](docs/Developer-guide.md) for entry points, file-access ownership, cancellation, localization, and the release checklist.
 
-## Состояние проверок
+## Project and verification
 
-[Core fixtures](Tests/YuzuCoreTests/ConversionTests.swift) проверяют изображения, PDF/pages/DPI, текст/DOCX/EPUB, values-only таблицы, субтитры, ZIP и безопасность файловых операций. Итог: **26/26 Swift tests** (22 Core + 4 App) прошли на arm64 и x86_64 через Rosetta, **13/13 Node tests** прошли. Готовая подписанная Sandbox `.app` прошла `--self-check` для DOCX/textutil, XLSX, ZIP/TAR и ZIP Action. Подробности: [Validation.md](docs/Validation.md), независимые [QA.md](docs/QA.md) и [NpmQA.md](docs/NpmQA.md). FFmpeg fixture выполнялся в developer-контексте и не расширяет возможности Sandbox `.app`. Эти проверки не обозначают проверку всех пар.
+The code was written from scratch after [static Tangerine research with REA](docs/TangerineResearch.md). Compress to ZIP is a separate owner-requested feature. The owner authorized reuse of the app/menu bar icons from Yuzu Mac App and an app-icon PNG for documentation only; no old source or Git history was carried over. See [component notices](THIRD_PARTY_NOTICES.md).
 
-Физические Finder drag, Sandbox grants/bookmark recovery, AirDrop, Terminal и перенос с полки в системные приложения пока не прошли новые ручные проверки. Запуск Intel-сборки на Intel и поведение на каждой поддерживаемой версии macOS не следуют из успешной компиляции. Это предварительный выпуск; дополнительные ограничения перечислены в [release notes](docs/Release-notes-0.1.0.md).
+**v0.1.1 checks:** 29 Swift tests passed on native arm64 and x86_64 under Rosetta; 13 Node tests passed. Both signed Sandbox apps passed conversion/ZIP self-checks and loaded all five language tables. Localization tests check matching keys, format placeholders, user filenames, fallback, and compact wheel labels. Manual Finder drag, Powerbox/bookmark recovery, AirDrop, Terminal, VoiceOver, shelf drag-out, live language switching/restart, Intel hardware, and macOS 13 checks remain deferred. See [validation](docs/Validation.md), [app QA](docs/QA.md), and [installer QA](docs/NpmQA.md).

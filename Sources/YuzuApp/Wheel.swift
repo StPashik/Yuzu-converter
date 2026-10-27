@@ -8,13 +8,13 @@ enum FileAction: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .airDrop: return "AirDrop"
-        case .float: return "На полку"
-        case .copy: return "Копировать"
-        case .move: return "Переместить"
-        case .copyPath: return "Путь"
-        case .openTerminal: return "Terminal"
-        case .compress: return "В ZIP"
+        case .airDrop: return L10n.text("AirDrop")
+        case .float: return L10n.text("Float")
+        case .copy: return L10n.text("Copy")
+        case .move: return L10n.text("Move")
+        case .copyPath: return L10n.text("Copy Path")
+        case .openTerminal: return L10n.text("Terminal")
+        case .compress: return L10n.text("ZIP")
         }
     }
     var symbol: String {
@@ -26,6 +26,18 @@ enum FileAction: String, CaseIterable {
         case .copyPath: return "link"
         case .openTerminal: return "terminal"
         case .compress: return "doc.zipper"
+        }
+    }
+
+    var help: String {
+        switch self {
+        case .airDrop: return L10n.text("Share the selected files with AirDrop.")
+        case .float: return L10n.text("Keep file references on a floating shelf. Originals stay in place.")
+        case .copy: return L10n.text("Copy files for pasting into another app.")
+        case .move: return L10n.text("Move files to a folder you choose.")
+        case .copyPath: return L10n.text("Copy full file paths, one per line.")
+        case .openTerminal: return L10n.text("Open Terminal in the selected folder or the file’s parent folder.")
+        case .compress: return L10n.text("Create one ZIP beside the first selected item. Originals stay in place.")
         }
     }
 
@@ -50,7 +62,8 @@ enum WheelOption: Equatable {
     var help: String {
         switch self {
         case .conversion(let format) where [.xlsx, .ods, .csv, .tsv].contains(format):
-            return "Только значения. Формулы, стили и встроенные объекты не сохраняются."
+            return L10n.text("Values only. Formulas, formatting, and embedded objects are not preserved.")
+        case .action(let action): return action.help
         default: return title
         }
     }
@@ -163,7 +176,7 @@ final class WheelDragView: NSView {
         caption.frame = NSRect(x: centerPoint.x - 40, y: centerPoint.y - 25, width: 80, height: 50)
         sources = urls
         confirmed = true
-        idleCaption = "Определяю формат…"
+        idleCaption = L10n.text("Reading file…")
         onSources?(urls, self)
         return .copy
     }
@@ -250,6 +263,10 @@ final class WheelMonitor {
     }
 
     func dismiss() { panel?.orderOut(nil); panel = nil; view = nil; mode = nil }
+
+    func refreshLanguage() {
+        if let view, view.confirmed { onSources?(view.sources, view) }
+    }
 
     private func poll() {
         let next = trigger.update(mouseDown: CGEventSource.buttonState(.combinedSessionState, button: .left),

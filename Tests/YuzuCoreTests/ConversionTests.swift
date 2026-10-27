@@ -61,7 +61,7 @@ final class ConversionTests: XCTestCase {
     }
 
     func testSubtitlesRetainTimesAndTextAndRejectInvalidInput() async throws {
-        let source = try SourceFile(url: file("captions.srt", text: "1\n00:00:01,250 --> 00:00:02,500\nПривет <b>мир</b>\n\n2\n00:00:03,000 --> 00:00:04,000\nSecond line\n"))
+        let source = try SourceFile(url: file("captions.srt", text: "1\n00:00:01,250 --> 00:00:02,500\nHello <b>world 🌍</b>\n\n2\n00:00:03,000 --> 00:00:04,000\nSecond line\n"))
         let outputs = try await ConversionEngine().convert(source, to: .vtt, in: directory)
         let vtt = try String(contentsOf: outputs[0], encoding: .utf8)
         XCTAssertTrue(vtt.hasPrefix("WEBVTT"))
@@ -70,7 +70,7 @@ final class ConversionTests: XCTestCase {
     }
 
     func testQuotedDelimitedTableRoundTripThroughXLSXAndODS() async throws {
-        let rows = [["Name", "Note"], ["Аня", "comma, quote \" and\nnewline"], ["", "tail"]]
+        let rows = [["Name", "Note"], ["Zoë", "comma, quote \" and\nnewline"], ["", "tail"]]
         let csv = try file("table.csv", text: DelimitedText.write(rows, separator: ","))
         XCTAssertEqual(try DelimitedText.parse(String(contentsOf: csv, encoding: .utf8), separator: ","), rows)
         let engine = ConversionEngine()
@@ -146,14 +146,14 @@ final class ConversionTests: XCTestCase {
 
     func testUTF16ContentDetectionAndConversion() async throws {
         let input = directory.appendingPathComponent("utf16.txt")
-        try XCTUnwrap("Русский текст\nSecond paragraph".data(using: .utf16)).write(to: input)
+        try XCTUnwrap("English café text 🌍\nSecond paragraph".data(using: .utf16)).write(to: input)
         let source = try SourceFile(url: input)
         XCTAssertEqual(source.format, .txt)
         let output = try await ConversionEngine().convert(source, to: .docx, in: directory)[0]
         XCTAssertEqual(try SourceFile(url: output).format, .docx)
         let scratch = try FileOperations.scratch(in: directory)
         defer { try? FileManager.default.removeItem(at: scratch) }
-        XCTAssertTrue(try NativeDocuments.readText(SourceFile(url: output), scratch: scratch).string.contains("Русский текст"))
+        XCTAssertTrue(try NativeDocuments.readText(SourceFile(url: output), scratch: scratch).string.contains("English café text 🌍"))
     }
 
     func testCancellationLeavesNoPublishedResult() async throws {
@@ -180,7 +180,7 @@ final class ConversionTests: XCTestCase {
     }
 
     func testEditableDOCXAndEPUBContainText() async throws {
-        let text = "A heading\nРедактируемый текст & символы < >\nSecond paragraph"
+        let text = "A heading\nEditable café text & symbols 🌍 < >\nSecond paragraph"
         let source = try SourceFile(url: file("document.txt", text: text))
         let engine = ConversionEngine()
         for format: FileFormat in [.docx, .epub] {
@@ -190,11 +190,11 @@ final class ConversionTests: XCTestCase {
             defer { try? FileManager.default.removeItem(at: scratch) }
             if format == .docx {
                 let contents = try XCTUnwrap(ArchiveReader(output).file(named: "word/document.xml", maximumBytes: 1_000_000))
-                XCTAssertTrue(String(decoding: contents, as: UTF8.self).contains("Редактируемый"))
+                XCTAssertTrue(String(decoding: contents, as: UTF8.self).contains("Editable"))
             } else {
                 let contents = try XCTUnwrap(ArchiveReader(output).file(named: "OEBPS/chapter.xhtml"))
                 XCTAssertTrue(String(decoding: contents, as: UTF8.self).contains("&amp;"))
-                XCTAssertTrue(try EPUB.read(output, scratch: scratch).string.contains("Редактируемый текст"))
+                XCTAssertTrue(try EPUB.read(output, scratch: scratch).string.contains("Editable café text"))
             }
         }
     }
@@ -376,7 +376,7 @@ final class ConversionTests: XCTestCase {
         try wavData.write(to: wav)
         XCTAssertEqual(try SourceFile(url: wav).format, .wav)
         XCTAssertEqual(try AVAudioFile(forReading: wav).length, 20_559)
-        let values = [["Name", "Note"], ["record", String(repeating: "д", count: 40_000) + "\nsecond line"]]
+        let values = [["Name", "Note"], ["record", String(repeating: "é", count: 40_000) + "\nsecond line"]]
         let csv = try file("large.data", text: DelimitedText.write(values, separator: ","))
         XCTAssertGreaterThan(try Data(contentsOf: csv).count, 65_536)
         let source = try SourceFile(url: csv)

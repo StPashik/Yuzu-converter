@@ -4,6 +4,9 @@ import YuzuCore
 /// Exercises child-process grants inside the signed app using only its own temporary files.
 enum AppSelfCheck {
     static func run() async throws {
+        for language in AppLanguage.allCases {
+            guard L10n.resourceBundle(for: language) != nil else { throw CocoaError(.fileReadNoSuchFile) }
+        }
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("yuzu-check-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }

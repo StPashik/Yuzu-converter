@@ -1,20 +1,32 @@
 import AppKit
 import ImageIO
 
+/// Chooses available backends and turns one classified source into a complete, validated output set.
+/// Converters write only into private staging; this type owns cleanup and final publication.
 public struct ConversionEngine: Sendable {
     private let tools: Tools
+    /// Captures executable locations. Format and encoder availability is checked when routes are requested.
     public init() { tools = Tools() }
 
+    /// Returns ordered output formats supported by every source in the same routing category.
+    /// Current input formats are excluded. This can probe files or encoders synchronously; call off the main thread.
+    /// An available route describes a supported export, not a guarantee of lossless format preservation.
     public func targets(for sources: [SourceFile]) -> [FileFormat] {
+        // Mixed drops only offer formats supported by every input, avoiding misleading targets.
         guard let first = sources.first, sources.allSatisfy({ $0.format.category == first.format.category }) else { return [] }
         return candidates(first.format).filter { target in sources.allSatisfy { supported($0, target) } }
     }
 
+    /// Converts into an existing writable directory while leaving the original and existing results intact.
+    /// Returns every output file; page/sheet sets are published together in a new folder under a free name.
+    /// The caller must retain source/destination grants and use a background task: most I/O remains blocking.
+    /// Cancellation is cooperative between chunks/pages/stages and terminates active child-process exports.
+    /// Failure or cancellation before publication discards private staging rather than publishing partial results.
     public func convert(_ source: SourceFile, to target: FileFormat, in directory: URL) async throws -> [URL] {
         try Task.checkCancellation()
         let current = try SourceFile(url: source.url)
-        guard current.format == source.format else { throw ConversionError.invalid("Формат исходника изменился после выбора.") }
-        guard supported(source, target) else { throw ConversionError.unsupported("Конвертация \(source.format.label) → \(target.label) недоступна.") }
+        guard current.format == source.format else { throw ConversionError.invalid("The source format changed after selection.") }
+        guard supported(source, target) else { throw ConversionError.unsupported("Conversion from \(source.format.label) to \(target.label) is unavailable.") }
         let scratch = try FileOperations.scratch(in: directory)
         defer { try? FileManager.default.removeItem(at: scratch) }
         let output = scratch.appendingPathComponent("result." + target.fileExtension)
@@ -36,12 +48,12 @@ public struct ConversionEngine: Sendable {
         } else if source.format.category == "Archives" {
             let contents = scratch.appendingPathComponent("contents", isDirectory: true)
             try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: false)
-            guard !(try ArchiveReader(source.url).entries(extractingTo: contents)).isEmpty else { throw ConversionError.invalid("Архив пуст.") }
+            guard !(try ArchiveReader(source.url).entries(extractingTo: contents)).isEmpty else { throw ConversionError.invalid("The archive is empty.") }
             let arguments = target == .zip ? ["-q", "-r", output.path, "."] : [target == .gzip ? "-czf" : "-cf", output.path, "-C", contents.path, "."]
             _ = try ProcessRunner.checked(URL(fileURLWithPath: target == .zip ? "/usr/bin/zip" : "/usr/bin/tar"), arguments, directory: contents)
         } else if source.format.category == "Spreadsheets" && source.format != .xls {
             let sheets = try Spreadsheet.read(source, scratch: scratch)
-            guard !sheets.isEmpty else { throw ConversionError.invalid("В книге нет доступных листов.") }
+            guard !sheets.isEmpty else { throw ConversionError.invalid("The workbook has no available sheets.") }
             if target == .csv || target == .tsv {
                 let folder = scratch.appendingPathComponent("sheets", isDirectory: true)
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
@@ -55,14 +67,15 @@ public struct ConversionEngine: Sendable {
                 try NativeDocuments.writePDF(NSAttributedString(string: text, attributes: [.font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)]), output: output)
             } else { try Spreadsheet.write(sheets, to: target, output: output, scratch: scratch) }
         } else if [.ppt, .pptx, .pages, .xls].contains(source.format) {
-            guard let office = tools.office else { throw ConversionError.unsupported("Для этого формата нужен LibreOffice.") }
+            guard let office = tools.office else { throw ConversionError.unsupported("LibreOffice is required for this format.") }
+            // A per-job profile avoids attaching to another LibreOffice instance or sharing its mutable state.
             let profile = scratch.appendingPathComponent("office-profile").absoluteString
             let officeOutput = scratch.appendingPathComponent("office-output", isDirectory: true)
             try FileManager.default.createDirectory(at: officeOutput, withIntermediateDirectories: false)
             let officeTarget: FileFormat = target == .jpg || target == .png ? .pdf : target
             _ = try ProcessRunner.checked(office, ["-env:UserInstallation=" + profile, "--headless", "--convert-to", officeTarget.rawValue, "--outdir", officeOutput.path, source.url.path])
             let converted = officeOutput.appendingPathComponent(stem + "." + officeTarget.rawValue)
-            guard FileManager.default.fileExists(atPath: converted.path) else { throw ConversionError.failed("LibreOffice не создал результат.") }
+            guard FileManager.default.fileExists(atPath: converted.path) else { throw ConversionError.failed("LibreOffice did not create an output file.") }
             if target == .jpg || target == .png { multiple = try NativeDocuments.pdfPages(converted, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true)) }
             else { try FileManager.default.moveItem(at: converted, to: output) }
         } else {
@@ -87,18 +100,20 @@ public struct ConversionEngine: Sendable {
         return [try FileOperations.publish(output, named: stem + "." + target.fileExtension, in: directory)]
     }
 
+    // Exit status alone is insufficient: reopen the result to catch empty files or a wrong container.
     private func validate(_ output: URL, format: FileFormat) throws {
-        guard let size = try output.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 0 else { throw ConversionError.failed("Движок создал пустой результат.") }
+        guard let size = try output.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > 0 else { throw ConversionError.failed("The engine created an empty output file.") }
         let detected = try SourceFile(url: output).format
         // Markdown and delimited text have no unique signature; their writers are checked structurally.
         if [.txt, .md, .csv, .tsv].contains(format) { return }
-        guard detected == format else { throw ConversionError.failed("Движок создал \(detected.label) вместо \(format.label).") }
+        guard detected == format else { throw ConversionError.failed("The engine created \(detected.label) instead of \(format.label).") }
     }
 
     private static let imageWriters = Set((CGImageDestinationCopyTypeIdentifiers() as? [String]) ?? [])
     private static let encoderCache = EncoderCache()
     private func supported(_ source: SourceFile, _ target: FileFormat) -> Bool {
         if supported(source.format, target) { return true }
+        // Native support varies with the actual asset, so the fallback cannot rely on its extension alone.
         guard source.format != target, candidates(source.format).contains(target), ["Audio", "Video"].contains(source.format.category) else { return false }
         return NativeMedia.supports(source, to: target)
     }
@@ -124,6 +139,7 @@ public struct ConversionEngine: Sendable {
         }
     }
 
+    // Keep route ordering separate from runtime checks; listing a candidate must not bypass availability gates.
     private func candidates(_ source: FileFormat) -> [FileFormat] {
         switch source {
         case .jpg, .png, .webp, .heic, .tiff, .svg, .avif, .bmp: return [.jpg, .png, .webp, .heic, .tiff, .avif, .bmp, .pdf]
@@ -147,9 +163,10 @@ public struct ConversionEngine: Sendable {
 
     private static let audioEncoders: [FileFormat: String] = [.mp3: "libmp3lame", .m4a: "aac", .wav: "pcm_s16le", .flac: "flac", .ogg: "libvorbis", .opus: "libopus", .aiff: "pcm_s16be", .wma: "wmav2"]
     private func media(_ source: SourceFile, to target: FileFormat, output: URL) throws {
-        guard let ffmpeg = tools.ffmpeg else { throw ConversionError.unsupported("FFmpeg не найден.") }
+        guard let ffmpeg = tools.ffmpeg else { throw ConversionError.unsupported("FFmpeg was not found.") }
         var arguments = ["-hide_banner", "-nostdin", "-loglevel", "error", "-n", "-i", source.url.path]
         if let audio = Self.audioEncoders[target] {
+            // Audio exports intentionally select the first audio stream and discard video/cover-art streams.
             arguments += ["-map", "0:a:0", "-vn", "-c:a", audio]
             if [.mp3, .m4a, .ogg, .opus, .wma].contains(target) { arguments += ["-b:a", "192k"] }
         } else if target == .webp || target == .avif {
@@ -157,8 +174,10 @@ public struct ConversionEngine: Sendable {
         } else if target == .gif {
             arguments += ["-an", "-vf", "fps=15,scale=960:-2:force_original_aspect_ratio=decrease", "-loop", "0"]
         } else if target == .webm {
+            // WebM requires compatible video and audio encoders; container support alone is not enough.
             arguments += ["-c:v", "libvpx-vp9", "-crf", "30", "-b:v", "0", "-c:a", encoder("libopus") ? "libopus" : "libvorbis"]
         } else {
+            // Even dimensions and 4:2:0 pixels avoid encoder failures on odd-sized source frames.
             arguments += ["-c:v", target == .wmv ? "wmv2" : "mpeg4", "-q:v", "3", "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:a", target == .wmv ? "wmav2" : target == .avi ? "mp3" : "aac"]
         }
         arguments.append(output.path)
@@ -166,6 +185,7 @@ public struct ConversionEngine: Sendable {
     }
 }
 
+/// Serializes encoder discovery and caches it by executable path so target updates do not spawn repeated probes.
 private final class EncoderCache: @unchecked Sendable {
     private let lock = NSLock()
     private var cache: [URL: Set<String>] = [:]

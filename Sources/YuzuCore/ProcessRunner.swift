@@ -1,12 +1,17 @@
 import Foundation
 import Darwin
 
+/// Exit status and the bounded UTF-8 tail of merged stdout/stderr, intended for diagnostics rather than binary data.
 struct ProcessResult {
     let status: Int32
     let output: String
 }
 
+/// Runs an executable directly with argument arrays, avoiding shell interpretation of user-supplied paths.
+/// Blocking process waits belong on a background task; cancellation/timeout terminates the direct child.
 enum ProcessRunner {
+    /// Drains output while waiting so a verbose tool cannot fill its pipe and deadlock the conversion.
+    /// Cancellation observed while polling throws CancellationError; timeouts throw; nonzero exits remain inspectable.
     static func run(_ executable: URL, _ arguments: [String], directory: URL? = nil, timeout: TimeInterval = 300) throws -> ProcessResult {
         try Task.checkCancellation()
         let process = Process()
@@ -14,6 +19,7 @@ enum ProcessRunner {
         process.arguments = arguments
         process.currentDirectoryURL = directory
         var environment = ProcessInfo.processInfo.environment
+        // Backend diagnostics stay English even when the application UI uses a different language.
         environment["LC_ALL"] = "en_US.UTF-8"
         process.environment = environment
         let pipe = Pipe()
@@ -28,6 +34,7 @@ enum ProcessRunner {
         while process.isRunning {
             if Task.isCancelled || Date() >= deadline {
                 cancelled = Task.isCancelled
+                // Give the tool a short cleanup window, then kill it so a cancelled job cannot wait indefinitely.
                 process.terminate()
                 let terminationDeadline = Date().addingTimeInterval(2)
                 while process.isRunning && Date() < terminationDeadline { Thread.sleep(forTimeInterval: 0.01) }
@@ -40,10 +47,11 @@ enum ProcessRunner {
         pipe.fileHandleForReading.readabilityHandler = nil
         buffer.append(pipe.fileHandleForReading.readDataToEndOfFile())
         if cancelled { throw CancellationError() }
-        if Date() >= deadline { throw ConversionError.failed("Движок не завершил обработку за \(Int(timeout)) секунд.") }
+        if Date() >= deadline { throw ConversionError.failed("The engine did not finish processing within \(Int(timeout)) seconds.") }
         return ProcessResult(status: process.terminationStatus, output: buffer.string)
     }
 
+    /// Converts a nonzero exit into a concise diagnostic; successful output is still the bounded merged log tail.
     static func checked(_ executable: URL, _ arguments: [String], directory: URL? = nil) throws -> String {
         let result = try run(executable, arguments, directory: directory)
         guard result.status == 0 else {
@@ -53,6 +61,7 @@ enum ProcessRunner {
     }
 }
 
+/// Pipe callbacks and the waiting task share this buffer; its lock protects a fixed-size diagnostic tail.
 private final class ProcessBuffer: @unchecked Sendable {
     private let lock = NSLock()
     private var data = Data()
@@ -67,6 +76,8 @@ private final class ProcessBuffer: @unchecked Sendable {
     }
 }
 
+/// Optional backend locations, not proof that an executable has every required codec or permission.
+/// Sandboxed releases accept bundled tools only; environment/Homebrew discovery is for development builds.
 struct Tools: Sendable {
     let ffmpeg: URL?
     let ffprobe: URL?
