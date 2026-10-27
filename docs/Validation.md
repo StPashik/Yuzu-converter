@@ -2,6 +2,26 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.2.0 — in-app updates (release preparation)
+
+Fresh local checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
+
+| Check | Recorded result |
+| --- | --- |
+| Native arm64 Swift tests | 34 passed, 0 failed, 0 skipped: 22 Core and 12 App tests |
+| Intel XCTest under Rosetta | 34 passed, 0 failed, 0 skipped after a separate x86_64 build |
+| Updater lifecycle | Tests verify queue deferral, one-time resumption, cancellation cleanup, and the actual optional Sparkle delegate selectors |
+| Node installer tests | 16 passed, including approved framework symlinks, rejection of unsafe paths/links, 0.1.2-to-0.2.0 upgrade, and preservation of newer in-app updates |
+| Localization | All five tables have 60 matching keys and compatible placeholders; compact wheel captions still fit |
+| Release apps | Both architecture ZIPs passed Info.plist/lipo and deep strict codesign, including the Sparkle framework and nested helpers |
+| Signed Sandbox self-checks | Both apps loaded Sparkle and all five languages, then passed the existing conversion/ZIP self-checks |
+| Final ZIP installation | Both archives installed into temporary homes; native version 0.2.0 and codesign passed |
+| npm package | Prepack passed with final pinned ZIP hashes; 7 files, no npm dependencies |
+
+Independent source review covered the shared controller, optional delegate contracts, abort recovery, busy queue/restart handling, Sandbox configuration, signing order, archive aliases, and prevention of npm downgrades. Reported issues were fixed before final builds/tests.
+
+Archive/feed signing is waiting for the owner's macOS Keychain authorization of `sign_update`. Signed-feed HTTP probes, public release verification, and installation of the published version remain pending. The private signing key stays in the login Keychain, not Git or release assets. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
+
 ## v0.1.2 — wheel input fix
 
 The owner reported that neither wheel appeared during file dragging with Shift/Control. The running `/Applications/Yuzu Converter.app` was 0.1.1 and matched the npm-installed binary; wheels were enabled. An AppKit probe reproduced the cause on this Mac: an armed panel with a fully clear background was visible but absent from WindowServer hit-testing. The same panel with a 1% black background received the hit.

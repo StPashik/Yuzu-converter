@@ -49,9 +49,17 @@ AppKit owns system sharing, pasteboard, workspace calls, and dialogs. Persist fi
 
 ## npm and GitHub Releases
 
-A small Node installer and launch command select the declared macOS architecture, download exactly their package version from `StPashik/Yuzu-converter`, verify a pinned SHA-256, and install the app into `~/Applications` using system `ditto`. Keep the existing app until the replacement is ready. Do not execute downloaded shell scripts.
+A small Node installer and launch command select the declared macOS architecture, download their package version from `StPashik/Yuzu-converter` when needed, verify a pinned SHA-256, and install the app into `~/Applications` using system `ditto`. Preserve the same or a newer installed numeric release so an old launcher cannot undo a Sparkle update. Keep the existing app until the replacement is ready. Do not execute downloaded shell scripts.
 
 A release contains app ZIPs, the npm `.tgz`, checksums, and license notices. The `.tgz` can be installed by release URL without npm registry publication. Generate checksums from the final archives and check package version/tag/asset names. Describe architecture support, signing, and notarization only after validating the actual artifacts.
+
+## In-app updates
+
+Version 0.2.0 adds a shared `AppUpdater` to the menu and Settings. Sparkle 2.10.1 owns network checks, update UI, Ed25519 verification, installation, and relaunch. Checks are manual and installation requires user confirmation. Each architecture reads its signed appcast from the repository's `main/updates` path. Both the feed and archive must verify against the public key embedded in the app, before archive extraction.
+
+Postpone relaunch while the file queue is nonempty. When the queue drains, stop new drags/jobs before resuming Sparkle's installation handler. A finished/cancelled/failed cycle clears the retained handler and restores the monitor if the application is still alive. Normal termination retains its cancellation/cleanup safety net.
+
+The Sandbox app enables outgoing network access, the Installer launcher service, and its two mach lookups. Sign helper tools inside out, preserving service entitlements. Ad-hoc builds disable library validation solely to load the bundled dynamic framework without a Team ID. See [Updates.md](Updates.md) for key custody, per-architecture feeds, license attribution, and release commands.
 
 ## Verification
 

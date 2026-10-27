@@ -98,10 +98,30 @@ async function tool(command, args) {
 
 export function validateArchivePaths(names) {
   if (!names.length || names.length > 100000) throw new Error('Invalid archive file count.');
+  const seen = new Set();
   for (const name of names) {
     const parts = name.split('/');
-    if (parts[0] !== appName || parts.some(part => part === '..' || part === '.') || /[\\\u0000-\u001f\u007f]/.test(name)) {
+    if (parts[0] !== appName || parts.some(part => part === '..' || part === '.') ||
+        parts.slice(0, -1).some(part => part === '') || /[\\\u0000-\u001f\u007f]/.test(name)) {
       throw new Error(`Unsafe application archive path: ${JSON.stringify(name)}`);
+    }
+    const key = name.replace(/\/$/, '').normalize('NFC').toLowerCase();
+    if (seen.has(key)) throw new Error('Duplicate application archive path.');
+    seen.add(key);
+  }
+}
+
+export function validateSparkleLinks(names, links) {
+  const framework = `${appName}/Contents/Frameworks/Sparkle.framework/`;
+  const approved = new Map(['Autoupdate', 'Headers', 'Modules', 'PrivateHeaders', 'Resources', 'Sparkle', 'Updater.app', 'XPCServices']
+    .map(name => [framework + name, `Versions/Current/${name}`]));
+  approved.set(framework + 'Versions/Current', 'B');
+  for (const [name, target] of links) {
+    if (approved.get(name) !== target) throw new Error('Only canonical Sparkle framework symbolic links are allowed.');
+    // No archive member may write through an alias, even when that alias points inside the app.
+    const prefix = name.normalize('NFC').toLowerCase() + '/';
+    if (names.some(entry => entry.normalize('NFC').toLowerCase().startsWith(prefix))) {
+      throw new Error('An application archive entry descends through a symbolic link.');
     }
   }
 }
@@ -111,10 +131,16 @@ async function validateArchive(path) {
   validateArchivePaths(names);
   const listing = await tool('/usr/bin/zipinfo', ['-l', path]);
   const entries = listing.split('\n').filter(line => /^[^ ]{10}\s/.test(line));
-  // ditto would otherwise follow an archive symlink before we could inspect the extracted tree.
-  if (entries.length !== names.length || entries.some(line => !/^[-d][rwxstST?-]{9}\s/.test(line))) {
-    throw new Error('Application archives may contain only regular files and directories.');
+  if (entries.length !== names.length || entries.some((line, i) => !/^[-dl][rwxstST?-]{9}\s/.test(line) || !line.endsWith(' ' + names[i]))) {
+    throw new Error('Application archives may contain only regular files and directories, plus canonical Sparkle links.');
   }
+  const links = new Map();
+  for (let i = 0; i < entries.length; i++) {
+    if (!entries[i].startsWith('l')) continue;
+    const result = await run('/usr/bin/unzip', ['-p', path, names[i]], { maxBuffer: 4096, timeout: 30000 });
+    links.set(names[i], result.stdout);
+  }
+  validateSparkleLinks(names, links);
   const totals = listing.match(/(\d+) files?, (\d+) bytes uncompressed/);
   if (!totals || Number(totals[1]) !== names.length || Number(totals[2]) > maxArchiveBytes) {
     throw new Error('Invalid or oversized expanded application archive.');
@@ -145,6 +171,17 @@ export function applicationPath(home = homedir()) {
   return join(home, 'Applications', appName);
 }
 
+function isAtLeastVersion(installed, requested) {
+  // shortcut: releases use three numeric components; use semver if prerelease version strings are introduced.
+  if (![installed, requested].every(value => /^\d+\.\d+\.\d+$/.test(value))) return false;
+  const left = installed.split('.').map(BigInt);
+  const right = requested.split('.').map(BigInt);
+  for (let i = 0; i < left.length; i++) {
+    if (left[i] !== right[i]) return left[i] > right[i];
+  }
+  return true;
+}
+
 export async function install({ manifest = releaseInfo, home = homedir(), platform = process.platform, arch = process.arch, fetchAsset = download, log = console.log } = {}) {
   const asset = selectAsset(manifest, platform, arch);
   if (platform === process.platform && Number(systemRelease().split('.')[0]) < 22) throw new Error('Yuzu Converter requires macOS 13 or later.');
@@ -154,9 +191,13 @@ export async function install({ manifest = releaseInfo, home = homedir(), platfo
   await mkdir(applications, { recursive: true });
   await requireDirectory(applications);
   const current = await statOrNull(destination);
-  if (current && await validateApplication(destination) === manifest.version) {
-    log(`Yuzu Converter ${manifest.version} is already installed in ${destination}.`);
-    return destination;
+  if (current) {
+    const installed = await validateApplication(destination);
+    if (isAtLeastVersion(installed, manifest.version)) {
+      // An older npm launcher must never undo a newer in-app update.
+      log(`Yuzu Converter ${installed} is already installed in ${destination}.`);
+      return destination;
+    }
   }
 
   const stage = await mkdtemp(join(applications, '.yuzu-install-'));

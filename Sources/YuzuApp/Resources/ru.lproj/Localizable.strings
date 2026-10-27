@@ -56,3 +56,6 @@
 "Copy full file paths, one per line." = "Скопировать полные пути к файлам, каждый с новой строки.";
 "Open Terminal in the selected folder or the file’s parent folder." = "Открыть Terminal в выбранной папке или в папке, где находится файл.";
 "Create one ZIP beside the first selected item. Originals stay in place." = "Создать один ZIP-архив рядом с первым выбранным объектом. Оригиналы останутся на месте.";
+"Check for Updates…" = "Проверить обновления…";
+"The update will install when file operations finish." = "Обновление установится после завершения операций с файлами.";
+"Updates are checked only when you ask. Installation requires your confirmation." = "Обновления проверяются только по вашему запросу. Установка требует подтверждения.";

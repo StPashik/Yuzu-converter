@@ -62,6 +62,8 @@ App-owned UI refreshes live when the setting changes. The app-scoped `AppleLangu
 
 ## Build and release checklist
 
+`AppUpdater.swift` shares the updater between the menu and Settings, retains a postponed installation while jobs run, and restores drag monitoring after cancellation/failure. Its delegate selector tests protect against silently mistyping optional Objective-C methods in Swift. Read [Updates.md](Updates.md) before signing a release; the private signing key stays in Keychain.
+
 - Work on `feature/*` from `develop`; obtain independent QA, merge with `--no-ff`, and reserve `main`/tags for releases. Never force-push or rewrite published tags/assets.
 - Check package/plist versions, minimum macOS, both architectures, five-table key/placeholder parity, English fallback, live UI updates, and copied release resources. Keep physical checks explicitly deferred until performed.
 - Run automated checks in separate scratch paths; do not share a Swift build directory between parallel runs:
@@ -80,6 +82,7 @@ The armed-wheel regression test uses the public WindowServer hit-test API. Run t
 bash scripts/build-app.sh arm64
 bash scripts/build-app.sh x64
 node scripts/prepare-npm.mjs dist
+node scripts/prepare-updates.mjs dist
 npm pack --pack-destination dist
 ```
 
