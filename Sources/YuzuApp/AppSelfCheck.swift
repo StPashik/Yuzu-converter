@@ -1,4 +1,6 @@
 import Foundation
+import CoreGraphics
+import ImageIO
 import YuzuCore
 
 /// Exercises child-process grants inside the signed app using only its own temporary files.
@@ -11,6 +13,30 @@ enum AppSelfCheck {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         let engine = ConversionEngine()
+        // Exercise a real output profile inside the signed Sandbox, including descriptive metadata removal.
+        let tagged = root.appendingPathComponent("tagged.tiff")
+        guard let pixels = CGContext(data: nil, width: 8, height: 4, bitsPerComponent: 8, bytesPerRow: 0,
+                                     space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let destination = CGImageDestinationCreateWithURL(tagged as CFURL, "public.tiff" as CFString, 1, nil) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        pixels.setFillColor(CGColor(red: 0.2, green: 0.5, blue: 0.8, alpha: 1))
+        pixels.fill(CGRect(x: 0, y: 0, width: 8, height: 4))
+        guard let image = pixels.makeImage() else { throw CocoaError(.fileWriteUnknown) }
+        CGImageDestinationAddImage(destination, image, [kCGImagePropertyGPSDictionary: [
+            kCGImagePropertyGPSLatitude: 51.5, kCGImagePropertyGPSLatitudeRef: "N"
+        ]] as CFDictionary)
+        guard CGImageDestinationFinalize(destination),
+              let taggedSource = CGImageSourceCreateWithURL(tagged as CFURL, nil),
+              let taggedProperties = CGImageSourceCopyPropertiesAtIndex(taggedSource, 0, nil) as? [String: Any],
+              taggedProperties[kCGImagePropertyGPSDictionary as String] != nil else { throw CocoaError(.fileReadCorruptFile) }
+        let original = try Data(contentsOf: tagged)
+        let jpeg = try await engine.convert(SourceFile(url: tagged), to: .jpg, in: root,
+                                            options: .init(quality: .compact, preserveMetadata: false))[0]
+        guard let clean = CGImageSourceCreateWithURL(jpeg as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(clean, 0, nil) as? [String: Any],
+              properties[kCGImagePropertyGPSDictionary as String] == nil,
+              try Data(contentsOf: tagged) == original else { throw CocoaError(.fileReadCorruptFile) }
         let text = root.appendingPathComponent("sample.txt")
         try "Yuzu sandbox check".write(to: text, atomically: true, encoding: .utf8)
         let docx = try await engine.convert(SourceFile(url: text), to: .docx, in: root)[0]
@@ -33,6 +59,6 @@ enum AppSelfCheck {
         guard process.terminationStatus == 0 else { throw CocoaError(.executableRuntimeMismatch) }
         let tar = try await engine.convert(SourceFile(url: zip), to: .tar, in: root)[0]
         _ = try await engine.convert(SourceFile(url: tar), to: .zip, in: root)
-        _ = try FileOperations.compress([text, csv], in: root)
+        _ = try FileOperations.compress([text, csv], in: root, compression: .maximum)
     }
 }

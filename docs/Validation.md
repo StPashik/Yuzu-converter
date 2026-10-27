@@ -2,6 +2,35 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.3.0 — Settings and output profiles
+
+Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
+
+| Check | Recorded result |
+| --- | --- |
+| Native arm64 Swift tests | 61 passed, 0 failed, 0 skipped: 37 Core and 24 App tests |
+| Intel XCTest under Rosetta | 61 passed, 0 failed, 0 skipped from the separately built x86_64 test bundle |
+| Native Settings renders | 64 PNGs: every tab/language/appearance plus seven additional format editors in both appearances; representative layouts reviewed independently |
+| Localization | 168 matching keys parsed in each of five tables; unit placeholder/fallback/label checks passed |
+| Profiles and shortcuts | Isolated preference persistence/reset, immutable snapshots, legacy swap migration, duplicate assignment swaps, full chords, Caps Lock/Fn handling, and Escape suppression passed |
+| Wheel material/feedback | Backdrop does not intercept hits, selected petal is excluded from its mask, Solid hides it, and repeated same-sector updates emit no extra feedback |
+| Encoder fixtures | Actual quality/metadata/orientation/color, 300-DPI pages, PCM depths and exact Int32 low bits, Float64 rejection, AAC bitrate, portrait video caps, archive compression, EPUB versions, and no-publication on invalid layouts passed |
+| Developer encoders | Optional FFmpeg/FFprobe fixtures actually ran and passed, including GIF sizing/rate and global/stream/chapter metadata removal; these are not packaged app capabilities |
+| Node installer tests | 16 passed, 0 failed, 0 skipped, including 0.2.1-to-0.3.0 upgrade and newer-version preservation |
+| Signed release apps | Both architecture builds passed plist/lipo and deep strict codesign checks |
+| Signed Sandbox self-checks | Both architectures passed the existing conversion/ZIP checks plus a real metadata-off image profile and maximum ZIP compression in private temporary directories |
+| Update signing | Both final archive signatures independently verified; both appcasts signed and verified with build 6 / version 0.3.0 |
+| Final artifacts | Both final ZIPs installed into temporary homes; native version 0.3.0 and codesign passed; manifest hashes, build/feed/key, license copies, and all five resource tables matched the archives |
+| npm package | Prepack passed against final hashes; 7 files, no dependencies; final artifact checksums recorded in Release-checksums-0.3.0.txt |
+
+The first targeted Settings suite passed 6/6. A later full native run passed 59/60 and exposed a real native-video metadata leak: assigning an empty export metadata array still retained the source title. A fresh media-only composition fixed that path; the unchanged assertion was strengthened for unresized MOV as well as resized MP4. The targeted regression then passed, followed by both complete 60/60 suites before the final playback-state audit. Assertions were not weakened.
+
+A final independent audit found that rebuilt tracks could become enabled, and that copied volume tags alone did not preserve mute during export. Tracks now retain their enabled state, and every native-video audio track gets an explicit validated mix in both metadata modes. A genuine disabled-video/hidden-commentary fixture checks mute and half gain, including nonempty audible output; its PCM decoder validates little-endian Float32 rather than misreading big-endian samples. The strict audibility assertions passed, followed by both final 61/61 suites.
+
+Independent QA also found and fixed Int32 precision loss through Float32 processing and incomplete developer FFmpeg metadata removal. Regression fixtures compare actual nonzero low-bit PCM samples and tagged global/stream/chapter output. UI review corrected clipped search placeholders, inherited XCTest version text, About icon corners, duplicate login errors, and status refresh after returning from System Settings. General scrolling and inactive native-control coloring are intentional; the development preview does not establish active-window Glass compositing or VoiceOver behavior.
+
+The five Tangerine pages were observed separately through REA; [Tangerine-settings.md](Tangerine-settings.md) preserves evidence IDs and unknowns. No original preference values, grants, artwork, sounds, pseudocode, binaries, or source were imported. [Settings.md](Settings.md) explains Yuzu's own numeric mappings and route-dependent limits. Physical Finder/Powerbox/bookmark recovery, ancestor child-scope derivation, login-item approval, real terminal/AirDrop use, haptics/VoiceOver, Intel hardware, macOS 13, and a full interactive Sparkle install/relaunch remain unverified. The preview remains ad-hoc signed without notarization.
+
 ## v0.2.1 — Yuzu wheel appearance
 
 At the owner's explicit request, the old Yuzu Mac App wheel was read only as a design reference and its appearance was applied to the current AppKit implementation. [Wheel-design.md](Wheel-design.md) records dimensions, colors, typography, motion, and native rendered previews. No old engines, settings, source modules, history, or caches were imported.
@@ -20,10 +49,14 @@ Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Final ZIP installation | Both archives installed into temporary homes; native version 0.2.1 and codesign passed |
 | Update signing | Both archives independently verified against the embedded public key; both appcasts signed and verified, using build 5 / short version 0.2.1 |
 | npm package | Prepack accepted final ZIP hashes; 7 files, no npm dependencies |
+| Published release | English notes matched the reviewed file; all eight GitHub-reported asset digests matched local artifacts, and both live feeds matched the signed XML byte for byte |
+| Live update checks | Real arm64/x86_64 Sparkle probes accepted the production feeds/key: build 4 found build 5 available; build 5 reported current on both architectures. These probes did not download or install updates |
+| Public installation | npm 12.2.1 upgraded the published launcher/home app to 0.2.1; the same verified installer upgraded `/Applications`. CLI/native versions are 0.2.1 and both installed apps passed deep strict codesign |
+| Active application | The old installed instance quit gracefully; `/Applications/Yuzu Converter.app` was launched with the new design. The saved Russian language remained selected |
 
 The first targeted wheel run passed 7/7. A later full native run passed 35 tests but failed the WindowServer gate while the hit belonged to `loginwindow`; a separate layered/non-layered control probe saw the same owner. After the owner confirmed the Mac was unlocked, both complete suites passed 36/36. The assertion and product input handling were not weakened to bypass this environment condition.
 
-Independent read-only review found no blocker in geometry, selection reset, input validation, generation checks, access scopes, or jobs, and reviewed all four previews. Final checksums are in [Release-checksums-0.2.1.txt](Release-checksums-0.2.1.txt). Public feed/release/installed-upgrade results are recorded after publication. Physical Finder drag, VoiceOver, Powerbox recovery, external services, a full interactive Sparkle install/relaunch, Intel hardware, and macOS 13 remain unverified. The preview is ad-hoc signed without Apple notarization.
+Independent read-only review found no blocker in geometry, selection reset, input validation, generation checks, access scopes, or jobs, and reviewed all four previews. Final checksums are in [Release-checksums-0.2.1.txt](Release-checksums-0.2.1.txt). The installed upgrade used the npm installer, not a full interactive Sparkle cycle. Physical Finder drag, VoiceOver, Powerbox recovery, external services, a full interactive Sparkle install/relaunch, Intel hardware, and macOS 13 remain unverified. The preview is ad-hoc signed without Apple notarization.
 
 ## v0.2.0 — in-app updates
 

@@ -4,14 +4,14 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.2.1 brings the wheel design from Yuzu Mac App.** Rounded translucent petals, orange selection, larger format labels, and a three-line center keep the file context visible. Signed in-app updates, five interface languages, conversion, and seven Actions remain available. File tools are outside the scope of this release.
+**v0.3.0 brings a complete five-tab Settings screen.** Choose wheel style and shortcuts, manage output-folder access, select your terminal, and save real conversion defaults for each output format. Quality, metadata policy, media size/bitrate/depth, archive compression, and EPUB version now reach the encoders. File tools remain outside the scope.
 
 ## Download
 
 Requires **macOS 13 or later**. Choose your Mac:
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.1/Yuzu-Converter-0.2.1-arm64.zip)
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.1/Yuzu-Converter-0.2.1-x64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/Yuzu-Converter-0.3.0-arm64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/Yuzu-Converter-0.3.0-x64.zip)
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -23,7 +23,7 @@ See the [quick start](docs/Quick-start.md) for installation, permissions, and np
 2. Hold **Shift** for conversion or **Control** for Actions.
 3. Drop onto a wheel sector. Press **Escape** to cancel, or hold the other modifier to switch wheels.
 
-Open **Settings…** from the menu bar to swap the keys or choose whether new files join an existing shelf. Converted files are saved beside their originals under an available name. The app may ask for access to that folder the first time.
+Open **Settings… → General** to choose independent shortcut combinations, Glass/Solid style, feedback, login behavior, Terminal/iTerm2, or whether files join an existing shelf. **Formats** stores output defaults, **Compatibility** shows current routes, and **Folders** manages remembered access. Converted files stay beside their originals under an available name. See the [Settings guide](docs/Settings.md) for supported options and limits.
 
 Choose the interface language in Settings: **English** (default), **Russian**, **German**, **French**, or **Spanish**. App-owned UI updates live; some system dialogs use the new language after an app restart. Your Mac's global language is unchanged. Technical converter diagnostics, project documentation, code comments, and releases remain English.
 
@@ -31,7 +31,7 @@ Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**,
 
 ## Keep the app up to date
 
-Choose **Check for Updates…** from the menu bar or Settings. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
+Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
 See the [wheel design notes](docs/Wheel-design.md) for the visual reference and native AppKit previews.
 
@@ -54,7 +54,7 @@ The Sandbox app does not include or launch external FFmpeg/FFprobe/LibreOffice. 
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.1/stpashik-yuzu-converter-0.2.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/stpashik-yuzu-converter-0.3.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -86,6 +86,6 @@ Rebuilding an app archive requires rerunning `prepare-npm` and `npm pack`. Devel
 
 ## Project and verification
 
-The code was written from scratch after [static Tangerine research with REA](docs/TangerineResearch.md). Compress to ZIP is a separate owner-requested feature. The owner authorized reuse of the app/menu bar icons from Yuzu Mac App and an app-icon PNG for documentation only; no old source or Git history was carried over. See [component notices](THIRD_PARTY_NOTICES.md).
+The code was written from scratch after [Tangerine research with REA](docs/TangerineResearch.md), including [five observed Settings pages](docs/Tangerine-settings.md). Observed UI and static field names remain separate from unknown proprietary defaults. Compress to ZIP is a separate owner-requested feature. The owner authorized the Yuzu Mac App icons and wheel design reference; no old engines, settings, caches, source modules, or Git history were carried over. See [component notices](THIRD_PARTY_NOTICES.md).
 
 The wheel regression test exercises real WindowServer hit-testing before a drag is confirmed: it fails with the old fully transparent window and passes with the corrected background. Fresh release checks are recorded in [validation](docs/Validation.md); [app QA](docs/QA.md) and [installer QA](docs/NpmQA.md) retain historical review results. Physical Finder drag, Powerbox/bookmark recovery, AirDrop, Terminal, VoiceOver, shelf drag-out, Intel hardware, and macOS 13 remain unverified.

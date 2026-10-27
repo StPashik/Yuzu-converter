@@ -62,7 +62,8 @@ public enum FileOperations {
     /// Originals remain untouched. The destination must be outside selected folders; links, special files,
     /// and conflicting root names are rejected. Existing ZIP names receive a free numeric suffix.
     /// Call off the main thread. Cancellation cleans private staging and stops the compression process.
-    public static func compress(_ sources: [URL], in directory: URL) throws -> URL {
+    public static func compress(_ sources: [URL], in directory: URL,
+                                compression: ArchiveCompression = .balanced) throws -> URL {
         try Task.checkCancellation()
         let selected = try normalized(sources)
         var isDirectory: ObjCBool = false
@@ -94,7 +95,7 @@ public enum FileOperations {
         try rejectLinks(contents)
         let output = scratch.appendingPathComponent("result.zip")
         // -y prevents a link introduced during staging from making zip follow another tree.
-        _ = try ProcessRunner.checked(URL(fileURLWithPath: "/usr/bin/zip"), ["-q", "-r", "-y", output.path, "."], directory: contents)
+        _ = try ProcessRunner.checked(URL(fileURLWithPath: "/usr/bin/zip"), ["-q", "-r", "-y", "-\(compression.level)", output.path, "."], directory: contents)
         _ = try ArchiveReader(output).entries()
         try Task.checkCancellation()
         let name = selected.count == 1 ? selected[0].lastPathComponent + ".zip" : "Archive.zip"

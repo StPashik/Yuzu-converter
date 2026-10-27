@@ -1,28 +1,79 @@
 import AppKit
+import Combine
 
 /// Powerbox grants belong to the UI; the converter only receives usable URLs.
 @MainActor
-final class AccessStore {
+final class AccessStore: ObservableObject {
+    @Published private(set) var folders: [URL] = []
+    private let defaults: UserDefaults
     private var bookmarks: [String: Data] {
-        get { UserDefaults.standard.dictionary(forKey: "outputBookmarks") as? [String: Data] ?? [:] }
-        set { UserDefaults.standard.set(newValue, forKey: "outputBookmarks") }
+        get { (defaults.dictionary(forKey: "outputBookmarks") ?? [:]).compactMapValues { $0 as? Data } }
+        set {
+            defaults.set(newValue, forKey: "outputBookmarks")
+            refresh()
+        }
     }
 
-    /// Returns an active folder grant, or nil when the user cancels. The caller must stop the scope.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        refresh()
+    }
+
+    func refresh() {
+        folders = bookmarks.keys.filter { $0.hasPrefix("/") && !$0.contains("\0") }.sorted()
+            .map { URL(fileURLWithPath: $0, isDirectory: true) }
+    }
+
+    func forgetFolder(_ folder: URL) {
+        let path = folder.standardizedFileURL.path
+        bookmarks = bookmarks.filter { URL(fileURLWithPath: $0.key).standardizedFileURL.path != path }
+    }
+
+    func addFolder() throws {
+        let panel = NSOpenPanel()
+        panel.title = L10n.text("Folder Access")
+        panel.message = L10n.text("Allow saving in this folder and its subfolders. Originals stay in place.")
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.prompt = L10n.text("Allow Access")
+        guard panel.runModal() == .OK, let folder = panel.url else { return }
+        let active = folder.startAccessingSecurityScopedResource()
+        defer { if active { folder.stopAccessingSecurityScopedResource() } }
+        try remember(folder)
+    }
+
+    /// Returns an active grant for the actual output parent; the caller must stop that exact URL.
     func outputFolder(beside source: URL) throws -> URL? {
+        guard source.isFileURL else { throw CocoaError(.fileReadUnsupportedScheme) }
         let parent = source.deletingLastPathComponent().standardizedFileURL
-        if let data = bookmarks[parent.path] {
+        for key in bookmarks.keys.sorted(by: { $0.count > $1.count }) {
+            guard let data = bookmarks[key] else { continue }
             var stale = false
-            if let url = try? URL(resolvingBookmarkData: data, options: [.withSecurityScope],
-                                  relativeTo: nil, bookmarkDataIsStale: &stale),
-               url.startAccessingSecurityScopedResource() {
-                if Self.isParent(url, of: source) {
-                    do { if stale { try remember(url, for: parent.path) } }
-                    catch { url.stopAccessingSecurityScopedResource(); throw error }
-                    return url
-                }
-                url.stopAccessingSecurityScopedResource()
+            guard let folder = try? URL(resolvingBookmarkData: data,
+                                       options: [.withSecurityScope, .withoutUI, .withoutMounting],
+                                       relativeTo: nil, bookmarkDataIsStale: &stale),
+                  folder.startAccessingSecurityScopedResource() else { continue }
+            var transfersGrant = false
+            defer { if !transfersGrant { folder.stopAccessingSecurityScopedResource() } }
+            guard Self.contains(source, in: folder),
+                  (try? folder.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
+            if stale { try remember(folder, replacing: key) }
+            if Self.isParent(folder, of: source) {
+                transfersGrant = true
+                return folder
             }
+            // A child bookmark transfers its own scope, rather than leaking the ancestor's grant.
+            let childData = try parent.bookmarkData(options: [.withSecurityScope],
+                                                   includingResourceValuesForKeys: nil, relativeTo: nil)
+            var childStale = false
+            let child = try URL(resolvingBookmarkData: childData,
+                                options: [.withSecurityScope, .withoutUI, .withoutMounting],
+                                relativeTo: nil, bookmarkDataIsStale: &childStale)
+            guard Self.isParent(child, of: source), child.startAccessingSecurityScopedResource() else {
+                throw CocoaError(.fileWriteNoPermission)
+            }
+            return child
         }
 
         // A file drop does not grant Sandbox write access to its parent folder.
@@ -39,14 +90,22 @@ final class AccessStore {
             throw AccessError.wrongFolder(parent.lastPathComponent)
         }
         _ = url.startAccessingSecurityScopedResource()
-        do { try remember(url, for: parent.path) }
+        do { try remember(url) }
         catch { url.stopAccessingSecurityScopedResource(); throw error }
         return url
     }
 
     nonisolated static func isParent(_ directory: URL, of source: URL) -> Bool {
-        directory.standardizedFileURL.resolvingSymlinksInPath() ==
+        directory.isFileURL && source.isFileURL && directory.standardizedFileURL.resolvingSymlinksInPath() ==
         source.deletingLastPathComponent().standardizedFileURL.resolvingSymlinksInPath()
+    }
+
+    nonisolated static func contains(_ source: URL, in directory: URL) -> Bool {
+        guard directory.isFileURL, source.isFileURL else { return false }
+        let root = directory.standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        let parent = source.deletingLastPathComponent().standardizedFileURL.resolvingSymlinksInPath().pathComponents
+        // Components reject sibling prefixes; resolving both sides rejects a symlink escaping the grant.
+        return parent.count >= root.count && Array(parent.prefix(root.count)) == root
     }
 
     /// Move destinations are chosen explicitly; ownership of the returned grant transfers to the job.
@@ -62,11 +121,12 @@ final class AccessStore {
         return url
     }
 
-    private func remember(_ url: URL, for path: String) throws {
+    private func remember(_ url: URL, replacing previous: String? = nil) throws {
         let data = try url.bookmarkData(options: [.withSecurityScope],
                                         includingResourceValuesForKeys: nil, relativeTo: nil)
         var updated = bookmarks
-        updated[path] = data
+        if let previous { updated.removeValue(forKey: previous) }
+        updated[url.standardizedFileURL.path] = data
         bookmarks = updated
     }
 }

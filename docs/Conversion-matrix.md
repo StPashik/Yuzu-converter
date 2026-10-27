@@ -29,6 +29,10 @@ The current format is hidden. Mixed inputs in one internal category receive only
 
 ## Output quality and safety
 
+Output-format profiles now configure actual quality/metadata, native media size/bitrate/PCM depth, ZIP/TAR.GZ compression, and EPUB 2/3 reflow. [Settings.md](Settings.md) lists exact encoder mappings and supported fields. Plain TAR has no compression level; native PCM metadata removal, original-page EPUB, and PDF-to-Office reconstruction remain unavailable. Exposing their limitations does not remove those capability requirements. Settings' compatibility tables distinguish format-level support from media pairs requiring a compatible actual file; they are not a full candidate inventory or proof of every file/profile.
+
+The metadata-off image path applies orientation to pixels, retains color, and drops descriptive source tags. Native media and developer FFmpeg have separate metadata policies; the latter removes global/stream tags and chapters. Generated raster pages retain 300-DPI metadata. Match-source PCM rejects unsupported depths rather than silently convert them. Native video Balanced uses the system Medium preset; High selects Highest. See version-specific validation rather than assuming older fixture passes verify these new options.
+
 - PDF → JPG/PNG puts all pages in a separate folder at an actual 300 DPI. Pages exceeding 32,768 pixels per side or 64 megapixels are rejected rather than silently downscaled. Fixtures check page count, pixel dimensions, and DPI.
 - DOCX contains editable text rather than a faithful copy of complex Office layout. PDF → TXT/MD extracts existing text. Raster images are not labeled editable Office output.
 - XLSX/ODS transfer all sheets and values as string cells. Formula calculation, style/asset round-tripping, and native spreadsheet printing are not implemented.
@@ -67,7 +71,7 @@ The researched behavior and Yuzu’s implementation have separate evidence. [Tan
 | `copy` | File URLs in NSPasteboard.general | Real Clipboard/Finder paste and scope lifetime checks deferred |
 | `move` | Destination picker, queued operation, available names, deduplication/ancestor filtering. Cross-volume files compare source size/mtime before/after copying; folders are refused before copying | Core fixtures exist; physical picker/Sandbox checks deferred; no content-hash guarantee |
 | `copyPath` | Paths as newline-separated text | Real system paste targets not manually tested |
-| `openTerminal` | NSWorkspace + Terminal; the directory itself or a file/package’s parent; deduplicate folders | Folder-mapping fixture exists; real Terminal/Sandbox check deferred |
-| Compress to ZIP | One archive beside the first input, available name, originals preserved | Owner-requested feature; creation/cancellation fixtures and signed Sandbox self-check passed for v0.1.1 |
+| `openTerminal` | NSWorkspace + selected Terminal/iTerm2; the directory itself or a file/package’s parent; deduplicate folders | Folder-mapping and bundle-ID fixtures exist; real terminal/Sandbox checks deferred |
+| Compress to ZIP | One archive beside the first input, ZIP compression profile, available name, originals preserved | Owner-requested feature; version-specific creation/cancellation/compression fixtures and Sandbox results are recorded in Validation |
 
 Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual parity are not established. The owner deferred new manual Finder/Sandbox/AirDrop/Terminal checks; those checks remain open in the preview.

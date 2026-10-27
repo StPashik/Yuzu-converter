@@ -8,10 +8,10 @@ import ImageIO
 enum NativeDocuments {
     /// Writes all readable image frames to PDF/TIFF; other raster outputs use the first frame.
     /// PDF creation applies EXIF orientation at full pixel resolution before choosing its page bounds.
-    static func image(_ source: URL, to target: FileFormat, output: URL) throws {
+    static func image(_ source: URL, to target: FileFormat, output: URL, options: ConversionOptions = .init()) throws {
         guard let imageSource = CGImageSourceCreateWithURL(source as CFURL, nil), CGImageSourceGetCount(imageSource) > 0 else {
             if let image = NSImage(contentsOf: source), let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) {
-                try writeImage(cgImage, to: target, output: output)
+                try writeImage(cgImage, to: target, output: output, options: options)
                 return
             }
             throw ConversionError.invalid("Could not decode the image.")
@@ -22,14 +22,7 @@ enum NativeDocuments {
             defer { context.closePDF() }
             for index in 0..<count {
                 try Task.checkCancellation()
-                guard let properties = CGImageSourceCopyPropertiesAtIndex(imageSource, index, nil) as? [String: Any],
-                      let width = properties[kCGImagePropertyPixelWidth as String] as? NSNumber,
-                      let height = properties[kCGImagePropertyPixelHeight as String] as? NSNumber else { throw ConversionError.invalid("Could not read the image dimensions.") }
-                // ImageIO applies EXIF rotation while keeping the original pixel resolution.
-                let options = [kCGImageSourceCreateThumbnailFromImageAlways: true,
-                               kCGImageSourceCreateThumbnailWithTransform: true,
-                               kCGImageSourceThumbnailMaxPixelSize: max(width.intValue, height.intValue)] as CFDictionary
-                guard let image = CGImageSourceCreateThumbnailAtIndex(imageSource, index, options) else { throw ConversionError.invalid("The image page is corrupted.") }
+                let image = try orientedImage(imageSource, at: index)
                 var bounds = CGRect(x: 0, y: 0, width: image.width, height: image.height)
                 let box = NSData(bytes: &bounds, length: MemoryLayout<CGRect>.size)
                 context.beginPDFPage([kCGPDFContextMediaBox as String: box] as CFDictionary)
@@ -43,13 +36,22 @@ enum NativeDocuments {
         guard let destination = CGImageDestinationCreateWithURL(output as CFURL, identifier as CFString, frames, nil) else { throw ConversionError.failed("ImageIO cannot write \(target.label).") }
         for index in 0..<frames {
             try Task.checkCancellation()
-            CGImageDestinationAddImageFromSource(destination, imageSource, index, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
+            if options.preserveMetadata {
+                CGImageDestinationAddImageFromSource(destination, imageSource, index,
+                                                    [kCGImageDestinationLossyCompressionQuality: options.quality.imageQuality] as CFDictionary)
+            } else {
+                // Re-encode pixels, not source properties: drop EXIF/GPS/IPTC while retaining color and displayed orientation.
+                let image = try orientedImage(imageSource, at: index)
+                CGImageDestinationAddImage(destination, image,
+                                           [kCGImageDestinationLossyCompressionQuality: options.quality.imageQuality] as CFDictionary)
+            }
         }
         guard CGImageDestinationFinalize(destination) else { throw ConversionError.failed("Could not write the image.") }
     }
 
     /// Encodes one decoded image. Raster DPI is metadata; the supplied pixel dimensions are not resampled here.
-    static func writeImage(_ image: CGImage, to target: FileFormat, output: URL, dpi: Double = 72) throws {
+    static func writeImage(_ image: CGImage, to target: FileFormat, output: URL, dpi: Double = 72,
+                           options: ConversionOptions = .init()) throws {
         if target == .pdf {
             var box = CGRect(x: 0, y: 0, width: image.width, height: image.height)
             guard let context = CGContext(output as CFURL, mediaBox: &box, nil) else { throw ConversionError.failed("Could not create the PDF.") }
@@ -58,14 +60,15 @@ enum NativeDocuments {
         }
         guard let identifier = target.imageType,
               let destination = CGImageDestinationCreateWithURL(output as CFURL, identifier as CFString, 1, nil) else { throw ConversionError.unsupported("No writer is available for \(target.label).") }
-        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: 0.9, kCGImagePropertyDPIWidth: dpi, kCGImagePropertyDPIHeight: dpi] as CFDictionary)
+        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: options.quality.imageQuality, kCGImagePropertyDPIWidth: dpi, kCGImagePropertyDPIHeight: dpi] as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { throw ConversionError.failed("Could not finish writing the image.") }
     }
 
     /// Renders every PDF page at 300 DPI into a new staging folder and returns its ordered file URLs.
     /// Page size/rotation controls pixel dimensions. Oversized pages fail instead of silently reducing DPI;
     /// the caller discards the whole staging folder if a later page fails or cancellation is requested.
-    static func pdfPages(_ source: URL, to target: FileFormat, directory: URL) throws -> [URL] {
+    static func pdfPages(_ source: URL, to target: FileFormat, directory: URL,
+                         options: ConversionOptions = .init()) throws -> [URL] {
         guard let document = CGPDFDocument(source as CFURL), !document.isEncrypted || document.isUnlocked, document.numberOfPages > 0 else {
             throw ConversionError.invalid("The PDF is corrupted, empty, or password protected.")
         }
@@ -92,10 +95,26 @@ enum NativeDocuments {
             context.drawPDFPage(page)
             guard let image = context.makeImage() else { throw ConversionError.failed("Could not render page \(index).") }
             let output = directory.appendingPathComponent(String(format: "Page %03d.%@", index, target.fileExtension))
-            try writeImage(image, to: target, output: output, dpi: 300)
+            try writeImage(image, to: target, output: output, dpi: 300, options: options)
             outputs.append(output)
         }
         return outputs
+    }
+
+    private static func orientedImage(_ source: CGImageSource, at index: Int) throws -> CGImage {
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [String: Any],
+              let width = properties[kCGImagePropertyPixelWidth as String] as? NSNumber,
+              let height = properties[kCGImagePropertyPixelHeight as String] as? NSNumber else {
+            throw ConversionError.invalid("Could not read the image dimensions.")
+        }
+        // Applying the transform at full resolution also works for formats that cannot store EXIF orientation.
+        let options = [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                       kCGImageSourceCreateThumbnailWithTransform: true,
+                       kCGImageSourceThumbnailMaxPixelSize: max(width.intValue, height.intValue)] as CFDictionary
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, index, options) else {
+            throw ConversionError.invalid("The image page is corrupted.")
+        }
+        return image
     }
 
     /// Reads text/basic formatting, parses Markdown, or extracts an existing PDF text layer without OCR.

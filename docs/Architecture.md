@@ -21,6 +21,12 @@ The owner authorized reuse of the app icon `Resources/YuzuAppIcon.icns` and menu
 
 ## Format catalog and engines
 
+`ConversionOptions` is a Codable/Sendable value, validated against the output format before encoding. Settings stores profiles by stable output-format identifier, and `PendingJob` captures a value copy before queueing; ZIP Actions use the ZIP compression profile. Defaults, encoder mappings, supported fields, and unavailable layouts are explicit in [Settings.md](Settings.md). Metadata removal is an encoding policy with output-level fixtures, not only a saved checkbox. PCM match-source must preserve supported sample precision or reject the source depth.
+
+Native-video metadata removal rebuilds track ranges without descriptive metadata while retaining enabled state, transforms, and volume. Export also applies an explicit audio mix to every audio track in both metadata modes: copied volume tags alone do not establish actual mute/gain. Invalid source gains fail rather than clamp. The regression checks real disabled video, hidden nonzero audio, mute, and half-gain output.
+
+`ConversionEngine.availability(from:to:)` exposes the existing format-level gates to Settings without fabricating SourceFile inputs. Native media can report file-dependent availability; actual wheel targets still probe the real source. Settings performs catalogue/encoder discovery off the main actor.
+
 One catalog feeds the UI, backend selection, and fixtures. Distinguish researched candidates, implemented routes, and verified pairs. Hide the current format and intersect available routes for mixed inputs. [Conversion-matrix.md](Conversion-matrix.md) preserves the target inventory and verification limits.
 
 Prefer system ImageIO, PDFKit, and AVFoundation. Do not assume that they support every pair. Record a third-party engine’s version, architecture, license, and actual capabilities before distribution. Never take FFmpeg or other backends from Tangerine. Office/EPUB/Slides/Spreadsheets/Archives need real routes; QuickLook or text extraction does not replace editable reconstruction.
@@ -39,6 +45,12 @@ The job queue performs reading, encoding, and file work off the main thread. Upd
 
 ## Dragging, wheels, and Actions
 
+Settings uses five stable enum-identified pages and a retained resizable window. One Settings/AccessStore/AppUpdater instance is shared with the app. Closing or changing language does not recreate preferences, grants, or the updater. General reads ServiceManagement status for login registration and refreshes when the application becomes active; registration occurs only after the user toggles it.
+
+Fifteen standard modifier combinations are available. Match complete chords, ignore Caps Lock/Fn, retain a latched wheel after key release, and suppress selection after Escape until mouse release. Resolve duplicate assignments by swapping, retaining the original preview's legacy swap preference during migration.
+
+Glass uses a native masked backdrop, with the selected petal excluded to preserve its orange fill. Solid and Reduce Transparency use an opaque surface. Both share the existing geometry, accessible labels, and armed-window behavior. Feedback occurs only on entering a different nonempty sector, uses system Tink/alignment feedback, and is throttled; no proprietary sounds are bundled.
+
 Accept data through `NSDraggingDestination.draggingEntered` / `draggingUpdated` and the corresponding `draggingPasteboard`. Do not read the global drag pasteboard. A temporary destination activates on the selected modifier with a 1% black background: WindowServer excludes fully transparent pixels from hit-testing, preventing drag entry before the wheel is drawn. Draw the wheel only after a confirmed file drag. The regression test checks the armed window's actual WindowServer hit; a physical Finder integration check remains open.
 
 Shift/Control switch the current wheel; Escape closes selection. Sectors expose system accessibility beyond visual hit testing. Open settings and the shelf only on explicit user action. The exact researched semantics and unknowns for `airDrop`, `float`, `copy`, `move`, `copyPath`, and `openTerminal` are recorded in [TangerineResearch.md](TangerineResearch.md).
@@ -48,6 +60,8 @@ Version 0.2.1 applies the owner-authorized Yuzu Mac App visual reference: rounde
 Compress to ZIP is an additional wheel Action. It neither introduces File tools nor changes the 46-case target conversion inventory.
 
 AppKit owns system sharing, pasteboard, workspace calls, and dialogs. Persist file access through scoped bookmarks. A file grant does not imply permission to write to its parent; use Powerbox when needed. Verify the distributed app’s signature, entitlements, and subprocess access rather than inferring them from developer runs.
+
+For saved ancestor access, resolve scopes without UI/mounting, validate canonical path components, and derive an independently scoped child bookmark for the actual output parent while the ancestor is active. Transfer the child scope to the job and release the ancestor. Removing a saved bookmark changes only future access. Real Sandbox descendant-bookmark recovery remains a deferred physical gate. Terminal selection is limited to the known Terminal/iTerm2 bundle identifiers and retains source grants through launch completion.
 
 ## npm and GitHub Releases
 
