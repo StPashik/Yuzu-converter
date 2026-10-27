@@ -1,79 +1,157 @@
 import AppKit
 import SwiftUI
+import YuzuCore
+
+enum SettingsSection: String, CaseIterable, Identifiable {
+    case general = "General", formats = "Formats", compatibility = "Compatibility", folders = "Folders", about = "About"
+    var id: String { rawValue }
+}
+
+enum WheelStyle: String, CaseIterable, Identifiable {
+    case glass = "Glass", solid = "Solid"
+    var id: String { rawValue }
+}
+
+/// Only the four standard modifiers participate; Caps Lock and Fn do not change a saved shortcut.
+enum DragModifier: String, CaseIterable, Identifiable {
+    case shift, control, option, command
+    case controlShift, optionShift, commandShift, controlOption, controlCommand, optionCommand
+    case controlOptionShift, controlCommandShift, optionCommandShift, controlOptionCommand, all
+    var id: String { rawValue }
+
+    var flags: NSEvent.ModifierFlags {
+        switch self {
+        case .shift: return .shift
+        case .control: return .control
+        case .option: return .option
+        case .command: return .command
+        case .controlShift: return [.control, .shift]
+        case .optionShift: return [.option, .shift]
+        case .commandShift: return [.command, .shift]
+        case .controlOption: return [.control, .option]
+        case .controlCommand: return [.control, .command]
+        case .optionCommand: return [.option, .command]
+        case .controlOptionShift: return [.control, .option, .shift]
+        case .controlCommandShift: return [.control, .command, .shift]
+        case .optionCommandShift: return [.option, .command, .shift]
+        case .controlOptionCommand: return [.control, .option, .command]
+        case .all: return [.control, .option, .shift, .command]
+        }
+    }
+
+    private var keys: [(flag: NSEvent.ModifierFlags, symbol: String, name: String)] {
+        [(.control, "⌃", "Control"), (.option, "⌥", "Option"), (.shift, "⇧", "Shift"), (.command, "⌘", "Command")]
+            .filter { flags.contains($0.0) }
+    }
+    var symbols: String { keys.map(\.symbol).joined() }
+    var title: String { keys.map { L10n.text($0.name) }.joined(separator: " + ") }
+    var displayName: String { keys.count == 1 ? "\(symbols) \(title)" : symbols }
+}
 
 @MainActor
 final class Settings: ObservableObject {
+    private let defaults: UserDefaults
+    @Published var section: SettingsSection = .general
     @Published var language = L10n.language {
         didSet { L10n.language = language }
     }
-    @Published var wheelsEnabled = UserDefaults.standard.object(forKey: "wheelsEnabled") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(wheelsEnabled, forKey: "wheelsEnabled") }
+    @Published var wheelsEnabled: Bool {
+        didSet { defaults.set(wheelsEnabled, forKey: "wheelsEnabled") }
     }
-    @Published var swapModifiers = UserDefaults.standard.bool(forKey: "swapModifiers") {
-        didSet { UserDefaults.standard.set(swapModifiers, forKey: "swapModifiers") }
+    @Published var addToShelf: Bool {
+        didSet { defaults.set(addToShelf, forKey: "addToShelf") }
     }
-    @Published var addToShelf = UserDefaults.standard.object(forKey: "addToShelf") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(addToShelf, forKey: "addToShelf") }
+    @Published var wheelStyle: WheelStyle {
+        didSet { defaults.set(wheelStyle.rawValue, forKey: "wheelStyle") }
     }
+    @Published var soundsAndHapticsEnabled: Bool {
+        didSet { defaults.set(soundsAndHapticsEnabled, forKey: "soundsAndHapticsEnabled") }
+    }
+    @Published var terminalApplication: TerminalApplication {
+        didSet { defaults.set(terminalApplication.rawValue, forKey: "terminalApplication") }
+    }
+    @Published private(set) var conversionModifier: DragModifier {
+        didSet { defaults.set(conversionModifier.rawValue, forKey: "conversionModifier") }
+    }
+    @Published private(set) var actionsModifier: DragModifier {
+        didSet { defaults.set(actionsModifier.rawValue, forKey: "actionsModifier") }
+    }
+    @Published private(set) var profiles: [String: ConversionOptions]
+    let loginItem = LoginItemController()
     private var window: NSWindow?
 
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        wheelsEnabled = defaults.object(forKey: "wheelsEnabled") as? Bool ?? true
+        addToShelf = defaults.object(forKey: "addToShelf") as? Bool ?? true
+        wheelStyle = defaults.string(forKey: "wheelStyle").flatMap(WheelStyle.init(rawValue:)) ?? .glass
+        soundsAndHapticsEnabled = defaults.object(forKey: "soundsAndHapticsEnabled") as? Bool ?? true
+        terminalApplication = defaults.string(forKey: "terminalApplication").flatMap(TerminalApplication.init(rawValue:)) ?? .terminal
+        // Preserve the original preview's swapped keys when upgrading to independent shortcut pickers.
+        let swapped = defaults.bool(forKey: "swapModifiers")
+        let conversion = defaults.string(forKey: "conversionModifier").flatMap(DragModifier.init(rawValue:)) ?? (swapped ? .control : .shift)
+        let actions = defaults.string(forKey: "actionsModifier").flatMap(DragModifier.init(rawValue:)) ?? (swapped ? .shift : .control)
+        conversionModifier = conversion
+        actionsModifier = actions == conversion ? (conversion == .control ? .shift : .control) : actions
+        profiles = defaults.data(forKey: "conversionProfiles").flatMap {
+            try? JSONDecoder().decode([String: ConversionOptions].self, from: $0)
+        } ?? [:]
+    }
+
     var shortcutDescription: String {
-        let convert = L10n.text("Convert"), actions = L10n.text("Actions")
-        return swapModifiers ? "⌃ \(convert) · ⇧ \(actions)" : "⇧ \(convert) · ⌃ \(actions)"
+        "\(conversionModifier.symbols) \(L10n.text("Convert")) · \(actionsModifier.symbols) \(L10n.text("Actions"))"
+    }
+    var shortcutHint: String { "\(conversionModifier.symbols) / \(actionsModifier.symbols) · Esc" }
+
+    func setModifier(_ modifier: DragModifier, for mode: WheelMode) {
+        // Swapping a conflicting choice keeps both wheels reachable without another confirmation dialog.
+        switch mode {
+        case .conversion:
+            if modifier == actionsModifier { actionsModifier = conversionModifier }
+            conversionModifier = modifier
+        case .actions:
+            if modifier == conversionModifier { conversionModifier = actionsModifier }
+            actionsModifier = modifier
+        }
+    }
+
+    func options(for format: FileFormat) -> ConversionOptions { profiles[format.rawValue] ?? ConversionOptions() }
+
+    func setOptions(_ options: ConversionOptions, for format: FileFormat) {
+        var updated = profiles
+        updated[format.rawValue] = options
+        saveProfiles(updated)
+    }
+
+    func resetOptions(for format: FileFormat) {
+        var updated = profiles
+        updated.removeValue(forKey: format.rawValue)
+        saveProfiles(updated)
+    }
+
+    private func saveProfiles(_ updated: [String: ConversionOptions]) {
+        guard let data = try? JSONEncoder().encode(updated) else { return }
+        defaults.set(data, forKey: "conversionProfiles")
+        profiles = updated
     }
 
     func refreshLanguage() { window?.title = L10n.text("Yuzu Converter Settings") }
 
-    func show(updater: AppUpdater) {
+    func show(updater: AppUpdater, access: AccessStore) {
+        loginItem.refresh()
+        access.refresh()
         if window == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 540),
-                                  styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 660, height: 640),
+                                  styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
             window.title = L10n.text("Yuzu Converter Settings")
+            window.contentMinSize = NSSize(width: 620, height: 560)
             window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: SettingsView(settings: self, updater: updater))
+            window.setFrameAutosaveName("YuzuSettings")
+            window.contentView = NSHostingView(rootView: SettingsView(settings: self, updater: updater, access: access))
             window.center()
             self.window = window
         }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
-    }
-}
-
-private struct SettingsView: View {
-    @ObservedObject var settings: Settings
-    @ObservedObject var updater: AppUpdater
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Label("Yuzu Converter", systemImage: "arrow.triangle.2.circlepath")
-                    .font(.title2.bold())
-                Text(L10n.text("Drag a file and hold a shortcut key. Drop it on the action or format you need."))
-                    .foregroundStyle(.secondary)
-                Toggle(L10n.text("Enable wheels"), isOn: $settings.wheelsEnabled)
-                Toggle(L10n.text("Swap Shift and Control"), isOn: $settings.swapModifiers)
-                Text(settings.shortcutDescription).font(.callout.monospaced())
-                Picker(L10n.text("Language"), selection: $settings.language) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.name).tag(language)
-                    }
-                }
-                Text(L10n.text("Some system dialogs use the new language after restarting the app."))
-                    .font(.caption).foregroundStyle(.secondary)
-                Toggle(L10n.text("Add files to the existing floating shelf"), isOn: $settings.addToShelf)
-                Text(L10n.text("Escape cancels selection. Results are saved beside the original under an available name."))
-                    .font(.caption).foregroundStyle(.secondary)
-                Divider()
-                Button(L10n.text("Check for Updates…")) { updater.checkForUpdates() }
-                    .disabled(!updater.canCheckForUpdates)
-                Text(L10n.text(updater.installationWaiting
-                    ? "The update will install when file operations finish."
-                    : "Updates are checked only when you ask. Installation requires your confirmation."))
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(width: 480, height: 540)
     }
 }

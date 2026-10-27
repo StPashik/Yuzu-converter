@@ -14,11 +14,13 @@ At the owner's request, version 0.2.1 follows the wheel appearance in the owner'
 
 The same rounded Core Graphics path draws each petal and determines drag selection, so transparent gaps and clipped corners do not select an option. The 1% background of the armed window remains separate from the visual fade: it must receive the first AppKit drag event even while the wheel is hidden.
 
-The center keeps the source visible while the second line changes to the selected format or a release instruction. Long source names truncate in the middle; full text remains in the tooltip/accessibility text. Existing native buttons preserve accessibility labels and help. System appearance supplies light/dark colors; this change adds no theme, opacity, or animation preferences.
+The center keeps the source visible while the second line changes to the selected format or a release instruction. Long source names truncate in the middle; full text remains in the tooltip/accessibility text. Existing native buttons preserve accessibility labels and help. System appearance supplies light/dark colors. The table above describes the v0.2.1 surface.
+
+Version 0.3.0 adds Glass/Solid in [Settings](Settings.md). Glass uses a native HUD backdrop masked to the same rounded regions; the selected petal is excluded from the material so orange remains unfiltered. Solid and the system Reduce Transparency setting use an opaque surface. Geometry, label sizing, fade, armed-window input handling, and accessible buttons remain shared. The center's shortcut hint now follows the selected modifier combinations.
 
 ## Native previews
 
-These images are AppKit renders of the current control with a private test pasteboard. They are not physical Finder or VoiceOver checks.
+These images retain the v0.2.1 AppKit appearance with a private test pasteboard. They are not physical Finder or VoiceOver checks. Fresh Glass/Solid behavior is tested separately in the v0.3.0 Settings suite.
 
 | Actions, light appearance | Conversion, dark appearance |
 | --- | --- |

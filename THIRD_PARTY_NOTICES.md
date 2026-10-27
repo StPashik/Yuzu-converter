@@ -8,6 +8,8 @@ The owner also authorized using Yuzu Mac App's wheel appearance as a read-only v
 
 The packaged app uses Apple system frameworks and macOS system libarchive; their copies are not redistributed. System `textutil`, `zip`, and `tar` are invoked from macOS. The operating system supplies the native Swift runtime libraries.
 
+Tangerine's Settings window was observed through REA as a design and feature reference. Yuzu recreates the relevant layout and parameters with its own code. No Tangerine artwork, sounds, resources, source, pseudocode, binaries, grants, account data, or preferences are included. Feedback uses macOS's system Tink sound and alignment haptics.
+
 The app bundles [Sparkle 2.10.1](https://github.com/sparkle-project/Sparkle/releases/tag/2.10.1) for user-initiated, signed software updates. Its framework, installer services, and bundled third-party components retain their notices in [Sparkle-LICENSE.txt](docs/licenses/Sparkle-LICENSE.txt); this license is also copied into the app's Resources folder. Sparkle's license does not change the license of Yuzu's own code.
 
 This release does not bundle FFmpeg, LibreOffice, Java, Node, third-party npm packages, or Tangerine resources. Users supply Node.js/npm separately for installation and the launch command. The app itself does not require Node, and the installer has no third-party npm dependencies.

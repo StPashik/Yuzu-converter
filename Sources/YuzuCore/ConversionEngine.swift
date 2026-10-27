@@ -17,13 +17,25 @@ public struct ConversionEngine: Sendable {
         return candidates(first.format).filter { target in sources.allSatisfy { supported($0, target) } }
     }
 
+    /// Read-only format catalogue for Settings; actual files are still probed by targets(for:).
+    /// Native media support is conditional on the asset rather than a filename or enum case.
+    public func availability(from source: FileFormat, to target: FileFormat) -> ConversionAvailability {
+        guard source != target, candidates(source).contains(target) else { return .unavailable }
+        if supported(source, target) { return .available }
+        if source.category == "Audio", [.wav, .aiff, .m4a].contains(target) { return .dependsOnFile }
+        if source.category == "Video", source != .gif, [.mov, .mp4].contains(target) { return .dependsOnFile }
+        return .unavailable
+    }
+
     /// Converts into an existing writable directory while leaving the original and existing results intact.
     /// Returns every output file; page/sheet sets are published together in a new folder under a free name.
     /// The caller must retain source/destination grants and use a background task: most I/O remains blocking.
     /// Cancellation is cooperative between chunks/pages/stages and terminates active child-process exports.
     /// Failure or cancellation before publication discards private staging rather than publishing partial results.
-    public func convert(_ source: SourceFile, to target: FileFormat, in directory: URL) async throws -> [URL] {
+    public func convert(_ source: SourceFile, to target: FileFormat, in directory: URL,
+                        options: ConversionOptions = .init()) async throws -> [URL] {
         try Task.checkCancellation()
+        try options.validate(for: target)
         let current = try SourceFile(url: source.url)
         guard current.format == source.format else { throw ConversionError.invalid("The source format changed after selection.") }
         guard supported(source, target) else { throw ConversionError.unsupported("Conversion from \(source.format.label) to \(target.label) is unavailable.") }
@@ -34,14 +46,14 @@ public struct ConversionEngine: Sendable {
         let stem = source.url.deletingPathExtension().lastPathComponent
 
         if source.format == .pdf, target == .jpg || target == .png {
-            multiple = try NativeDocuments.pdfPages(source.url, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true))
+            multiple = try NativeDocuments.pdfPages(source.url, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true), options: options)
         } else if source.format.category == "Images" {
             if target == .pdf || (target.imageType.map { Self.imageWriters.contains($0) } ?? false) {
-                try NativeDocuments.image(source.url, to: target, output: output)
-            } else { try media(source, to: target, output: output) }
+                try NativeDocuments.image(source.url, to: target, output: output, options: options)
+            } else { try media(source, to: target, output: output, options: options) }
         } else if source.format.category == "Audio" || source.format.category == "Video" {
-            if supported(source.format, target) { try media(source, to: target, output: output) }
-            else { try await NativeMedia.convert(source, to: target, output: output) }
+            if supported(source.format, target) { try media(source, to: target, output: output, options: options) }
+            else { try await NativeMedia.convert(source, to: target, output: output, options: options) }
         } else if source.format.category == "Subtitles" {
             let cues = try Subtitles.parse(TextFile.read(source.url), format: source.format)
             try Subtitles.write(cues, format: target).write(to: output, atomically: false, encoding: .utf8)
@@ -49,7 +61,10 @@ public struct ConversionEngine: Sendable {
             let contents = scratch.appendingPathComponent("contents", isDirectory: true)
             try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: false)
             guard !(try ArchiveReader(source.url).entries(extractingTo: contents)).isEmpty else { throw ConversionError.invalid("The archive is empty.") }
-            let arguments = target == .zip ? ["-q", "-r", output.path, "."] : [target == .gzip ? "-czf" : "-cf", output.path, "-C", contents.path, "."]
+            var arguments = target == .zip ? ["-q", "-r", "-\(options.compression.level)", output.path, "."]
+                : [target == .gzip ? "-czf" : "-cf", output.path]
+            if target == .gzip { arguments += ["--options", "gzip:compression-level=\(options.compression.level)"] }
+            if target != .zip { arguments += ["-C", contents.path, "."] }
             _ = try ProcessRunner.checked(URL(fileURLWithPath: target == .zip ? "/usr/bin/zip" : "/usr/bin/tar"), arguments, directory: contents)
         } else if source.format.category == "Spreadsheets" && source.format != .xls {
             let sheets = try Spreadsheet.read(source, scratch: scratch)
@@ -76,15 +91,15 @@ public struct ConversionEngine: Sendable {
             _ = try ProcessRunner.checked(office, ["-env:UserInstallation=" + profile, "--headless", "--convert-to", officeTarget.rawValue, "--outdir", officeOutput.path, source.url.path])
             let converted = officeOutput.appendingPathComponent(stem + "." + officeTarget.rawValue)
             guard FileManager.default.fileExists(atPath: converted.path) else { throw ConversionError.failed("LibreOffice did not create an output file.") }
-            if target == .jpg || target == .png { multiple = try NativeDocuments.pdfPages(converted, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true)) }
+            if target == .jpg || target == .png { multiple = try NativeDocuments.pdfPages(converted, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true), options: options) }
             else { try FileManager.default.moveItem(at: converted, to: output) }
         } else {
             let text = source.format == .epub ? try EPUB.read(source.url, scratch: scratch) : try NativeDocuments.readText(source, scratch: scratch)
-            if target == .epub { try EPUB.write(text, title: stem, output: output, scratch: scratch) }
+            if target == .epub { try EPUB.write(text, title: stem, output: output, scratch: scratch, version: options.epubReflowVersion) }
             else if target == .jpg || target == .png {
                 let pdf = scratch.appendingPathComponent("document.pdf")
                 try NativeDocuments.writePDF(text, output: pdf)
-                multiple = try NativeDocuments.pdfPages(pdf, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true))
+                multiple = try NativeDocuments.pdfPages(pdf, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true), options: options)
             } else { try NativeDocuments.writeText(text, to: target, output: output) }
         }
 
@@ -162,23 +177,42 @@ public struct ConversionEngine: Sendable {
     }
 
     private static let audioEncoders: [FileFormat: String] = [.mp3: "libmp3lame", .m4a: "aac", .wav: "pcm_s16le", .flac: "flac", .ogg: "libvorbis", .opus: "libopus", .aiff: "pcm_s16be", .wma: "wmav2"]
-    private func media(_ source: SourceFile, to target: FileFormat, output: URL) throws {
+    private func media(_ source: SourceFile, to target: FileFormat, output: URL, options: ConversionOptions) throws {
         guard let ffmpeg = tools.ffmpeg else { throw ConversionError.unsupported("FFmpeg was not found.") }
         var arguments = ["-hide_banner", "-nostdin", "-loglevel", "error", "-n", "-i", source.url.path]
+        if options.preserveMetadata { arguments += ["-map_metadata", "0"] }
+        else {
+            // Global metadata, stream tags, and chapters have independent automatic-copy rules in FFmpeg.
+            arguments += ["-map_metadata", "-1", "-map_metadata:s", "-1", "-map_chapters", "-1"]
+        }
         if let audio = Self.audioEncoders[target] {
             // Audio exports intentionally select the first audio stream and discard video/cover-art streams.
-            arguments += ["-map", "0:a:0", "-vn", "-c:a", audio]
-            if [.mp3, .m4a, .ogg, .opus, .wma].contains(target) { arguments += ["-b:a", "192k"] }
+            var codec = audio
+            if target == .wav || target == .aiff {
+                let depth = try NativeMedia.resolvedDepth(options.audioSampleDepth, source: source.url)
+                let encoding = depth == .float32 ? "f32" : depth == .bit24 ? "s24" : depth == .bit32 ? "s32" : "s16"
+                codec = "pcm_" + encoding + (target == .aiff ? "be" : "le")
+            }
+            arguments += ["-map", "0:a:0", "-vn", "-c:a", codec]
+            if [.mp3, .m4a, .ogg, .opus, .wma].contains(target) {
+                // A manual bitrate overrides the quality preset's automatic bitrate.
+                arguments += ["-b:a", "\(options.audioBitrate ?? options.quality.audioBitrate)k"]
+            }
         } else if target == .webp || target == .avif {
             arguments += ["-frames:v", "1", "-c:v", target == .webp ? "libwebp" : "libaom-av1"]
+            if target == .webp { arguments += ["-quality", String(Int(options.quality.imageQuality * 100))] }
+            else { arguments += ["-crf", options.quality == .compact ? "40" : options.quality == .balanced ? "26" : "16", "-b:v", "0"] }
         } else if target == .gif {
-            arguments += ["-an", "-vf", "fps=15,scale=960:-2:force_original_aspect_ratio=decrease", "-loop", "0"]
+            arguments += ["-an", "-vf", "fps=\(options.gifFrameRate ?? 15),scale=min(iw\\,\(options.gifMaxWidth ?? 960)):-2", "-loop", "0"]
         } else if target == .webm {
             // WebM requires compatible video and audio encoders; container support alone is not enough.
-            arguments += ["-c:v", "libvpx-vp9", "-crf", "30", "-b:v", "0", "-c:a", encoder("libopus") ? "libopus" : "libvorbis"]
+            arguments += ["-c:v", "libvpx-vp9", "-crf", options.quality == .compact ? "40" : options.quality == .balanced ? "30" : "20", "-b:v", "0", "-c:a", encoder("libopus") ? "libopus" : "libvorbis"]
+            if let height = options.videoMaxHeight { arguments += ["-vf", "scale=-2:trunc(min(ih\\,\(height))/2)*2"] }
         } else {
             // Even dimensions and 4:2:0 pixels avoid encoder failures on odd-sized source frames.
-            arguments += ["-c:v", target == .wmv ? "wmv2" : "mpeg4", "-q:v", "3", "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", "-c:a", target == .wmv ? "wmav2" : target == .avi ? "mp3" : "aac"]
+            let scale = options.videoMaxHeight.map { "scale=-2:trunc(min(ih\\,\($0))/2)*2" }
+                ?? "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+            arguments += ["-c:v", target == .wmv ? "wmv2" : "mpeg4", "-q:v", options.quality == .compact ? "8" : options.quality == .balanced ? "3" : "1", "-pix_fmt", "yuv420p", "-vf", scale, "-c:a", target == .wmv ? "wmav2" : target == .avi ? "mp3" : "aac"]
         }
         arguments.append(output.path)
         _ = try ProcessRunner.checked(ffmpeg, arguments)

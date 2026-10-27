@@ -3,18 +3,18 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.2.1</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.3.0</link>
     <description>Signed x64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.2.1</title>
-      <sparkle:version>5</sparkle:version>
-      <sparkle:shortVersionString>0.2.1</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.3.0</title>
+      <sparkle:version>6</sparkle:version>
+      <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Yuzu Converter 0.2.1 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.2.1">Read the release notes on GitHub</a>.</p>]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.2.1/Yuzu-Converter-0.2.1-x64.zip" sparkle:edSignature="DQakilmYoN///yXCyoEsPVD4HyUrzfeON7Z4h0+g6avhVRiDmWeE3qT4X+j8e54s2FR3rvNhTZwZhhtX0dYkBQ==" length="1420198" type="application/octet-stream"></enclosure>
+      <description><![CDATA[<p>Yuzu Converter 0.3.0 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.3.0">Read the release notes on GitHub</a>.</p>]]></description>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.3.0/Yuzu-Converter-0.3.0-x64.zip" sparkle:edSignature="9PkQ6Lvo+hwanuGWt+r77qQq6rS2xGy3Z//ecVSuiRkFiI1BXLwQPcs7ffHKYMcCNFNwgdnkbHDJoCE1k7FjBg==" length="1663194" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: RaZzE2ZeSbMSeJ6M2VidgIH8jG307PvcSSz1/sacBAfZPKlwzZNSClfKOSxT2yN6f8zpEVpstcwDKx04nNQZAQ==
+edSignature: 5C2AQw7w6yunnx2HwhDhzQfcupX6ctTcwdGKEgzmqdHkXx2jNKBr7y0RyTDYCXEf2ilDtv9BflwQ5Fn3qUnSCA==
 length: 1355
 -->

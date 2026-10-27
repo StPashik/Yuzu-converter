@@ -64,8 +64,9 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
                 service.delegate = self
                 service.perform(withItems: files.urls)
             case .openTerminal:
-                guard let terminal = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal")
-                else { throw ActionError.terminalUnavailable }
+                let application = settings.terminalApplication
+                guard let terminal = NSWorkspace.shared.urlForApplication(withBundleIdentifier: application.bundleIdentifier)
+                else { throw ActionError.terminalUnavailable(application.name) }
                 Task {
                     do {
                         let folders = try await Task.detached { try Self.terminalFolders(files.urls) }.value
@@ -131,12 +132,13 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
 }
 
 private enum ActionError: LocalizedError {
-    case airDropUnavailable, sharingInProgress, terminalUnavailable
+    case airDropUnavailable, sharingInProgress, terminalUnavailable(String)
     var errorDescription: String? {
         switch self {
         case .airDropUnavailable: return L10n.text("AirDrop is not available for these files on this Mac.")
         case .sharingInProgress: return L10n.text("Wait for the current AirDrop transfer to finish.")
-        case .terminalUnavailable: return L10n.text("Terminal could not be found.")
+        case .terminalUnavailable(let name):
+            return L10n.text("%@ could not be found. Choose another terminal app in Settings.", name)
         }
     }
 }

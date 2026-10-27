@@ -34,11 +34,17 @@ Preview Move limit: cross-volume folder moves are refused before copying, preser
 
 ## UI and file access
 
+The owner requested Tangerine's Settings design and all parameters relevant to Conversion and Actions. Use five tabs (General, Formats, Compatibility, Folders, About), native grouped controls, and all five languages. General includes Glass/Solid wheel style, actual macOS launch-at-login status, system sound/haptic feedback, independent modifier combinations, Float behaviour, and Terminal/iTerm2 selection. Do not add a File tools shortcut or commercial purchase controls. [Tangerine-settings.md](Tangerine-settings.md) records observed UI and static parameters separately from unknown proprietary behavior.
+
+Persist output-format profiles and capture immutable values when queueing jobs. Quality, metadata policy, media size/bitrate/depth, archive compression, and EPUB version must affect their supported encoders. Validate persisted values before file work. Preserve 300-DPI PDF image output and image orientation/color. Unsupported original-page EPUB and PDF-to-Office layouts must be visibly explained and rejected, not enabled no-op controls; their implementation remains an open capability requirement in [Conversion-matrix.md](Conversion-matrix.md).
+
+Formats and Compatibility must use Yuzu's own backend checks, distinguish file-dependent media support, and retain the full documented target inventory. Folders lists/adds/forgets only Yuzu's own bookmarks. A user-approved ancestor may cover descendants after canonical containment checks, but the returned output URL must remain the actual source parent with balanced scope ownership. Forgetting future access must preserve files and active jobs. [Settings.md](Settings.md) documents implemented choices and limits.
+
 Run as a menu bar app without a Dock icon or main window. The menu contains **Settings…**, **Check for Updates…**, and **Quit**. Open settings and the shelf only in response to an explicit user action.
 
 Provide the same update check in Settings. Checks are user-initiated, and downloading/installing a new version requires confirmation. Authenticate the feed and archives, select the correct architecture, and finish queued file work before restarting. A failed or cancelled installation must restore normal operation. A stale npm launcher must not downgrade an app updated in place. See [Updates.md](Updates.md).
 
-Shift selects conversion; Control selects Actions. Allow the keys to be swapped and an open wheel to switch modes. The tooltip must show the keys even when wheels are disabled. Escape cancels selection. An empty drag must not show the wheel.
+Shift selects conversion; Control selects Actions by default. Allow independent nonempty combinations of Shift, Control, Option, and Command; choosing a conflicting combination swaps the two. Migrate the original swap preference and allow an open wheel to switch modes. The tooltip must show the keys even when wheels are disabled. Escape cancels selection. An empty drag must not show the wheel.
 
 Use real AppKit file dragging, including from an inactive Finder. Global drag-pasteboard polling, private APIs, or extra permissions are not substitutes for supported integration. Wheel sectors and settings must expose system accessibility.
 

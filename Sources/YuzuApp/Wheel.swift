@@ -77,8 +77,9 @@ struct DragTrigger {
     private var cancelled = false
 
     mutating func update(mouseDown: Bool, flags: NSEvent.ModifierFlags, escape: Bool,
-                         enabled: Bool, swapped: Bool) -> WheelMode? {
-        defer { previous = flags }
+                         enabled: Bool, conversion: DragModifier = .shift, actions: DragModifier = .control) -> WheelMode? {
+        let modifiers = flags.intersection([.shift, .control, .option, .command])
+        defer { previous = modifiers }
         guard mouseDown, enabled else {
             mode = nil
             cancelled = false
@@ -86,12 +87,10 @@ struct DragTrigger {
         }
         if escape { cancelled = true; mode = nil }
         guard !cancelled else { return nil }
-        let added = flags.subtracting(previous)
-        if added.contains(.shift) || (mode == nil && flags.contains(.shift)) {
-            mode = swapped ? .actions : .conversion
-        }
-        if added.contains(.control) || (mode == nil && flags.contains(.control)) {
-            mode = swapped ? .conversion : .actions
+        if modifiers != previous || mode == nil {
+            // Match complete chords so a single-key shortcut cannot steal a multi-key choice.
+            if modifiers == conversion.flags { mode = .conversion }
+            else if modifiers == actions.flags { mode = .actions }
         }
         return mode
     }
@@ -149,7 +148,10 @@ enum WheelGeometry {
 final class WheelDragView: NSView {
     var onSources: (([URL], WheelDragView) -> Void)?
     var onDrop: (([URL], WheelOption) -> Void)?
+    var onHighlight: (() -> Void)?
     var mode: WheelMode = .conversion
+    var style: WheelStyle = .glass { didSet { updateMaterial(); needsDisplay = true } }
+    var shortcutHint = "⇧ / ⌃ · Esc" { didSet { cancelHint.stringValue = shortcutHint } }
     private(set) var sources: [URL] = []
     private var centerPoint: CGPoint = .zero
     private var selected: Int? {
@@ -158,18 +160,22 @@ final class WheelDragView: NSView {
             needsDisplay = true
             updateCaption()
             updateLabels()
+            updateMaterial()
+            if selected != nil { onHighlight?() }
         }
     }
     private var labels: [NSButton] = []
     private let summary = NSTextField(labelWithString: "")
     private let caption = NSTextField(labelWithString: "")
     private let cancelHint = NSTextField(labelWithString: "⇧ / ⌃ · Esc")
+    private let material = WheelMaterialView()
     var sourceCaption = "" { didSet { updateCaption() } }
     var idleCaption = "" { didSet { updateCaption() } }
     var options: [WheelOption] = [] { didSet { selected = nil; rebuildLabels() } }
     var confirmed = false {
         didSet {
             needsDisplay = true
+            updateMaterial()
             [summary, caption, cancelHint].forEach { $0.isHidden = !confirmed }
             labels.forEach { $0.isHidden = !confirmed }
             guard oldValue != confirmed else { return }
@@ -190,6 +196,12 @@ final class WheelDragView: NSView {
         super.init(frame: frame)
         wantsLayer = true
         registerForDraggedTypes([.fileURL])
+        material.material = .hudWindow
+        material.blendingMode = .behindWindow
+        material.state = .active
+        material.wantsLayer = true
+        material.isHidden = true
+        addSubview(material, positioned: .below, relativeTo: nil)
         summary.alignment = .center
         summary.font = .systemFont(ofSize: 12, weight: .semibold)
         summary.lineBreakMode = .byTruncatingMiddle
@@ -204,17 +216,41 @@ final class WheelDragView: NSView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
-    override func draw(_ dirtyRect: NSRect) {
-        guard confirmed, let context = NSGraphicsContext.current?.cgContext else { return }
+    private var paths: [CGPath] {
         let radius = WheelGeometry.centerRadius
         let circle = CGPath(ellipseIn: CGRect(x: centerPoint.x - radius, y: centerPoint.y - radius,
                                              width: radius * 2, height: radius * 2), transform: nil)
-        let petals = options.indices.map { WheelGeometry.path($0, count: options.count, center: centerPoint) }
-        for path in [circle] + petals {
+        return [circle] + options.indices.map { WheelGeometry.path($0, count: options.count, center: centerPoint) }
+    }
+
+    override func layout() { super.layout(); updateMaterial() }
+
+    private var usesGlass: Bool { style == .glass && !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency }
+
+    private func updateMaterial() {
+        material.frame = bounds
+        material.isHidden = !confirmed || !usesGlass
+        let path = CGMutablePath()
+        // Keep the selected petal outside the backdrop so its orange fill stays unfiltered.
+        let highlightedPath = selected.map { $0 + 1 }
+        for (index, region) in paths.enumerated() where highlightedPath != index {
+            path.addPath(region)
+        }
+        let mask = CAShapeLayer()
+        mask.frame = bounds
+        mask.path = path
+        material.layer?.mask = mask
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard confirmed, let context = NSGraphicsContext.current?.cgContext else { return }
+        let paths = paths
+        let petals = Array(paths.dropFirst())
+        for path in paths {
             context.saveGState()
             context.setShadow(offset: CGSize(width: 0, height: -2), blur: 8, color: NSColor.black.withAlphaComponent(0.13).cgColor)
             context.addPath(path)
-            context.setFillColor(NSColor.windowBackgroundColor.withAlphaComponent(0.78).cgColor)
+            context.setFillColor(NSColor.windowBackgroundColor.withAlphaComponent(usesGlass ? 0.18 : 1).cgColor)
             context.fillPath()
             context.restoreGState()
             context.addPath(path)
@@ -311,6 +347,7 @@ final class WheelDragView: NSView {
             return button
         }
         updateLabels()
+        updateMaterial()
         needsDisplay = true
     }
 
@@ -333,6 +370,12 @@ final class WheelDragView: NSView {
     }
 }
 
+/// The backdrop follows the wheel without intercepting its drag destination or accessible buttons.
+@MainActor
+private final class WheelMaterialView: NSVisualEffectView {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
 @MainActor
 final class WheelMonitor {
     private let settings: Settings
@@ -341,6 +384,8 @@ final class WheelMonitor {
     private var panel: NSPanel?
     private var view: WheelDragView?
     private var mode: WheelMode?
+    private let feedbackSound = NSSound(named: NSSound.Name("Tink"))
+    private var lastFeedback = Date.distantPast
     var onSources: (([URL], WheelDragView) -> Void)?
     var onDrop: (([URL], WheelOption) -> Void)?
 
@@ -358,6 +403,8 @@ final class WheelMonitor {
     func dismiss() { panel?.orderOut(nil); panel = nil; view = nil; mode = nil }
 
     func refreshLanguage() {
+        view?.style = settings.wheelStyle
+        view?.shortcutHint = settings.shortcutHint
         if let view, view.confirmed { onSources?(view.sources, view) }
     }
 
@@ -365,7 +412,8 @@ final class WheelMonitor {
         let next = trigger.update(mouseDown: CGEventSource.buttonState(.combinedSessionState, button: .left),
                                   flags: NSEvent.modifierFlags,
                                   escape: CGEventSource.keyState(.combinedSessionState, key: 53),
-                                  enabled: settings.wheelsEnabled, swapped: settings.swapModifiers)
+                                  enabled: settings.wheelsEnabled, conversion: settings.conversionModifier,
+                                  actions: settings.actionsModifier)
         guard let next else { if panel != nil { dismiss() }; return }
         if panel == nil { arm(next) }
         if mode != next {
@@ -387,6 +435,16 @@ final class WheelMonitor {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         let view = WheelDragView(frame: NSRect(origin: .zero, size: screen.visibleFrame.size))
         view.mode = mode
+        view.style = settings.wheelStyle
+        view.shortcutHint = settings.shortcutHint
+        view.onHighlight = { [weak self] in
+            guard let self, self.settings.soundsAndHapticsEnabled,
+                  Date().timeIntervalSince(self.lastFeedback) >= 0.08 else { return }
+            self.lastFeedback = Date()
+            self.feedbackSound?.volume = 0.2
+            self.feedbackSound?.play()
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        }
         view.onSources = { [weak self] urls, view in self?.onSources?(urls, view) }
         view.onDrop = { [weak self] urls, option in
             self?.dismiss()

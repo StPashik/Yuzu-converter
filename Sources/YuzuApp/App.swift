@@ -72,10 +72,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DispatchQueue.main.async { self?.handleDrop(files, option: option) }
         }
         actions.onMove = { [weak self] files, folder in
-            self?.enqueue(PendingJob(files: files, kind: .move, destinations: [folder]))
+            guard let self else { folder.stopAccessingSecurityScopedResource(); return }
+            self.enqueue(PendingJob(files: files, kind: .move, destinations: [folder]))
         }
         actions.onCompress = { [weak self] files, folder in
-            self?.enqueue(PendingJob(files: files, kind: .compress, destinations: [folder]))
+            guard let self else { folder.stopAccessingSecurityScopedResource(); return }
+            self.enqueue(PendingJob(files: files, kind: .compress, destinations: [folder],
+                                    options: self.settings.options(for: .zip)))
         }
         progress.onCancel = { [weak self] in self?.currentJob?.cancel() }
         updater.canRestart = { [weak self] in self?.currentJob == nil && self?.jobs.isEmpty != false }
@@ -106,7 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         actions.refreshLanguage()
         progress.refreshLanguage()
     }
-    @objc private func showSettings() { settings.show(updater: updater) }
+    @objc private func showSettings() { settings.show(updater: updater, access: access) }
     @objc private func quit() { NSApp.terminate(nil) }
 
     private func updateSources(_ urls: [URL], view: WheelDragView) {
@@ -162,7 +165,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     guard let folder = try access.outputFolder(beside: url) else { return }
                     folders.append(folder)
                 }
-                enqueue(PendingJob(files: files, kind: .conversion(target), destinations: folders))
+                // Snapshot output defaults before queueing; later edits belong to future jobs.
+                enqueue(PendingJob(files: files, kind: .conversion(target), destinations: folders,
+                                   options: settings.options(for: target)))
                 enqueued = true
             } catch { ActionController.show(error) }
         }
@@ -192,13 +197,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     for (i, url) in job.files.urls.enumerated() {
                         try Task.checkCancellation()
                         let source = try SourceFile(url: url)
-                        count += try await engine.convert(source, to: target, in: job.destinations[i]).count
+                        count += try await engine.convert(source, to: target, in: job.destinations[i], options: job.options).count
                     }
                     return count
                 case .move:
                     return try FileOperations.copy(job.files.urls, to: job.destinations[0], move: true).count
                 case .compress:
-                    _ = try FileOperations.compress(job.files.urls, in: job.destinations[0])
+                    _ = try FileOperations.compress(job.files.urls, in: job.destinations[0], compression: job.options.compression)
                     return 1
                 }
             }
@@ -243,6 +248,7 @@ private struct PendingJob: Sendable {
     let files: ScopedFiles
     let kind: JobKind
     let destinations: [URL]
+    var options = ConversionOptions()
 }
 
 private enum JobKind: Sendable {

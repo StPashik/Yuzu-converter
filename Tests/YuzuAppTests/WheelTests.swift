@@ -104,15 +104,15 @@ final class WheelTests: XCTestCase {
 
     func testTriggerLatchesSwitchesAndEscapeSuppressesUntilRelease() {
         var trigger = DragTrigger()
-        XCTAssertNil(trigger.update(mouseDown: false, flags: .shift, escape: false, enabled: true, swapped: false))
-        XCTAssertEqual(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: true, swapped: false), .conversion)
-        XCTAssertEqual(trigger.update(mouseDown: true, flags: [], escape: false, enabled: true, swapped: false), .conversion)
-        XCTAssertEqual(trigger.update(mouseDown: true, flags: .control, escape: false, enabled: true, swapped: false), .actions)
-        XCTAssertNil(trigger.update(mouseDown: true, flags: .control, escape: true, enabled: true, swapped: false))
-        XCTAssertNil(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: true, swapped: false))
-        XCTAssertNil(trigger.update(mouseDown: false, flags: [], escape: false, enabled: true, swapped: false))
-        XCTAssertEqual(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: true, swapped: true), .actions)
-        XCTAssertNil(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: false, swapped: false))
+        XCTAssertNil(trigger.update(mouseDown: false, flags: .shift, escape: false, enabled: true, conversion: .shift, actions: .control))
+        XCTAssertEqual(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: true, conversion: .shift, actions: .control), .conversion)
+        XCTAssertEqual(trigger.update(mouseDown: true, flags: [], escape: false, enabled: true, conversion: .shift, actions: .control), .conversion)
+        XCTAssertEqual(trigger.update(mouseDown: true, flags: .control, escape: false, enabled: true, conversion: .shift, actions: .control), .actions)
+        XCTAssertNil(trigger.update(mouseDown: true, flags: .control, escape: true, enabled: true, conversion: .shift, actions: .control))
+        XCTAssertNil(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: true, conversion: .shift, actions: .control))
+        XCTAssertNil(trigger.update(mouseDown: false, flags: [], escape: false, enabled: true, conversion: .shift, actions: .control))
+        XCTAssertEqual(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: true, conversion: .control, actions: .shift), .actions)
+        XCTAssertNil(trigger.update(mouseDown: true, flags: .shift, escape: false, enabled: false, conversion: .shift, actions: .control))
     }
 
     func testEverySectorUsesItsVisiblePathAndRejectsCenterAndGaps() {
