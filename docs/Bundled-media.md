@@ -6,6 +6,8 @@ Yuzu Converter 0.4.0 includes FFmpeg and FFprobe for Apple Silicon and Intel. No
 
 Drop a supported MP4, MOV, MKV, WebM, AVI, or WMV file to convert to another of those formats, animated GIF, or MP3 audio. The current format is hidden. MP3 appears only when the input has an audio stream. Animated GIF input can become MP4, MOV, MKV, WebM, AVI, or WMV; it has no audio to extract. For multiple files, the wheel offers the intersection of their available outputs.
 
+AV1 software decoding is not included in this build. A native AVFoundation route, when available for the actual asset, depends on the Mac.
+
 Format names identify containers. The actual codec, damaged data, encryption/DRM, and unusual stream layouts can still prevent conversion. Preserve originals. FFmpeg exports select the first video stream and optional first audio stream; subtitles, attachments, and additional streams are not carried into these outputs. GIF is animated and silent. Its settings control frame rate and maximum width.
 
 Compatible MP4/MOV and PCM/M4A conversions retain the existing native engine. Other media routes use the bundled FFmpeg. Native export retains its documented playback-volume and disabled-track policy. When macOS exposes disabled or non-unit-volume source tracks, FFmpeg routes are hidden rather than exposing muted or hidden content; native MP4/MOV routes may remain available. Playback flags in containers macOS cannot read are not independently reconstructed.
