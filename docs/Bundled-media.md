@@ -1,6 +1,6 @@
 # Bundled video conversion
 
-Yuzu Converter 0.4.0 includes FFmpeg and FFprobe for Apple Silicon and Intel. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
+Starting with 0.4.1, Yuzu Converter includes FFmpeg and FFprobe for Apple Silicon only. Version 0.4.0 remains the final Intel release. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
 
 ## What appears in the wheel
 
@@ -37,15 +37,14 @@ The helper executables statically link these codec libraries and have only macOS
 
 ## Build from source
 
-Install Xcode command-line tools, Python 3.12+, `make`, `pkg-config`, and `xz`. The build uses the macOS SDK and targets macOS 13.0. The script downloads only the pinned upstream archives and refuses a SHA-256 mismatch. It disables automatic third-party library discovery, preventing accidental Homebrew linkage. Build directories use a temporary path without spaces because upstream makefiles cannot reliably handle spaces. Apple Silicon libvpx uses its ARM target; Intel uses portable C code and does not require NASM. Intel WebM encoding may be slower than an assembly-optimized build.
+Install Xcode command-line tools, Python 3.12+, `make`, `pkg-config`, and `xz`. The build uses the macOS SDK and targets macOS 13.0. The script downloads only the pinned upstream archives and refuses a SHA-256 mismatch. It disables automatic third-party library discovery, preventing accidental Homebrew linkage. Build directories use a temporary path without spaces because upstream makefiles cannot reliably handle spaces. Apple Silicon libvpx uses its ARM target. The build script retains the historical Intel recipe for reproducing 0.4.0; current releases do not package or test new Intel binaries.
 
 From the Yuzu repository, or the source package's root:
 
 ```sh
 python3 scripts/build-media.py arm64
-python3 scripts/build-media.py x64
 ```
 
-The source package includes `.build/media-sources` with the four exact archives for an offline rebuild. Generated helpers are placed in `.build/media-arm64/Tools` and `.build/media-x64/Tools`. Re-run the media build after changing its source manifest or recipe; remove stale generated tools before packaging. In the full Yuzu repository, `bash scripts/build-app.sh arm64` or `x64` copies and signs the matching helpers. The native app has no Python, pkg-config, or Node runtime dependency.
+The source package includes `.build/media-sources` with the four exact archives for an offline rebuild. Current release helpers are placed in `.build/media-arm64/Tools`. Re-run the media build after changing its source manifest or recipe; remove stale generated tools before packaging. In the full Yuzu repository, `bash scripts/build-app.sh arm64` copies and signs the matching helpers. The native app has no Python, pkg-config, or Node runtime dependency.
 
 For release verification, point `YUZU_FFMPEG`/`YUZU_FFPROBE` at the matching newly built tools and set `YUZU_MEDIA_REQUIRED=1` while running Swift tests in an isolated scratch path. The video matrix fixture must run, not skip. Then run each signed app's `--self-check`: this resolves only bundled helpers inside the real Sandbox. [Validation](Validation.md) records actual results and the remaining physical/hardware limits.

@@ -6,8 +6,7 @@ cd "$project_root"
 app_arch="${1:-arm64}"
 case "$app_arch" in
   arm64) swift_arch=arm64 ;;
-  x64) swift_arch=x86_64 ;;
-  *) echo 'Usage: scripts/build-app.sh arm64|x64' >&2; exit 2 ;;
+  *) echo 'New releases require Apple Silicon. Usage: scripts/build-app.sh [arm64]' >&2; exit 2 ;;
 esac
 
 app_version=$(/usr/bin/plutil -extract version raw -o - package.json)
@@ -26,7 +25,8 @@ app="$stage/Yuzu Converter.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" "$app/Contents/Frameworks"
 cp "$binary_path/YuzuApp" "$app/Contents/MacOS/YuzuApp"
 cp Resources/Info.plist "$app/Contents/Info.plist"
-/usr/libexec/PlistBuddy -c "Set :SUFeedURL https://raw.githubusercontent.com/StPashik/Yuzu-converter/main/updates/appcast-$app_arch.xml" "$app/Contents/Info.plist"
+# The public Latest release switches its signed feed and archives together, independent of branch pushes.
+/usr/libexec/PlistBuddy -c "Set :SUFeedURL https://github.com/StPashik/Yuzu-converter/releases/latest/download/appcast-$app_arch.xml" "$app/Contents/Info.plist"
 cp LICENSE THIRD_PARTY_NOTICES.md "$app/Contents/Resources/"
 cp Resources/YuzuAppIcon.icns "$app/Contents/Resources/Yuzu.icns"
 cp Sources/YuzuApp/Resources/YuzuMenuBar.pdf "$app/Contents/Resources/YuzuMenuBar.pdf"

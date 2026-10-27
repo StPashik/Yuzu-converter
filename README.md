@@ -8,16 +8,17 @@ File conversion and useful file actions from your Mac’s menu bar. Hold a key w
 
 ## Download
 
-Requires **macOS 13 or later**. Choose your Mac:
+Requires **Apple Silicon (M1 or later) and macOS 13 or later**.
 
 - [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-arm64.zip)
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-x64.zip)
+
+Intel Macs can keep [version 0.4.0](https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0), the final Intel release. New releases and updates target Apple Silicon only.
 
 This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-FFmpeg-Sources-0.4.0.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
-See the [quick start](docs/Quick-start.md) for installation, permissions, and npm options.
+See the [quick start](docs/Quick-start.md) for first installation, permissions, and npm options. For subsequent versions, use **Check for Updates…** when you choose.
 
 ## Use it
 
@@ -33,13 +34,13 @@ Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**,
 
 ## Keep the app up to date
 
-Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
+Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu after your confirmation. Release publication leaves your installed copy alone. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
 See the [wheel design notes](docs/Wheel-design.md) for the visual reference and native AppKit previews.
 
 ## Format support
 
-| Area | Preview support |
+| Area | Implemented support |
 | --- | --- |
 | Images and PDF | System image readers/writers; every PDF page to JPG/PNG at 300 DPI; existing PDF text to TXT/MD |
 | Audio and video | Native WAV/AIFF/M4A and MP4/MOV, plus bundled FFmpeg video, GIF, MP3/FLAC/Opus/WMA routes |
@@ -47,9 +48,9 @@ See the [wheel design notes](docs/Wheel-design.md) for the visual reference and 
 | Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; text-based PDF output |
 | Subtitles and archives | SRT/VTT/TXT and ZIP/TAR/TAR.GZ; RAR input where system libarchive supports it |
 
-The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. The preview does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
+The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. Yuzu does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
 
-FFmpeg and FFprobe are included for both architectures; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
+FFmpeg and FFprobe are included for Apple Silicon; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
 
 ## Install with npm
 
@@ -74,13 +75,11 @@ swift test --scratch-path .build/verification
 swift run --scratch-path .build/development YuzuApp
 ```
 
-Build the pinned media engines and the two app archives, then pin their final checksums and package the installer. Build prerequisites and LGPL source obligations are in the [media guide](docs/Bundled-media.md):
+Build the pinned media engines and the Apple Silicon app archive, then pin their final checksums and package the installer. Build prerequisites and LGPL source obligations are in the [media guide](docs/Bundled-media.md):
 
 ```sh
 python3 scripts/build-media.py arm64
-python3 scripts/build-media.py x64
 bash scripts/build-app.sh arm64
-bash scripts/build-app.sh x64
 node scripts/prepare-npm.mjs dist
 node scripts/prepare-updates.mjs dist
 npm pack --pack-destination dist
@@ -91,6 +90,6 @@ Rebuilding an app archive requires rerunning `prepare-npm` and `npm pack`. Devel
 
 ## Project and verification
 
-The code was written from scratch after [Tangerine research with REA](docs/TangerineResearch.md), including [five observed Settings pages](docs/Tangerine-settings.md). Observed UI and static field names remain separate from unknown proprietary defaults. Compress to ZIP is a separate owner-requested feature. The owner authorized the Yuzu Mac App icons and wheel design reference; no old engines, settings, caches, source modules, or Git history were carried over. See [component notices](THIRD_PARTY_NOTICES.md).
+The code was written from scratch after [Tangerine research with REA](docs/TangerineResearch.md), including [five observed Settings pages](docs/Tangerine-settings.md). Observed UI and static field names remain separate from unknown proprietary defaults. Compress to ZIP is a separate owner-requested feature. The owner authorized the Yuzu Mac App icons and wheel design reference; no old engines, settings, caches, source modules, or Git history were carried over. See [component notices](THIRD_PARTY_NOTICES.md). Normal releases are stable GitHub Latest releases; signing limitations are documented separately. Contributors and maintainers follow the [PR/release workflow](docs/Releasing.md).
 
 The wheel regression test exercises real WindowServer hit-testing before a drag is confirmed: it fails with the old fully transparent window and passes with the corrected background. Fresh release checks are recorded in [validation](docs/Validation.md); [app QA](docs/QA.md) and [installer QA](docs/NpmQA.md) retain historical review results. Physical Finder drag, Powerbox/bookmark recovery, AirDrop, Terminal, VoiceOver, shelf drag-out, Intel hardware, and macOS 13 remain unverified.

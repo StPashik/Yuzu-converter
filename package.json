@@ -11,14 +11,15 @@
   "type": "module",
   "engines": { "node": ">=20.11" },
   "os": ["darwin"],
-  "cpu": ["arm64", "x64"],
+  "cpu": ["arm64"],
   "bin": { "yuzu-converter": "npm/cli.mjs" },
   "files": ["npm/", "README.md", "LICENSE"],
   "scripts": {
     "postinstall": "node npm/install.mjs",
     "prepack": "node npm/validate-release.mjs",
     "prepare:release": "node scripts/prepare-npm.mjs",
-    "test": "node --test Tests/npm/*.test.mjs",
+    "test": "node --test Tests/npm/*.test.mjs Tests/release/*.test.mjs",
+    "test:release": "node --test Tests/release/*.test.mjs",
     "test:installer": "node --test Tests/npm/*.test.mjs"
   }
 }

@@ -13,7 +13,7 @@ enum YuzuMain {
         if CommandLine.arguments.contains("--self-check") {
             Task.detached {
                 do { try await AppSelfCheck.run(); print("Sandbox self-check passed"); exit(0) }
-                catch { fputs("Self-check: \(error.localizedDescription)\n", stderr); exit(1) }
+                catch { fputs("Self-check: \(error as NSError)\n", stderr); exit(1) }
             }
             dispatchMain()
         }

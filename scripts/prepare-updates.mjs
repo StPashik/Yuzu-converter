@@ -17,9 +17,9 @@ if (publicBytes.length !== 32) throw new Error('A valid Sparkle public key is re
 // Node expects SPKI metadata around the raw Ed25519 key stored in Info.plist.
 const key = createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), publicBytes]), type: 'spki', format: 'der' });
 validateRelease(releaseInfo);
-await mkdir('updates', { recursive: true });
+await mkdir(directory, { recursive: true });
 
-for (const arch of ['arm64', 'x64']) {
+for (const arch of packageInfo.cpu) {
   const asset = releaseInfo.assets[arch];
   const path = join(directory, asset.name);
   const bytes = await readFile(path);
@@ -45,7 +45,8 @@ for (const arch of ['arm64', 'x64']) {
   </channel>
 </rss>
 `;
-  const destination = resolve(`updates/appcast-${arch}.xml`);
+  // Legacy main/updates feeds advance through a separate PR only after these assets are public.
+  const destination = join(directory, `appcast-${arch}.xml`);
   await writeFile(destination, feed);
   await run(join(tools, 'sign_update'), ['--account', account, destination]);
   await run(join(tools, 'sign_update'), ['--account', account, '--verify', destination]);

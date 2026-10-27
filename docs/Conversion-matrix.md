@@ -1,6 +1,6 @@
-# Conversion matrix: target inventory and preview support
+# Conversion matrix: target inventory and implemented support
 
-Updated October 27, 2026 for v0.4.0. The target remains Tangerine's 46-case format inventory. Missing capabilities remain requirements; they are not removed to match a backend. All candidate rows and research evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory). Version-specific build/test results and remaining physical gates are in [Validation.md](Validation.md).
+Updated October 27, 2026 for v0.4.0. Starting with 0.4.1, new releases target Apple Silicon only; 0.4.0 remains the final Intel release. This owner-approved architecture change does not reduce the conversion inventory. The target remains Tangerine's 46-case format inventory. Missing capabilities remain requirements; they are not removed to match a backend. All candidate rows and research evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory). Version-specific build/test results and remaining physical gates are in [Validation.md](Validation.md).
 
 ## Packaged Sandbox app and developer runs
 
@@ -12,7 +12,7 @@ Unsandboxed developer runs may discover separately installed FFmpeg/FFprobe/Libr
 
 The current format is hidden. Mixed inputs in one category receive only routes available to every file. Container names do not guarantee every codec/profile or lossless preservation. The media matrix fixture exercises real streams and output decoding; it does not prove every possible file.
 
-| Group and target inputs | Implemented preview routes | Limits and remaining targets |
+| Group and target inputs | Implemented routes | Limits and remaining targets |
 | --- | --- | --- |
 | Images: JPG, PNG, WebP, HEIC, TIFF, SVG, AVIF, BMP | System reader → JPG/PNG/HEIC/TIFF/BMP/PDF, plus WebP/AVIF where ImageIO provides a writer | Reader/writer support depends on macOS and the file. SVG export is absent. PDF/TIFF process multiple frames; other raster outputs use the first frame. The bundled FFmpeg has no libwebp/libaom encoder; developer builds may supply them |
 | Audio: MP3, M4A, WAV, FLAC, OGG, Opus, AIFF, WMA | Native compatible input → WAV/AIFF/M4A; bundled FFmpeg adds MP3/FLAC/Opus/WMA and decoding fallback | OGG/Vorbis output remains unavailable without a developer encoder. ASF/WMA identification uses bundled FFprobe. Input codec availability still matters |
@@ -74,4 +74,4 @@ The researched behavior and Yuzu’s implementation have separate evidence. [Tan
 | `openTerminal` | NSWorkspace + selected Terminal/iTerm2; the directory itself or a file/package’s parent; deduplicate folders | Folder-mapping and bundle-ID fixtures exist; real terminal/Sandbox checks deferred |
 | Compress to ZIP | One archive beside the first input, ZIP compression profile, available name, originals preserved | Owner-requested feature; version-specific creation/cancellation/compression fixtures and Sandbox results are recorded in Validation |
 
-Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual parity are not established. The owner deferred new manual Finder/Sandbox/AirDrop/Terminal checks; those checks remain open in the preview.
+Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual parity are not established. The owner deferred new manual Finder/Sandbox/AirDrop/Terminal checks; those checks remain unverified.

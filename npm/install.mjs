@@ -31,7 +31,7 @@ async function requireDirectory(path) {
 
 export function selectAsset(manifest, platform = process.platform, arch = process.arch) {
   if (platform !== 'darwin') throw new Error('Yuzu Converter requires macOS 13 or later.');
-  if (!['arm64', 'x64'].includes(arch)) throw new Error(`Unsupported architecture: ${arch}`);
+  if (!packageInfo.cpu.includes(arch)) throw new Error(`Unsupported architecture: ${arch}. This release requires an Apple Silicon Mac (arm64).`);
   validateRelease(manifest);
   return manifest.assets[arch];
 }

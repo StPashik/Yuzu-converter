@@ -10,7 +10,7 @@ import { applicationPath, install, selectAsset, validateArchivePaths, validateSp
 import { packageInfo, validateRelease } from '../../npm/validate-release.mjs';
 
 const run = promisify(execFile);
-const native = { skip: process.platform !== 'darwin' };
+const native = { skip: process.platform !== 'darwin' || !packageInfo.cpu.includes(process.arch) };
 const silent = () => {};
 const currentVersion = packageInfo.version;
 
@@ -18,7 +18,7 @@ function manifestFor(bytes) {
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   return {
     version: currentVersion, repository: 'StPashik/Yuzu-converter',
-    assets: Object.fromEntries(['arm64', 'x64'].map(arch => [arch, { name: `Yuzu-Converter-${currentVersion}-${arch}.zip`, sha256 }]))
+    assets: Object.fromEntries(packageInfo.cpu.map(arch => [arch, { name: `Yuzu-Converter-${currentVersion}-${arch}.zip`, sha256 }]))
   };
 }
 
@@ -63,17 +63,28 @@ function installFixture(home, fixture) {
   });
 }
 
-test('release assets are version-pinned for supported macOS architectures', () => {
+test('release assets are version-pinned and require Apple Silicon', () => {
   const manifest = manifestFor(Buffer.from('fixture'));
   assert.equal(selectAsset(manifest, 'darwin', 'arm64').name, `Yuzu-Converter-${currentVersion}-arm64.zip`);
-  assert.equal(selectAsset(manifest, 'darwin', 'x64').name, `Yuzu-Converter-${currentVersion}-x64.zip`);
+  assert.throws(() => selectAsset(manifest, 'darwin', 'x64'), /Apple Silicon/);
   assert.throws(() => selectAsset(manifest, 'linux', 'x64'), /macOS/);
   assert.throws(() => selectAsset(manifest, 'darwin', 'ia32'), /architecture/);
   assert.throws(() => validateRelease({ ...manifest, version: '999.0.0' }), /match/);
   assert.throws(() => validateRelease({ ...manifest, version: '0.1.0' }), /match/);
   assert.throws(() => validateRelease({ ...manifest, assets: { ...manifest.assets, arm64: { ...manifest.assets.arm64, sha256: null } } }), /pinned arm64/);
-  assert.throws(() => validateRelease({ ...manifest, assets: { arm64: manifest.assets.arm64 } }), /pinned x64/);
+  assert.throws(() => validateRelease({ ...manifest, assets: {} }), /pinned arm64/);
+  assert.throws(() => validateRelease({ ...manifest, assets: { ...manifest.assets, x64: manifest.assets.arm64 } }), /unsupported architectures/);
   assert.throws(() => applicationPath('relative-home'), /absolute/);
+});
+
+test('Intel installation is rejected before a download or an existing app replacement', async t => {
+  const home = await testHome(t, '0.4.0');
+  const plist = join(applicationPath(home), 'Contents/Info.plist');
+  const original = await readFile(plist);
+  await assert.rejects(install({ home, arch: 'x64', manifest: manifestFor(Buffer.from('unused')),
+    fetchAsset: () => assert.fail('must not download'), log: silent }), /Apple Silicon/);
+  assert.deepEqual(await readFile(plist), original);
+  assert.deepEqual(await readdir(join(home, 'Applications')), ['Yuzu Converter.app']);
 });
 
 test('only approved HTTPS GitHub download hosts can be followed', () => {

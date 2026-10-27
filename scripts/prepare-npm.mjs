@@ -8,7 +8,7 @@ const directory = resolve(process.argv[2] ?? 'dist');
 const manifest = { version: packageInfo.version, repository, assets: {} };
 
 // Pin the final archives; rebuilding an app afterwards requires regenerating the npm package.
-for (const arch of ['arm64', 'x64']) {
+for (const arch of packageInfo.cpu) {
   const name = `Yuzu-Converter-${packageInfo.version}-${arch}.zip`;
   const digest = createHash('sha256');
   for await (const chunk of createReadStream(resolve(directory, name))) digest.update(chunk);
