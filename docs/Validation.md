@@ -2,6 +2,29 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.2.1 — Yuzu wheel appearance
+
+At the owner's explicit request, the old Yuzu Mac App wheel was read only as a design reference and its appearance was applied to the current AppKit implementation. [Wheel-design.md](Wheel-design.md) records dimensions, colors, typography, motion, and native rendered previews. No old engines, settings, source modules, history, or caches were imported.
+
+Fresh checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
+
+| Check | Recorded result |
+| --- | --- |
+| Native arm64 Swift tests | 36 passed, 0 failed, 0 skipped: 22 Core and 14 App tests |
+| Intel XCTest under Rosetta | 36 passed, 0 failed, 0 skipped after a separate x86_64 build |
+| Wheel geometry and state | Rounded visible/hit paths, gaps/corners, top-first labels, white selection, and shrinking the option list while hovering passed |
+| Native previews | Conversion and Actions rendered in both light/dark appearances; all four PNGs were visually reviewed |
+| Localization | 62 matching keys and compatible placeholders in all five languages |
+| Node installer tests | 16 passed, including upgrade from 0.2.0 and preservation of newer app versions |
+| Signed release apps | Both ZIPs passed plist, architecture, and deep strict codesign checks; both signed Sandbox self-checks passed |
+| Final ZIP installation | Both archives installed into temporary homes; native version 0.2.1 and codesign passed |
+| Update signing | Both archives independently verified against the embedded public key; both appcasts signed and verified, using build 5 / short version 0.2.1 |
+| npm package | Prepack accepted final ZIP hashes; 7 files, no npm dependencies |
+
+The first targeted wheel run passed 7/7. A later full native run passed 35 tests but failed the WindowServer gate while the hit belonged to `loginwindow`; a separate layered/non-layered control probe saw the same owner. After the owner confirmed the Mac was unlocked, both complete suites passed 36/36. The assertion and product input handling were not weakened to bypass this environment condition.
+
+Independent read-only review found no blocker in geometry, selection reset, input validation, generation checks, access scopes, or jobs, and reviewed all four previews. Final checksums are in [Release-checksums-0.2.1.txt](Release-checksums-0.2.1.txt). Public feed/release/installed-upgrade results are recorded after publication. Physical Finder drag, VoiceOver, Powerbox recovery, external services, a full interactive Sparkle install/relaunch, Intel hardware, and macOS 13 remain unverified. The preview is ad-hoc signed without Apple notarization.
+
 ## v0.2.0 — in-app updates
 
 Fresh local checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:

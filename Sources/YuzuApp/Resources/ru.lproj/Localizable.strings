@@ -59,3 +59,5 @@
 "Check for Updates…" = "Проверить обновления…";
 "The update will install when file operations finish." = "Обновление установится после завершения операций с файлами.";
 "Updates are checked only when you ask. Installation requires your confirmation." = "Обновления проверяются только по вашему запросу. Установка требует подтверждения.";
+"To %@" = "В %@";
+"Release file" = "Отпустите файл";
