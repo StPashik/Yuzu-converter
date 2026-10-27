@@ -1,11 +1,18 @@
 import Foundation
 import Darwin
 
+/// File actions preserve existing destination names and stage copied/generated content before publication.
+/// Callers supply readable sources, a writable destination, and any required security-scoped grants.
 public enum FileOperations {
+    /// Copies or moves a normalized selection and returns its destination URLs.
+    /// Duplicate URLs and children of selected folders are processed only once. Each destination item
+    /// is published atomically; a later failure or cancellation does not roll back completed batch items.
+    /// Folder moves across volumes are rejected; cross-volume file moves copy before removing the original.
+    /// This blocks during filesystem work. Run off the main thread; cancellation is checked between stages.
     public static func copy(_ sources: [URL], to directory: URL, move: Bool) throws -> [URL] {
         var isDirectory: ObjCBool = false
         guard !sources.isEmpty, FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            throw ConversionError.invalid("Выберите существующую папку назначения.")
+            throw ConversionError.invalid("Choose an existing destination folder.")
         }
         let selected = try normalized(sources)
         var outputs: [URL] = []
@@ -18,7 +25,7 @@ public enum FileOperations {
             let resolvedDestination = destination.resolvingSymlinksInPath().path
             if (try source.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true,
                resolvedDestination == resolvedSource || resolvedDestination.hasPrefix(resolvedSource + "/") {
-                throw ConversionError.invalid("Нельзя поместить папку внутрь неё самой.")
+                throw ConversionError.invalid("A folder cannot be placed inside itself.")
             }
             if move {
                 if source.deletingLastPathComponent().resolvingSymlinksInPath() == destination.resolvingSymlinksInPath() { outputs.append(source); continue }
@@ -28,7 +35,7 @@ public enum FileOperations {
                 } catch let error as POSIXError where error.code == .EXDEV {
                     // shortcut: cross-volume folder moves need coordinated recursive verification before deletion.
                     if try source.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true {
-                        throw ConversionError.unsupported("Перемещение папок между томами пока недоступно; исходники сохранены. Используйте копирование или Finder.")
+                        throw ConversionError.unsupported("Moving folders between volumes is not available yet; the originals are unchanged. Use Copy or Finder.")
                     }
                 }
             }
@@ -43,7 +50,7 @@ public enum FileOperations {
                 // Publish the complete copy before removing anything from the original location.
                 let after = try source.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
                 guard before.fileSize == after.fileSize, before.contentModificationDate == after.contentModificationDate else {
-                    throw ConversionError.failed("Исходник изменился во время копирования; обе копии сохранены.")
+                    throw ConversionError.failed("The source changed while copying; both copies have been preserved.")
                 }
                 try FileManager.default.removeItem(at: source)
             }
@@ -51,16 +58,21 @@ public enum FileOperations {
         return outputs
     }
 
+    /// Builds one ZIP from staged copies, validates its entries, then returns its atomically published URL.
+    /// Originals remain untouched. The destination must be outside selected folders; links, special files,
+    /// and conflicting root names are rejected. Existing ZIP names receive a free numeric suffix.
+    /// Call off the main thread. Cancellation cleans private staging and stops the compression process.
     public static func compress(_ sources: [URL], in directory: URL) throws -> URL {
         try Task.checkCancellation()
         let selected = try normalized(sources)
         var isDirectory: ObjCBool = false
         guard !selected.isEmpty, FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
-            throw ConversionError.invalid("Выберите файлы и существующую папку для ZIP.")
+            throw ConversionError.invalid("Choose files and an existing folder for the ZIP archive.")
         }
+        // Reject portable-name collisions rather than silently merge trees from different source folders.
         let names = selected.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
         guard Set(names).count == names.count else {
-            throw ConversionError.invalid("У выбранных файлов совпадают имена; переименуйте их перед созданием одного ZIP.")
+            throw ConversionError.invalid("The selected files have matching names. Rename them before creating a single ZIP archive.")
         }
         let destination = directory.resolvingSymlinksInPath()
         for source in selected {
@@ -68,7 +80,7 @@ public enum FileOperations {
             if values.isDirectory == true {
                 let path = source.resolvingSymlinksInPath().path
                 guard destination.path != path, !destination.path.hasPrefix(path + "/") else {
-                    throw ConversionError.invalid("ZIP нельзя создавать внутри сжимаемой папки.")
+                    throw ConversionError.invalid("A ZIP archive cannot be created inside the folder being compressed.")
                 }
             }
             try rejectLinks(source)
@@ -78,6 +90,7 @@ public enum FileOperations {
         let contents = scratch.appendingPathComponent("contents", isDirectory: true)
         try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: false)
         _ = try copy(selected, to: contents, move: false)
+        // Sources can change while being copied; validate the staged tree as well as the original selection.
         try rejectLinks(contents)
         let output = scratch.appendingPathComponent("result.zip")
         // -y prevents a link introduced during staging from making zip follow another tree.
@@ -104,19 +117,21 @@ public enum FileOperations {
             try Task.checkCancellation()
             let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
             guard values.isSymbolicLink != true, values.isDirectory == true || values.isRegularFile == true else {
-                throw ConversionError.invalid("ZIP поддерживает обычные файлы и папки, без ссылок и специальных файлов: \(url.lastPathComponent)")
+                throw ConversionError.invalid("ZIP supports regular files and folders, without links or special files: \(url.lastPathComponent)")
             }
         }
         try check(source)
         guard try source.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true else { return }
         var enumerationError: Error?
         guard let items = FileManager.default.enumerator(at: source, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey], errorHandler: { _, error in enumerationError = error; return false }) else {
-            throw ConversionError.failed("Не удалось прочитать папку \(source.lastPathComponent).")
+            throw ConversionError.failed("Could not read the folder \(source.lastPathComponent).")
         }
         for case let item as URL in items { try check(item) }
         if let enumerationError { throw enumerationError }
     }
 
+    /// Renames a complete staged item to a free name. Staging must be on the destination volume;
+    /// EXDEV propagates deliberately so move callers can apply their separate cross-volume policy.
     static func publish(_ staged: URL, named name: String, in directory: URL) throws -> URL {
         let safeName = URL(fileURLWithPath: name).lastPathComponent
         let ext = (safeName as NSString).pathExtension
@@ -133,9 +148,10 @@ public enum FileOperations {
             if errno == EEXIST || errno == ENOTEMPTY { continue }
             throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
         }
-        throw ConversionError.failed("Не удалось подобрать свободное имя для \(name).")
+        throw ConversionError.failed("Could not find an available name for \(name).")
     }
 
+    /// Same-volume staging enables atomic publication; owner-only permissions protect unfinished contents.
     static func scratch(in directory: URL) throws -> URL {
         let url = directory.appendingPathComponent(".yuzu-" + UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])

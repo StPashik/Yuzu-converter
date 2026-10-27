@@ -1,60 +1,62 @@
-# Независимый QA: preview 0.1.0
+# Independent app QA — v0.1.0 preview
 
-Дата: 27 октября 2026. Проверена текущая рабочая копия до release commit. Область независимого review: `Sources/YuzuCore`, `Sources/YuzuApp`, вызываемые контракты, относящиеся к исправлениям fixtures, `scripts/build-app.sh`, `Package.swift`, `Resources/Info.plist` и entitlements. Исполнитель этого review писал npm-установщик, поэтому его собственные npm-тесты не считаются независимой проверкой установщика; отдельный результат находится в [NpmQA.md](NpmQA.md).
+Review date: October 27, 2026. This records review of the working tree before the v0.1.0 release commit: `Sources/YuzuCore`, `Sources/YuzuApp`, their contracts and relevant fixtures, `scripts/build-app.sh`, `Package.swift`, `Resources/Info.plist`, and entitlements. This reviewer authored the npm installer, so their own npm tests were not treated as independent installer review; see the separate [NpmQA.md](NpmQA.md).
 
-## Вердикт
+This is a translated historical record, followed by version-specific updates. Fresh v0.1.1 results are recorded separately in [Validation.md](Validation.md): 29 Swift tests per architecture, 13 installer tests, localization checks, signed Sandbox self-checks, and final ZIP installation. These are new runs, not inferred historical results.
 
-В повторно проверенном статическом scope существенных незакрытых замечаний не осталось. Реализация подходит для предварительного выпуска с ограничениями, перечисленными в [Conversion-matrix.md](Conversion-matrix.md). Это не подтверждение полной parity с Tangerine или готовности всех candidate pairs.
+## Verdict at review time
 
-Итоговый автоматический прогон после последней правки CR/LF/CRLF выполняет менеджер. Этот reviewer не запускал параллельную Swift-сборку, тесты, приложение или ручные Finder/Sandbox проверки. Итоговые pass counts, готовность архивов и результат запуска подписанной `.app --self-check` на момент записи документа не подтверждены этим review и не приписываются ему. Менеджер должен зафиксировать фактические результаты перед публикацией.
+No significant unresolved finding remained in the statically rechecked scope. The implementation was suitable for a preview with the limits in [Conversion-matrix.md](Conversion-matrix.md). This did not establish full Tangerine parity or readiness of every candidate pair.
 
-## Повторно проверенные исправления
+The manager owned the final automated run after the CR/LF/CRLF fix. This reviewer did not run a parallel Swift build, tests, the app, or manual Finder/Sandbox checks. At the original review time, final pass counts, archive readiness, and signed `.app --self-check` results were not confirmed by this reviewer. The manager later recorded those results below and in [Validation.md](Validation.md).
 
-| Сценарий из первоначального review | Что проверено в текущем коде | Автоматическое свидетельство в исходниках |
+## Rechecked fixes
+
+| Original scenario | What was checked in the code | Fixture evidence inspected |
 | --- | --- | --- |
-| Выход во время работы движка мог оставить процесс и scratch | `applicationShouldTerminate` отменяет задания, ждёт текущую обработку и определение форматов, затем отвечает AppKit; при завершении очередь больше не запускается | Process cancellation fixture существует; реальный выход приложения этим reviewer не выполнялся |
-| Powerbox мог сохранить другую папку как родителя исходника | Свежий и восстановленный URL проверяются `AccessStore.isParent`; ошибочные grants освобождаются, набор уже полученных папок закрывается через `defer` при ошибке/отмене | `testOutputGrantMustBelongToTheActualSourceParent` |
-| Sandbox release предлагал внешние FFmpeg/LibreOffice | `YuzuSandboxed=true` в Info.plist ограничивает `Tools.find` папкой `Bundle.Resources/Tools`; нативный audio/video fallback проверяет доступность системного reader/exporter | Native audio/video fixtures; запуск готовой подписанной `.app` отдельно |
-| Изменение вложенного файла могло остаться незамеченным при межтомном Move каталога | При `EXDEV` каталог отклоняется до copy/delete, оригинал сохраняется; поведение явно ограничено в требованиях | Ветка проверена статически; фактическое межтомное перемещение не запускалось |
-| ODS repeated count мог переполнить `Int` | Верхняя граница проверяется через остаток доступного количества до сложения и умножения | `testODSRepeatedCountsCannotOverflow` |
-| XML prefixes и ODS row containers приводили к пустому/неполному результату | Элементы и атрибуты сопоставляются по namespace URI; ODS header/group/rows containers обходятся; отсутствие листов даёт ошибку | `testPrefixedXLSXAndWrappedODSKeepRowsAndNamespaces` |
-| XML-текст копировался во все узлы stack | Упорядоченные text/child fragments хранятся в собственном узле, смешанный текст и CDATA сохраняют порядок; прежнее размножение текста по всем предкам удалено | Mixed XML/CDATА assertion в table fixture |
-| Архивные имена могли перезаписывать другой распакованный файл | Проверяются повторения, регистр, нормализованные имена и implicit parents; файл создаётся с `O_EXCL`/`O_NOFOLLOW`; ссылки и выход за scratch отклоняются | `testArchiveRejectsDuplicateCaseAndDirectoryAliasesWithoutTruncation` и прежние symlink/traversal fixtures |
-| RIFF/FORM offset считался в Unicode-символах | Container marker читается из байтов `8..<12`; двоичный размер больше не сдвигает WAVE/AIFF/AVI/WebP marker | `testRIFFByteOffsetsAndLargeQuotedCSVContentDetection` |
-| Большой CSV распознавался по оборванному quoted prefix | При табличных признаках CSV разбирается полный bounded текст, а не неполный 64 KiB prefix | Большой quoted CSV в том же fixture |
-| Windows rows пропускались, а CRLF внутри поля менялся | Детектор использует `.newlines`; CSV/TSV parser различает CR/LF/CRLF вне quotes и сохраняет исходный newline внутри quoted field; writer заключает такие поля в кавычки | `windowsRows` round-trip assertion в том же fixture |
-| Portrait JPEG превращался в sideways PDF | ImageIO transform применяет EXIF orientation при исходном максимальном размере, размеры PDF берутся из преобразованного изображения | `testJPEGOrientationIsAppliedToPDFWithoutDownsampling` |
+| Quitting during conversion could leave a process and scratch files | `applicationShouldTerminate` cancels jobs, waits for active work and format detection, then answers AppKit; the queue cannot restart during termination | Process cancellation fixture exists; this reviewer did not physically quit a running app |
+| Powerbox could remember a different folder as the input’s parent | Fresh and restored URLs are checked by `AccessStore.isParent`; invalid grants are released and previously acquired folders are closed through `defer` after error/cancellation | `testOutputGrantMustBelongToTheActualSourceParent` |
+| Sandbox release offered external FFmpeg/LibreOffice | `YuzuSandboxed=true` restricts `Tools.find` to `Bundle.Resources/Tools`; the native media fallback checks system reader/exporter availability | Native audio/video fixtures; finished signed-app execution was a separate check |
+| A nested file change could be missed during a cross-volume folder move | `EXDEV` refuses folders before copy/delete and preserves the original; the limitation is explicit in requirements | Branch inspected statically; no real cross-volume folder move was run |
+| ODS repeated counts could overflow `Int` | Bounds use remaining capacity before addition and multiplication | `testODSRepeatedCountsCannotOverflow` |
+| XML prefixes and ODS row containers could produce empty/incomplete output | Namespace URIs identify elements/attributes; ODS header/group/rows containers are traversed; missing sheets cause an error | `testPrefixedXLSXAndWrappedODSKeepRowsAndNamespaces` |
+| XML text was copied to every node on the stack | Each node stores its own ordered text/child fragments; mixed text and CDATA preserve order; ancestor duplication was removed | Mixed XML/CDATA assertion in the table fixture |
+| Archive names could overwrite another extracted file | Duplicate, case, normalized-name, and implicit-parent checks; files use `O_EXCL`/`O_NOFOLLOW`; links and paths outside scratch are rejected | `testArchiveRejectsDuplicateCaseAndDirectoryAliasesWithoutTruncation` and link/traversal fixtures |
+| RIFF/FORM offsets were counted as Unicode characters | Container markers use bytes `8..<12`, so binary lengths no longer shift WAVE/AIFF/AVI/WebP markers | `testRIFFByteOffsetsAndLargeQuotedCSVContentDetection` |
+| Large CSV detection used a truncated quoted prefix | Tabular candidates parse the complete bounded text rather than an incomplete 64 KiB prefix | Large quoted CSV in the same fixture |
+| Windows rows were skipped and CRLF inside fields changed | Detection uses `.newlines`; the parser distinguishes CR/LF/CRLF outside quotes, preserves the original newline inside quoted fields, and the writer quotes those fields | `windowsRows` round-trip assertion in the same fixture |
+| Portrait JPEG became sideways PDF | ImageIO applies EXIF orientation at the original maximum size; PDF dimensions come from the transformed image | `testJPEGOrientationIsAppliedToPDFWithoutDownsampling` |
 
-Наличие fixture в таблице означает, что его содержание просмотрено; результат его исполнения должен подтверждаться логом финального прогона.
+A fixture’s presence means its content was inspected. The final run log, rather than its existence, establishes execution results.
 
-## ZIP Action и очередь UI
+## Compress to ZIP and the UI queue
 
-`FileOperations.compress(_:in:) throws -> URL` — публичная синхронная операция Core. Она нормализует выбранные источники, убирает повторения и уже включённых потомков, отклоняет одинаковые верхние имена, ссылки и размещение ZIP внутри сжимаемого каталога. Данные сначала копируются в собственный scratch; готовый ZIP проверяется через `ArchiveReader` и публикуется с `RENAME_EXCL` под свободным именем. Исходники не перемещаются и не удаляются. Отмена проверяется до работы, при обходе/копировании, в процессе и перед публикацией.
+`FileOperations.compress(_:in:) throws -> URL` is a public synchronous Core operation. It normalizes selected inputs, removes duplicates and already-included descendants, rejects duplicate top-level names and links, and refuses to place the ZIP inside a selected directory. Data is copied into private scratch first; `ArchiveReader` validates the finished ZIP, then `RENAME_EXCL` publishes it under an available name. Sources are never moved or removed. Cancellation is checked before work, during traversal/copying, in the process, and before publication.
 
-В Actions присутствует «В ZIP». UI получает доступ к родительской папке первого input и передаёт операцию в общую очередь как `JobKind.compress`; сам Core вызывается внутри `Task.detached`. Scoped source URLs и destination grant удерживаются заданием, отмена передаётся worker, destination grant освобождается после завершения. Fixtures `testCompressFilesAndFolderWithoutOverwritingOrFollowingLinks` и `testCompressCancellationCreatesNoArchive` проверяют содержимое, свободное имя, сохранность оригиналов, отказ на links/одинаковых именах и отмену.
+The UI acquires access to the first input’s parent and queues the ZIP Action as `JobKind.compress`; Core runs in `Task.detached`. The job retains source scopes and destination permission, propagates cancellation to the worker, and releases destination permission after completion. `testCompressFilesAndFolderWithoutOverwritingOrFollowingLinks` and `testCompressCancellationCreatesNoArchive` check contents, available names, preservation of originals, rejection of links/duplicate names, and cancellation.
 
-Обработка drop отложена до следующего main tick после создания `ScopedFiles`, чтобы закончить AppKit drop до Powerbox/sharing. Clipboard copy удерживает source lease до изменения `NSPasteboard.changeCount`. Это подтверждено чтением кода; физическая передача grants между Finder, clipboard и приложением остаётся отдельным отложенным gate.
+Drop handling waits until the next main-queue tick after constructing `ScopedFiles`, allowing AppKit drop to finish before Powerbox/sharing. Clipboard Copy retains its source lease until `NSPasteboard.changeCount` changes. These were code observations; physical grant transfer among Finder, clipboard, and the app remains a deferred check.
 
-## Упаковка и разрешённые иконки
+## Packaging and authorized icons
 
-Статически совпадают release/npm contracts: `Yuzu Converter.app`, executable `YuzuApp`, bundle ID `com.stpashik.yuzu-converter`, version `0.1.0`, minimum macOS `13.0`, asset names `Yuzu-Converter-0.1.0-arm64.zip` и `Yuzu-Converter-0.1.0-x64.zip`. Скрипт ограничивает архитектуру, сверяет версии package/plist, подписывает entitlements, проверяет архитектуру через `lipo` и создаёт ZIP с одним app root через `ditto --norsrc --keepParent`. Пользовательская установленная `.app` скриптом сборки не затрагивается.
+The historical release/npm contracts matched: `Yuzu Converter.app`, executable `YuzuApp`, bundle ID `com.stpashik.yuzu-converter`, version `0.1.0`, minimum macOS `13.0`, and assets `Yuzu-Converter-0.1.0-arm64.zip` / `Yuzu-Converter-0.1.0-x64.zip`. The build script restricts architecture, compares package/plist versions, signs with entitlements, checks `lipo`, and uses `ditto --norsrc --keepParent` for one app root. It does not touch the user’s installed app.
 
-По отдельному разрешению владельца перенесены только две собственные иконки. Read-only SHA-256 сравнение с указанными оригиналами подтвердило совпадение:
+The owner explicitly allowed two app icons from Yuzu Mac App. Read-only SHA-256 comparison confirmed both originals matched their copies:
 
 - `Resources/YuzuAppIcon.icns`: `6a250b9e4853a92ad09a82b6b1e3e9bceb0b4063a2e6a3a37d001286737a5b86`.
 - `Sources/YuzuApp/Resources/YuzuMenuBar.pdf`: `41876c86fa4ea93f5e9efcd27213aa210d67f338ad54694ddef341462713b518`.
 
-App icon копируется как `Contents/Resources/Yuzu.icns`, на него указывает Info.plist. Menu bar PDF копируется в app resources; приложение сначала читает его через `Bundle.main`, а developer launch имеет fallback через `Bundle.module`. Другие старые исходники/история и ресурсы Tangerine этим review не переносились.
+The app icon is copied to `Contents/Resources/Yuzu.icns` and referenced by Info.plist. The menu bar PDF is copied into app resources; the app reads it through `Bundle.main`, with a `Bundle.module` fallback for developer runs. This review transferred no other old source/history or Tangerine resources. The later v0.1.1 request also permits an app-icon PNG solely for documentation; that is not an additional historical app asset check.
 
-## Точные границы preview
+## Exact preview boundaries
 
-- Для обычного файла между томами Move сравнивает размер и `modificationDate` исходника до и после копирования. Это проверка метаданных, без hash comparison, блокировки или файлового snapshot; полная защита от конкурентного изменения с теми же метаданными не заявляется. При обнаруженном изменении обе копии сохраняются. Каталоги между томами отклоняются до копирования; фактическая ветка `EXDEV` не прогонялась этим reviewer.
-- Полная матрица Tangerine не реализована; форматные, codec/layout и values-only ограничения остаются в Conversion-matrix. Архивные лимиты и отказ на links/collisions относятся также к проверке создаваемого ZIP.
-- Физический Finder drag, VoiceOver во время drag, Powerbox/bookmark recovery, clipboard paste, AirDrop, Terminal и shelf drag-out отложены владельцем. Новые ручные проверки не запрашивались и не выполнялись.
-- Сборка x64 не доказывает запуск на Intel; min macOS 13 в metadata не доказывает runtime-проверку на macOS 13. Подпись, notarization, Gatekeeper и установка из опубликованного Release должны описываться только по фактическому результату поставки.
+- Cross-volume file Move compares the source’s size and `modificationDate` before/after copying. There is no hash comparison, locking, or filesystem snapshot, so protection against concurrent changes with unchanged metadata is not claimed. Detected changes keep both copies. Cross-volume folders are refused before copying; this reviewer did not exercise a real `EXDEV`.
+- The full Tangerine matrix is not implemented. Format, codec/layout, and values-only limits remain in the conversion matrix. Archive limits and link/collision rejection also apply to created ZIP validation.
+- The owner deferred physical Finder drag, VoiceOver during drag, Powerbox/bookmark recovery, clipboard paste, AirDrop, Terminal, and shelf drag-out. No new manual checks were requested or performed.
+- An x64 build does not prove Intel hardware execution; minimum macOS 13 metadata does not prove testing on macOS 13. Report signing, notarization, Gatekeeper, and published-release installation only from actual distribution evidence.
 
-Review меняет только этот документ; code/commits и фоновые процессы не создавались.
+The original review changed only this record and created no code commits or background processes.
 
-## Результаты менеджера после review
+## Manager’s subsequent v0.1.0 results
 
-Финальные 26 Swift tests прошли на arm64 и x86_64 через Rosetta; 13 Node tests прошли. Оба signed Sandbox архива прошли self-check, установку в временные home, codesign strict и проверку версии. Команды и точные границы свидетельства записаны в [Validation.md](Validation.md). Это дополнение менеджера к независимому статическому review; отложенные физические gates остаются в силе.
+The final 26 Swift tests passed on native arm64 and x86_64 under Rosetta; 13 Node tests passed. Both signed Sandbox archives passed self-checks, installation into temporary homes, strict codesign, and version checks. [Validation.md](Validation.md) records commands and evidence limits. These were the manager’s additions to the independent static review; deferred physical checks remained open. They do not establish v0.1.1 results.

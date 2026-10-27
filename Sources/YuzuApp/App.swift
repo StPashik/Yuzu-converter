@@ -5,7 +5,10 @@ import YuzuCore
 @main
 enum YuzuMain {
     @MainActor static func main() {
-        if CommandLine.arguments.contains("--version") { print("0.1.0"); return }
+        if CommandLine.arguments.contains("--version") {
+            print(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development")
+            return
+        }
         if CommandLine.arguments.contains("--self-check") {
             Task.detached {
                 do { try await AppSelfCheck.run(); print("Sandbox self-check passed"); exit(0) }
@@ -13,6 +16,8 @@ enum YuzuMain {
             }
             dispatchMain()
         }
+        // Seed this app's language before AppKit caches text for standard dialogs.
+        UserDefaults.standard.set([L10n.language.rawValue], forKey: "AppleLanguages")
         let application = NSApplication.shared
         let delegate = AppDelegate()
         application.setActivationPolicy(.accessory)
@@ -22,6 +27,7 @@ enum YuzuMain {
 }
 
 @MainActor
+/// Coordinates UI, grants, and a serial job queue; Core work always runs on a background task.
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = Settings()
     private let access = AccessStore()
@@ -46,12 +52,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.setAccessibilityLabel("Yuzu Converter")
         item.button?.image?.isTemplate = true
         let menu = NSMenu()
-        menu.addItem(withTitle: "Настройки…", action: #selector(showSettings), keyEquivalent: ",").target = self
-        menu.addItem(withTitle: "Выйти", action: #selector(quit), keyEquivalent: "q").target = self
+        menu.addItem(withTitle: L10n.text("Settings…"), action: #selector(showSettings), keyEquivalent: ",").target = self
+        menu.addItem(withTitle: L10n.text("Quit"), action: #selector(quit), keyEquivalent: "q").target = self
         item.menu = menu
         statusItem = item
         settingsSubscription = settings.objectWillChange.sink { [weak self] _ in
-            DispatchQueue.main.async { self?.updateTooltip() }
+            DispatchQueue.main.async { self?.refreshLanguage() }
         }
         updateTooltip()
         monitor.onSources = { [weak self] urls, view in self?.updateSources(urls, view: view) }
@@ -71,22 +77,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateTooltip() {
-        statusItem?.button?.toolTip = "Yuzu Converter\n\(settings.shortcutDescription)\nПеретаскивайте файл · Escape — отмена"
+        statusItem?.button?.toolTip = "Yuzu Converter\n\(settings.shortcutDescription)\n\(L10n.text("Drag a file · Escape to cancel"))"
+    }
+
+    private func refreshLanguage() {
+        statusItem?.menu?.item(at: 0)?.title = L10n.text("Settings…")
+        statusItem?.menu?.item(at: 1)?.title = L10n.text("Quit")
+        updateTooltip()
+        settings.refreshLanguage()
+        monitor.refreshLanguage()
+        actions.refreshLanguage()
+        progress.refreshLanguage()
     }
     @objc private func showSettings() { settings.show() }
     @objc private func quit() { NSApp.terminate(nil) }
 
     private func updateSources(_ urls: [URL], view: WheelDragView) {
+        // Cancellation is cooperative, so the generation ID also rejects late results from an old wheel.
         detection?.cancel()
         let identifier = UUID()
         detectionID = identifier
         if view.mode == .actions {
             view.options = FileAction.allCases.map(WheelOption.action)
-            view.idleCaption = urls.count == 1 ? urls[0].lastPathComponent : "\(urls.count) файлов"
+            view.idleCaption = urls.count == 1 ? urls[0].lastPathComponent : L10n.text("%ld files", urls.count)
             return
         }
         view.options = []
-        view.idleCaption = "Определяю формат…"
+        view.idleCaption = L10n.text("Reading file…")
         let engine = engine
         detection = Task { [weak self, weak view] in
             let worker = Task.detached(priority: .userInitiated) { () throws -> [FileFormat] in
@@ -99,15 +116,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                     onCancel: { worker.cancel() })
                 guard !Task.isCancelled, self?.detectionID == identifier, let view else { return }
                 view.options = targets.map(WheelOption.conversion)
-                view.idleCaption = targets.isEmpty ? "Нет доступных целей" : "Конвертация"
+                view.idleCaption = L10n.text(targets.isEmpty ? "No available formats" : "Convert")
             } catch {
                 guard !Task.isCancelled, self?.detectionID == identifier else { return }
                 view?.options = []
-                view?.idleCaption = "Формат недоступен"
+                view?.idleCaption = L10n.text("Unsupported format")
             }
         }
     }
 
+    /// The drop has finished and its source grants are retained before any modal dialog is opened.
     private func handleDrop(_ files: ScopedFiles, option: WheelOption) {
         detection?.cancel()
         let urls = files.urls
@@ -132,9 +150,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func enqueue(_ job: PendingJob) { jobs.append(job); startNextJob() }
 
     private func startNextJob() {
+        // Keep each batch ordered. Earlier published results survive a later item's error or cancellation.
         guard !terminating, currentJob == nil, !jobs.isEmpty else { return }
         let job = jobs.removeFirst()
-        progress.show(title: job.kind.title)
+        let kind = job.kind
+        progress.show(title: { kind.title })
         let engine = engine
         currentJob = Task {
             let worker = Task.detached(priority: .userInitiated) { () throws -> Int in
@@ -157,11 +177,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             do {
                 let count = try await withTaskCancellationHandler(operation: { try await worker.value },
                                                                   onCancel: { worker.cancel() })
-                progress.finish("Готово: \(count)")
+                progress.finish("Completed: %ld", count)
             } catch is CancellationError {
-                progress.finish("Отменено")
+                progress.finish("Cancelled")
             } catch {
-                progress.finish("Не удалось завершить")
+                progress.finish("Could not complete")
                 if !terminating { ActionController.show(error) }
             }
             job.destinations.forEach { $0.stopAccessingSecurityScopedResource() }
@@ -200,9 +220,9 @@ private enum JobKind: Sendable {
     case conversion(FileFormat), move, compress
     var title: String {
         switch self {
-        case .conversion(let format): return "Конвертация в \(format.label)"
-        case .move: return "Перемещение файлов"
-        case .compress: return "Сжатие в ZIP"
+        case .conversion(let format): return L10n.text("Converting to %@", format.label)
+        case .move: return L10n.text("Moving files")
+        case .compress: return L10n.text("Compressing to ZIP")
         }
     }
 }
@@ -211,8 +231,10 @@ private enum JobKind: Sendable {
 private final class JobProgress {
     private let panel: NSPanel
     private let label = NSTextField(labelWithString: "")
-    private let cancel = NSButton(title: "Отменить", target: nil, action: nil)
+    private let cancel = NSButton(title: L10n.text("Cancel"), target: nil, action: nil)
     private var closeTimer: Timer?
+    // Store how to render the message so changing language does not restart or lose the active job.
+    private var titleSource: () -> String = { "" }
     var onCancel: (() -> Void)?
 
     init() {
@@ -228,18 +250,24 @@ private final class JobProgress {
         panel.contentView?.addSubview(cancel)
         panel.center()
     }
-    func show(title: String) {
+    func show(title: @escaping () -> String) {
         closeTimer?.invalidate()
-        label.stringValue = title
+        titleSource = title
+        refreshLanguage()
         cancel.isHidden = false
         panel.orderFrontRegardless()
     }
-    func finish(_ text: String) {
-        label.stringValue = text
+    func finish(_ key: String, _ arguments: CVarArg...) {
+        titleSource = { L10n.string(key, language: L10n.language, arguments: arguments) }
+        refreshLanguage()
         cancel.isHidden = true
         closeTimer = Timer.scheduledTimer(withTimeInterval: 3, repeats: false) { [weak self] _ in
             MainActor.assumeIsolated { self?.panel.orderOut(nil) }
         }
+    }
+    func refreshLanguage() {
+        label.stringValue = titleSource()
+        cancel.title = L10n.text("Cancel")
     }
     @objc private func cancelJob() { onCancel?() }
 }

@@ -1,53 +1,57 @@
-# Yuzu Converter — требования
+# Yuzu Converter requirements
 
-Дата: 27 октября 2026. Репозиторий: https://github.com/StPashik/Yuzu-converter.
+Updated October 27, 2026. Repository: https://github.com/StPashik/Yuzu-converter.
 
-## Цель и границы
+## Goal and scope
 
-Разработать с нуля нативное приложение macOS 13+, воспроизводящее конвертацию и Actions Tangerine. Основа исследования — установленный Tangerine 2.0.2 (9), `/Applications/Tangerine.app/Contents/MacOS/Tangerine`, arm64, SHA-256 `7691b34cc2c728aaf280041c0a13adef3e5192c43cb3e886a19ae4c69ea92928`. REA evidence должно отделять наблюдения от предположений и непроверенных деталей.
+Build a native macOS 13+ app from scratch, reproducing Tangerine’s conversion and Actions behavior. The research target is the installed Tangerine 2.0.2 (9), `/Applications/Tangerine.app/Contents/MacOS/Tangerine`, arm64, SHA-256 `7691b34cc2c728aaf280041c0a13adef3e5192c43cb3e886a19ae4c69ea92928`. REA findings must distinguish observations, inferences, and unknowns.
 
-File tools, PDF tools и Archive tools в этот выпуск не входят. Конвертация файлов PDF и архивных форматов остаётся частью целевого инвентаря. По дополнительному явному запросу владельца в Actions добавляется «Сжать в ZIP». Это собственная седьмая функция Yuzu, отдельно от шести Actions, исследованных в Tangerine через REA.
+File tools, PDF tools, and Archive tools are excluded. PDF and archive format conversion remain in the target inventory. The owner separately requested **Compress to ZIP**, a seventh Yuzu Action in addition to the six Actions researched in Tangerine. It must not be attributed to REA findings about Tangerine.
 
-Не переносить исходники, binaries/resources и историю прежнего Yuzu. Единственное исключение по прямому запросу владельца: собственная иконка приложения и собственный векторный значок menu bar из Yuzu Mac App, сохранённые как `Resources/YuzuAppIcon.icns` и `Sources/YuzuApp/Resources/YuzuMenuBar.pdf`. Старый код и остальные ресурсы не переносятся. Не копировать proprietary resources/binaries Tangerine. Понятный код и краткие комментарии, объясняющие причины решений, обязательны.
+Do not reuse old Yuzu source, binaries, resources, or Git history. The owner explicitly authorized these exceptions: the app icon at `Resources/YuzuAppIcon.icns`, the menu bar icon at `Sources/YuzuApp/Resources/YuzuMenuBar.pdf`, and an app-icon PNG used only in documentation at `docs/images/app-icon.png`, all from the owner’s Yuzu Mac App assets. The documentation PNG must not broaden reuse of application resources. No other old code or resources may be carried over. Do not copy proprietary Tangerine resources or binaries. Keep code readable, with short comments explaining the reasons behind decisions.
 
-## Конвертация
+Project documentation, code comments, release titles, release notes, and technical converter diagnostics must be English. Communicate with the owner in Russian. The app-owned interface has a language picker for English (default), Russian, German, French, and Spanish; changing the selection updates the UI live. Some system dialogs apply the app-scoped language after restart; never change the Mac's global language. Deliberately translated values in localization resource tables are an explicit exception to the English project-text policy. Keep keys and English fallback text consistent across all five languages.
 
-Целевые группы: Images, Audio, Video, PDF, Documents, EPUB, Slides, Spreadsheets, Subtitles, Archives. Полный список пар предстоит зафиксировать по REA в [Conversion-matrix.md](Conversion-matrix.md). Строка в статическом каталоге не доказывает работоспособность пары. Требования не сокращаются по доступности первого backend; отсутствующие возможности обозначаются явно.
+Version 0.1.1 introduces the language picker and English project documentation. Its build and runtime checks remain pending until performed; historical v0.1.0 results must retain their version and scope. API and flow comments must explain consequential contracts and ownership in clear English, rather than narrate obvious code.
 
-Тип входа определяется по содержимому. Для одного файла или однородной группы скрывается текущий формат; для смешанной группы показывается пересечение реально доступных пар. Заведомо неработающие цели не отображаются.
+## Conversion
 
-Результаты создаются рядом с исходниками под свободными именами. Исходники и существующие результаты не перезаписываются. Finder автоматически не открывается. PDF → JPG/PNG обрабатывает все страницы при действительных 300 DPI и возвращает все результаты в отдельной папке. Растр или извлечённый текст не выдаются за редактируемый документ.
+Target groups: Images, Audio, Video, PDF, Documents, EPUB, Slides, Spreadsheets, Subtitles, and Archives. The full REA candidate inventory and implementation gaps are recorded in [Conversion-matrix.md](Conversion-matrix.md). A static catalog entry is not proof that a pair works. Do not reduce requirements to fit the first available backend; state missing capabilities explicitly.
 
-Чтение, конвертация и файловые операции выполняются вне main thread. Необходимы отмена, понятные ошибки и очистка незавершённых результатов.
+Determine input type from content. Hide the current format for a single file or homogeneous group. For mixed inputs, show the intersection of routes that actually support every input. Do not offer targets known to be unavailable.
+
+Save results beside the originals under available names. Never overwrite sources or existing results. Do not open Finder automatically. PDF → JPG/PNG must process every page at an actual 300 DPI, put the results in a separate folder, and return every output URL. Do not present raster images or extracted text as reconstructed editable documents.
+
+Read files, convert content, and perform file operations off the main thread. Support cancellation, useful errors, and cleanup of incomplete results.
 
 ## Actions
 
-Исследуемый набор: `airDrop`, `float` (полка), `copy`, `move`, `copyPath`, `openTerminal`. Порядок, параметры и точная семантика подтверждаются REA до заявления о совпадении поведения. Действия не должны терять исходные данные при ошибке или отмене.
+The researched set is `airDrop`, `float` (the floating shelf), `copy`, `move`, `copyPath`, and `openTerminal`. Confirm order, parameters, and exact semantics through REA before claiming behavioral parity. Errors and cancellation must not lose source data.
 
-«Сжать в ZIP» объединяет выбранные файлы и папки в один архив рядом с первым выбранным input. Архив получает свободное имя; оригиналы и существующие файлы не изменяются. Действие не добавляет File tools и не приписывается REA Tangerine.
+Compress to ZIP combines selected files and folders into one archive beside the first selected input, using an available name. It preserves originals and existing files. It does not add File tools.
 
-Явная граница prerelease Move: перемещение каталогов между томами отклоняется до копирования, оригинал не удаляется. Для файлов между томами сравниваются размер и время изменения исходника до/после копирования; при изменении сохраняются обе копии. Это проверка метаданных, без хеширования. Полная поддержка межтомного перемещения каталогов остаётся дальнейшей работой.
+Preview Move limit: cross-volume folder moves are refused before copying, preserving the original. Cross-volume file moves compare the source’s size and modification time before and after copying; if a change is detected, both copies are kept. This is a metadata check, without content hashing. Full cross-volume folder movement remains future work.
 
-## Пользовательский интерфейс и доступ
+## UI and file access
 
-Приложение живёт в menu bar, без Dock и главного окна. Меню содержит только «Настройки…» и «Выйти». Настройки и полка открываются по явному действию пользователя.
+Run as a menu bar app without a Dock icon or main window. The menu contains only **Settings…** and **Quit**. Open settings and the shelf only in response to an explicit user action.
 
-Shift вызывает конвертацию, Control — Actions. Нужны обратное назначение в настройках и переключение уже открытого колеса. Tooltip показывает клавиши и при выключенных колёсах. Escape отменяет операцию выбора. Пустой drag не показывает колесо.
+Shift selects conversion; Control selects Actions. Allow the keys to be swapped and an open wheel to switch modes. The tooltip must show the keys even when wheels are disabled. Escape cancels selection. An empty drag must not show the wheel.
 
-Используется настоящий AppKit file drag, включая неактивный Finder. Глобальное чтение drag pasteboard, private API и новые разрешения не заменяют поддерживаемую интеграцию. Сектора и настройки должны быть доступны через системную accessibility.
+Use real AppKit file dragging, including from an inactive Finder. Global drag-pasteboard polling, private APIs, or extra permissions are not substitutes for supported integration. Wheel sectors and settings must expose system accessibility.
 
-Sandbox использует Powerbox и security-scoped bookmarks. Доступ сохраняется и восстанавливается без повторных диалогов, когда разрешение уже существует. Первичный доступ к папке вывода запрашивается, если file drag не предоставил необходимых прав; нельзя считать доступ к родителю файла автоматически разрешённым.
+Use Powerbox and security-scoped bookmarks in the Sandbox. Reuse and restore existing grants without repeated dialogs. Request initial output-folder access if the file drag did not provide it; access to a file does not imply access to its parent folder.
 
-## Поставка
+## Distribution
 
-Нативная `.app` устанавливается через `npm install -g`. В GitHub Release публикуются архив готового приложения, установочный npm `.tgz`, SHA-256 и лицензии распространяемых зависимостей. Установка `.tgz` по URL GitHub Release допустима; наличие npm registry account не предполагается.
+Provide a native `.app`, installable through `npm install -g`, and direct Apple Silicon/Intel app downloads. GitHub Releases contain the finished app archives, npm installer `.tgz`, SHA-256 checksums, and applicable dependency licenses. Installing the release `.tgz` URL is supported; do not assume an npm registry account.
 
-Воспроизводимая сборка и установка документируются. Release notes перечисляют фактически проверенные пары, доступные backends, поддерживаемые архитектуры и остающиеся ограничения. Непроверенные возможности не объявляются поддержанными. Подпись и notarization указываются по фактическому состоянию.
+Document reproducible build and installation steps. Release notes must describe verified routes, available backends, supported architectures, and remaining limits. Do not label unverified capabilities as supported. Describe signing and notarization according to the actual artifacts.
 
-## Проверка и выпуск
+## Verification and release process
 
-Утверждённый менеджером план находится в [Architecture.md](Architecture.md). Общие Core/UI/Finder-контракты принадлежат менеджеру. Изменения идут из `feature/*` от `develop`, после независимого QA объединяются через `merge --no-ff`; `main` и tags используются для выпуска. Force push запрещён. Старый checkout и его caches не изменяются.
+The manager accepted [Architecture.md](Architecture.md). Shared Core/UI/Finder contracts belong to the manager. Use `feature/*` branches from `develop`, independent QA, and `merge --no-ff`; reserve `main` and tags for releases. Never force-push. Leave old checkouts and caches untouched.
 
-Автоматические тесты выполняются в отдельных scratch paths. Новые ручные проверки владельцем отложены. Физический Finder drag, Sandbox grants/bookmark recovery и взаимодействие с реальными системными приложениями остаются непроверенными gates, пока не появится соответствующее свидетельство. Успешная сборка и unit-тесты не доказывают полную parity или production readiness.
+Use separate scratch paths for automated tests. New manual checks requested from the owner remain deferred. Physical Finder drag, Sandbox grant/bookmark recovery, and integration with real system apps remain unverified until corresponding evidence exists. Passing builds and unit tests do not establish full parity or production readiness.
 
-Источник требований: текущие запросы владельца и ранее зафиксированные требования в соседнем checkout `Yuzu-converter/docs/Requirements.md`, прочитанные как текстовый reference. Исходники и Git-история старых проектов не использовались; перенос двух собственных иконок разрешён отдельным прямым запросом.
+These requirements combine the owner’s current requests with the requirements previously recorded in the neighboring `Yuzu-converter/docs/Requirements.md`, read only as text reference. No old source or Git history was reused; the icon exceptions were explicitly authorized by the owner.

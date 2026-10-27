@@ -3,6 +3,9 @@ import SwiftUI
 
 @MainActor
 final class Settings: ObservableObject {
+    @Published var language = L10n.language {
+        didSet { L10n.language = language }
+    }
     @Published var wheelsEnabled = UserDefaults.standard.object(forKey: "wheelsEnabled") as? Bool ?? true {
         didSet { UserDefaults.standard.set(wheelsEnabled, forKey: "wheelsEnabled") }
     }
@@ -15,14 +18,17 @@ final class Settings: ObservableObject {
     private var window: NSWindow?
 
     var shortcutDescription: String {
-        swapModifiers ? "⌃ Конвертация · ⇧ Actions" : "⇧ Конвертация · ⌃ Actions"
+        let convert = L10n.text("Convert"), actions = L10n.text("Actions")
+        return swapModifiers ? "⌃ \(convert) · ⇧ \(actions)" : "⇧ \(convert) · ⌃ \(actions)"
     }
+
+    func refreshLanguage() { window?.title = L10n.text("Yuzu Converter Settings") }
 
     func show() {
         if window == nil {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 330),
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 480, height: 420),
                                   styleMask: [.titled, .closable], backing: .buffered, defer: false)
-            window.title = "Yuzu Converter — настройки"
+            window.title = L10n.text("Yuzu Converter Settings")
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: SettingsView(settings: self))
             window.center()
@@ -37,20 +43,27 @@ private struct SettingsView: View {
     @ObservedObject var settings: Settings
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             Label("Yuzu Converter", systemImage: "arrow.triangle.2.circlepath")
                 .font(.title2.bold())
-            Text("Перетащите файл и нажмите клавишу. Отпустите файл над нужным сектором.")
+            Text(L10n.text("Drag a file and hold a shortcut key. Drop it on the action or format you need."))
                 .foregroundStyle(.secondary)
-            Toggle("Включить колёса", isOn: $settings.wheelsEnabled)
-            Toggle("Поменять Shift и Control местами", isOn: $settings.swapModifiers)
+            Toggle(L10n.text("Enable wheels"), isOn: $settings.wheelsEnabled)
+            Toggle(L10n.text("Swap Shift and Control"), isOn: $settings.swapModifiers)
             Text(settings.shortcutDescription).font(.callout.monospaced())
-            Toggle("Добавлять файлы в существующую полку", isOn: $settings.addToShelf)
-            Text("Escape отменяет выбор. Результаты сохраняются рядом с оригиналом под свободным именем.")
+            Picker(L10n.text("Language"), selection: $settings.language) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.name).tag(language)
+                }
+            }
+            Text(L10n.text("Some system dialogs use the new language after restarting the app."))
+                .font(.caption).foregroundStyle(.secondary)
+            Toggle(L10n.text("Add files to the existing floating shelf"), isOn: $settings.addToShelf)
+            Text(L10n.text("Escape cancels selection. Results are saved beside the original under an available name."))
                 .font(.caption).foregroundStyle(.secondary)
             Spacer(minLength: 0)
         }
         .padding(24)
-        .frame(width: 440, height: 330)
+        .frame(width: 480, height: 420)
     }
 }

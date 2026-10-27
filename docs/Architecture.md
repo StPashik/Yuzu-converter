@@ -1,57 +1,63 @@
-# Архитектура Yuzu Converter
+# Yuzu Converter architecture
 
-Дата: 27 октября 2026. Статус: план Архитектора принят менеджером. Это план реализации; наличие документа не подтверждает работу описанных возможностей.
+Updated October 27, 2026. The manager accepted this architecture. It describes the design and intended contracts; it is not evidence that every capability has been verified. Version 0.1.1 adds English project documentation and five selectable UI languages; fresh build and runtime validation is pending.
 
-## Структура
+## Structure
 
-Один Swift Package, два target:
+One Swift package has two production targets:
 
-- `YuzuCore`: идентификация содержимого, каталог форматов и маршрутов, конвертация, очередь заданий с отменой, безопасная публикация результатов и модели Actions. Core не управляет окнами и не вызывает диалоги.
-- `YuzuApp`: AppKit menu bar, drag destination, колёса, системные Actions и полка. SwiftUI используется для содержимого настроек, когда упрощает код. UI выполняет Powerbox-запросы и передаёт разрешённые URL в Core.
+- `YuzuCore` identifies content, catalogs formats/routes, converts files, runs cancellable jobs, safely publishes results, and provides file-operation contracts. It does not manage windows or present dialogs.
+- `YuzuApp` owns the AppKit menu bar, drag destination, wheels, system Actions, and floating shelf. SwiftUI is used for settings content where it simplifies the code. The UI requests Powerbox access and passes usable URLs to Core.
 
-Общие Core/UI/Finder-контракты принадлежат менеджеру. Отдельный исполнитель не меняет их параллельно без согласования. Новые обёртки и зависимости вводятся только для реальной потребности, которую не покрывают существующий код или системный API.
+Shared Core/UI/Finder contracts belong to the manager. Contributors must coordinate changes to those contracts. Add a wrapper or dependency only for a real need that existing code or a system API does not cover.
 
-По прямому запросу владельца переиспользуются ровно два собственных assets из прежнего Yuzu Mac App: app icon `Resources/YuzuAppIcon.icns` и menu bar icon `Sources/YuzuApp/Resources/YuzuMenuBar.pdf`. Они включаются в bundle при сборке; отдельная генерация иконки не нужна. Это исключение не разрешает перенос старого кода, прочих ресурсов или ресурсов Tangerine.
+## Localization and developer explanations
 
-## Каталог и движки
+Project documentation, release text, and code comments use English; conversations with the owner use Russian. Settings offers English (default), Russian, German, French, and Spanish for app-owned UI, with live updates. Five `en`/`ru`/`de`/`fr`/`es` `.lproj` tables use the same keys and an English fallback. Translated resource values are deliberate localization data, not a violation of the English source/documentation policy. Technical conversion diagnostics remain English.
 
-Единый каталог питает UI, выбор backend и fixtures. Он различает исследованные кандидаты, реализованные маршруты и проверенные пары. Текущий формат скрывается; смешанный набор использует пересечение доступных маршрутов. Целевой инвентарь и состояние проверок сохраняются в [Conversion-matrix.md](Conversion-matrix.md).
+Keep UI localization in YuzuApp; Core remains responsible for conversion and technical errors. Use English API/flow comments to explain file-grant ownership, cancellation, validation, and publication guarantees. [Developer-guide.md](Developer-guide.md) gives the source reading order and contribution checklist.
 
-Первыми рассматриваются системные ImageIO, PDFKit и AVFoundation. Доступность конкретных пар ими не предполагается заранее. Для внешнего движка фиксируются версия, архитектура, лицензия и реальные возможности. FFmpeg и прочие backends не берутся из Tangerine. Office/EPUB/Slides/Spreadsheets/Archives требуют настоящих маршрутов; QuickLook и извлечение текста не заменяют редактируемую конвертацию.
+The owner authorized reuse of the app icon `Resources/YuzuAppIcon.icns` and menu bar icon `Sources/YuzuApp/Resources/YuzuMenuBar.pdf` from Yuzu Mac App. They are included in the app bundle; a separate icon generator is unnecessary. An app-icon PNG from the same owner-provided assets may be used only at `docs/images/app-icon.png` for documentation. These exceptions do not permit reuse of old source, other application resources, Git history, or Tangerine resources.
 
-Тип определяется по содержимому с проверкой ошибок чтения. Внешние процессы получают аргументы массивом, без shell interpolation. Логи ограничиваются по размеру, ошибки и отмена доводятся до UI.
+## Format catalog and engines
 
-## Файлы и задачи
+One catalog feeds the UI, backend selection, and fixtures. Distinguish researched candidates, implemented routes, and verified pairs. Hide the current format and intersect available routes for mixed inputs. [Conversion-matrix.md](Conversion-matrix.md) preserves the target inventory and verification limits.
 
-Операция сначала пишет в собственный временный каталог. Готовый результат получает свободное имя и публикуется без перезаписи. Успех возвращает все созданные URL; ошибка и отмена удаляют только собственные незавершённые файлы. Исходники сохраняются до успешного завершения операции, которой явно требуется перемещение.
+Prefer system ImageIO, PDFKit, and AVFoundation. Do not assume that they support every pair. Record a third-party engine’s version, architecture, license, and actual capabilities before distribution. Never take FFmpeg or other backends from Tangerine. Office/EPUB/Slides/Spreadsheets/Archives need real routes; QuickLook or text extraction does not replace editable reconstruction.
 
-`FileOperations.compress(_:in:) throws -> URL` в YuzuCore создаёт один ZIP из выбранных файлов/папок и публикует его под свободным именем в родительской папке первого input. UI получает необходимые scoped grants и ставит операцию в общую очередь. Оригиналы не изменяются. Это седьмое Action Yuzu по отдельному запросу владельца; к шести исследованным REA Actions Tangerine оно не относится.
+Identify content and handle read failures. Invoke processes with argument arrays rather than shell interpolation. Bound logs and propagate errors and cancellation to the UI. The packaged Sandbox app uses system tools and frameworks; external FFmpeg/FFprobe/LibreOffice discovery is limited to unsandboxed developer runs.
 
-Move между томами для файлов выполняет copy + проверку данных перед удалением исходника. Межтомное перемещение каталогов в prerelease отклоняется до копирования: обхода через рекурсивный copy/delete пока нет.
+## Files and jobs
 
-Очередь задач выполняет чтение, кодирование и файловую работу вне main thread. Состояние UI обновляется на main actor. Поддерживаются отмена и завершение запущенного дочернего процесса. Параллельные build/test не используют один scratch path.
+Write to a private scratch directory first. Validate completed output, then publish it under an available name without replacing an existing file. Return every created URL. On failure or cancellation, remove only the operation’s incomplete files. Preserve sources until an explicitly requested move has succeeded.
 
-## Drag, колёса и Actions
+`FileOperations.compress(_:in:) throws -> URL` creates one ZIP from selected files/folders and publishes it beside the first input under an available name. The UI acquires the required scopes and queues the operation. Originals remain unchanged. Compress to ZIP is a separate owner-requested Yuzu Action, not one of the six Tangerine Actions established by REA.
 
-Данные принимаются через `NSDraggingDestination.draggingEntered` / `draggingUpdated` и соответствующий `draggingPasteboard`. Глобальное чтение drag pasteboard не используется. Временный прозрачный drag destination может активироваться на выбранном модификаторе, но колесо рисуется только после подтверждённого file drag. Этот способ требует отдельного физического Finder gate.
+For a cross-volume file move, compare the original’s size and modification time before and after copying; keep both copies when a change is detected. This checks metadata, not content hashes. Cross-volume folder moves are refused before copying in the preview; recursive copy/delete is not used as a fallback.
 
-Shift/Control переключают текущее колесо; Escape закрывает выбор. Сектора имеют системную accessibility, а не только визуальный hit-test. Настройки и полка открываются по явному действию. Точная семантика `airDrop`, `float`, `copy`, `move`, `copyPath`, `openTerminal` уточняется по REA.
+The job queue performs reading, encoding, and file work off the main thread. Update UI state on the main actor. Propagate cancellation to active child processes. Do not run concurrent builds/tests in the same scratch directory.
 
-Собственное действие «Сжать в ZIP» добавляется в Actions wheel отдельно; оно не расширяет File tools и не изменяет целевую матрицу конвертации из 46 format cases.
+## Dragging, wheels, and Actions
 
-AppKit отвечает за системный sharing/pasteboard/workspace и диалоги. Доступ к файлам сохраняется через scoped bookmarks. Запись рядом с входом не предполагает автоматический доступ к родительской папке; при отсутствии grants нужен Powerbox. Распространяемый Sandbox-вариант требует проверки подписи, entitlements и наследования прав внешними процессами.
+Accept data through `NSDraggingDestination.draggingEntered` / `draggingUpdated` and the corresponding `draggingPasteboard`. Do not read the global drag pasteboard. A temporary transparent drag destination may activate on the selected modifier, but draw the wheel only after a confirmed file drag. This approach still needs a physical Finder integration check.
 
-## npm и GitHub Releases
+Shift/Control switch the current wheel; Escape closes selection. Sectors expose system accessibility beyond visual hit testing. Open settings and the shelf only on explicit user action. The exact researched semantics and unknowns for `airDrop`, `float`, `copy`, `move`, `copyPath`, and `openTerminal` are recorded in [TangerineResearch.md](TangerineResearch.md).
 
-Установочный пакет содержит небольшой Node-установщик и команду запуска. Он выбирает объявленную архитектуру macOS, скачивает архив ровно своей версии из `StPashik/Yuzu-converter`, проверяет встроенный SHA-256 и устанавливает `.app` в `~/Applications` через системный `ditto`. Существующая установка не удаляется до готовности новой. Скачанные shell scripts не выполняются.
+Compress to ZIP is an additional wheel Action. It neither introduces File tools nor changes the 46-case target conversion inventory.
 
-GitHub Release содержит архив `.app`, npm `.tgz`, SHA-256 и лицензии зависимостей. Пакет можно установить командой `npm install -g URL_пакета.tgz`, без npm registry. Release pipeline обязан формировать checksum после окончательного содержимого архива и проверять соответствие package version/tag/artifact names. Поддерживаемые архитектуры, подпись и notarization объявляются только по факту сборки и проверки.
+AppKit owns system sharing, pasteboard, workspace calls, and dialogs. Persist file access through scoped bookmarks. A file grant does not imply permission to write to its parent; use Powerbox when needed. Verify the distributed app’s signature, entitlements, and subprocess access rather than inferring them from developer runs.
 
-## Проверки
+## npm and GitHub Releases
 
-- Swift unit-тесты: определение типа, выбор маршрута и пересечение целей, безопасные имена, ошибки, отмена и сохранность исходников.
-- Интеграционные fixtures: реальная конвертация заявляемых пар, проверка содержимого результата и PDF со всеми страницами при 300 DPI.
-- Node-тесты: выбор asset, проверка checksum, ошибки загрузки/распаковки и сохранность существующей установки.
-- Release smoke check: сборка готовой `.app`, содержимое `.tgz`, версии и checksum. Сам checksum не заменяет подпись и notarization.
+A small Node installer and launch command select the declared macOS architecture, download exactly their package version from `StPashik/Yuzu-converter`, verify a pinned SHA-256, and install the app into `~/Applications` using system `ditto`. Keep the existing app until the replacement is ready. Do not execute downloaded shell scripts.
 
-Независимый QA сверяет реализацию с требованиями и матрицей. До физической проверки Finder drag, Sandbox grants и системных Actions эти gates явно остаются непроверенными. Release не заявляет полную parity на основании одной сборки или unit-тестов.
+A release contains app ZIPs, the npm `.tgz`, checksums, and license notices. The `.tgz` can be installed by release URL without npm registry publication. Generate checksums from the final archives and check package version/tag/asset names. Describe architecture support, signing, and notarization only after validating the actual artifacts.
+
+## Verification
+
+- Swift unit tests cover content detection, route intersection, available names, errors, cancellation, and source preservation.
+- Integration fixtures perform conversions, inspect output content, and verify every PDF page at 300 DPI.
+- Node tests cover asset selection, checksum enforcement, download/extraction errors, and preservation of an existing app.
+- Release smoke checks inspect the finished `.app`, `.tgz` contents, versions, and checksums. A checksum does not replace signing or notarization.
+
+Independent QA compares the implementation with requirements and the matrix. Keep physical Finder drag, Sandbox grants, and system Actions marked unverified until tested. Historical v0.1.0 results are in [Validation.md](Validation.md); they are not fresh v0.1.1 runs.

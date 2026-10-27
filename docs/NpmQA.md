@@ -1,38 +1,38 @@
-# Независимая проверка npm-установщика
+# Independent npm installer review — v0.1.0
 
-Дата: 27 октября 2026. Область: текущие `npm/install.mjs`, `npm/validate-release.mjs`, `npm/cli.mjs`, `scripts/prepare-npm.mjs`, `Tests/npm/installer.test.mjs` и вызывающие package scripts. Код просмотрен независимо от исполнителя; изменения в код не вносились. Предполагаемая нагрузка — обычная установка или обновление приложения одним пользователем macOS.
+Review date: October 27, 2026. This is the historical review of `npm/install.mjs`, `npm/validate-release.mjs`, `npm/cli.mjs`, `scripts/prepare-npm.mjs`, `Tests/npm/installer.test.mjs`, and their package scripts. The reviewer was independent of the installer’s author and changed no code. Expected use: one macOS user installing or updating the app. The installer logic is unchanged in v0.1.1; fresh 13/13 Node tests, final ZIP install checks, and npm prepack passed. See the version-specific [validation record](Validation.md) for subsequent published-download checks.
 
-Установщик выбирает version-pinned asset из собственного GitHub Release, проверяет SHA-256 до распаковки и устанавливает готовую `.app` в `~/Applications`. При обновлении старое приложение переносится в собственный staging только после проверки новой версии; при ошибке публикации предусмотрено восстановление или сохранение backup с сообщением о его расположении.
+The installer selects a version-pinned GitHub Release asset, checks SHA-256 before extraction, and installs the app into `~/Applications`. During an update, it moves the old app into private staging only after validating the replacement. If publication fails, it restores the old app or preserves its backup and reports the location.
 
-## Результат
+## Result
 
-В проверенной области не найден конкретный критический путь обхода валидации или потери прежней установленной `.app`. Это ограниченный вывод о текущем npm-коде, а не общий допуск всего приложения к выпуску.
+No concrete critical validation bypass or path that loses the previously installed app was found in the reviewed scope. This is a conclusion about that npm implementation, not approval of the entire product.
 
-Проверены следующие границы:
+Reviewed boundaries:
 
-- Manifest связывает package version, точные имена arm64/x64 assets, repository и оба SHA-256. `prepack` отклоняет неподготовленный manifest. `prepare-npm` записывает manifest только после чтения обоих архивов и повторной проверки package version.
-- Downloads разрешены только по HTTPS на явно перечисленные GitHub hosts; credentials, нестандартные ports и чужие redirect hosts отклоняются. Есть предел redirects, timeout, потоковый SHA-256 и ограничение размера.
-- Archive paths проверяются до `ditto`: один ожидаемый `.app` root, без `..`, абсолютных/управляющих paths и backslash. `zipinfo` допускает только обычные файлы/каталоги; symlinks и превышение expanded-size limit отклоняются.
-- Home/Applications и основные application paths проверяются через `lstat`. Existing symlink или чужой bundle ID не заменяется. Перед публикацией проверяются executable, plist, bundle ID и версия новой `.app`.
-- Команды запускаются через `execFile` с массивами аргументов и абсолютными системными paths. Скачанные shell scripts не выполняются. При SHA/ZIP/bundle-validation ошибке существующее приложение ещё находится на прежнем месте.
-- Rename новой версии выполняется на том же томе. При неуспешном rollback backup не удаляется. Удаляется только собственный staging; пользовательские preferences и другие приложения код не затрагивает.
+- The manifest binds package version, exact arm64/x64 asset names, repository, and both SHA-256 values. `prepack` refuses an unprepared manifest. `prepare-npm` reads both archives and rechecks package version before writing the manifest.
+- Downloads use HTTPS and an explicit GitHub host allowlist. Credentials, nonstandard ports, and redirects to other hosts are rejected. Redirect count, timeout, archive size, and streamed checksum computation are bounded.
+- Archive paths are checked before `ditto`: one expected app root, no `..`, absolute/control-character paths, or backslashes. `zipinfo` permits regular files/directories only; symlinks and excessive expanded size are rejected.
+- Home/Applications and essential app paths use `lstat` checks. Existing symlinks or a foreign bundle ID are not replaced. Validate the new executable, plist, bundle ID, and version before publishing it.
+- Commands use `execFile`, argument arrays, and absolute system paths. Downloaded shell scripts are not run. SHA/ZIP/bundle-validation failures occur while the existing app is still in its original location.
+- Replacement renames stay on the same volume. A failed rollback preserves its backup. Only the installer’s own staging is removed; user preferences and unrelated apps are untouched.
 
-## Автоматическая проверка
+## Historical automated check
 
-Независимо выполнено:
+The reviewer independently ran:
 
 ```sh
 node --test Tests/npm/installer.test.mjs
 ```
 
-Результат: **13 passed, 0 failed, 0 skipped**. Использован Node v24.19.0. Тесты работали в отдельных временных home/staging, не устанавливали приложение в настоящий `~/Applications` и не запускали `.app`.
+Result: **13 passed, 0 failed, 0 skipped**, using Node v24.19.0. Tests used private temporary homes/staging, did not install into the real `~/Applications`, and did not launch the app.
 
-Покрыты asset selection/manifest, URL allowlist, checksum, unsafe paths, установка, повторная установка, upgrade, сохранность старой `.app` при неверном SHA/повреждённом ZIP/чужом bundle, symlink внутри архива и symlink в destination/Applications.
+Coverage included asset selection/manifest, URL allowlist, checksum, unsafe paths, first install, repeated install, upgrade, preservation of the old app after a wrong SHA/corrupt ZIP/foreign bundle, archive symlinks, and destination/Applications symlinks.
 
-## Границы заключения
+## Limits of this conclusion
 
-Тесты подставляют локальный ZIP вместо реального HTTPS download. Они не доказывают правильность ещё не опубликованных Release assets, Gatekeeper launch или подпись приложения. Final `.tgz` и оба `.zip` необходимо сверить после окончательной сборки; checksum manifest должен соответствовать именно этим архивам.
+Tests substituted local ZIPs for HTTPS downloads. They did not prove the correctness of unpublished Release assets, Gatekeeper launch, or app signing. Check the final `.tgz` and both app ZIPs after building; the manifest must pin those exact archives. Later v0.1.0 release checks are recorded separately in [Validation.md](Validation.md).
 
-Принудительный сбой rename после переноса старой `.app`, отказ диска во время rollback, аварийное завершение процесса и конкурирующие установщики отдельно не моделировались. Ветки recovery прочитаны статически; отсутствие такого теста не объявляется доказанной потерей данных. Установщик доверяет содержимому загруженного npm-пакета и embedded SHA-256; это не замена Developer ID/notarization.
+Forced rename failure after moving the old app, disk failure during rollback, abrupt termination, and concurrent installers were not modeled separately. Recovery branches were inspected statically; missing fault-injection tests are not evidence of data loss. The installer trusts the npm package and its embedded SHA-256 values; this is not a substitute for Developer ID or notarization.
 
-Вердикт по проверенной области: критических препятствий для prerelease не обнаружено. Общий verdict, окончательный build/install smoke check и решение о выпуске остаются у менеджера.
+Verdict for the reviewed scope: no critical blocker to the v0.1.0 preview was found. The manager owned overall approval, final build/install smoke checks, and publication. This translated record does not assert a new v0.1.1 review or test run.
