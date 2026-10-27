@@ -4,6 +4,8 @@ Communicate with the owner in Russian. Use English for documentation, code comme
 
 Keep docs/Requirements.md and the accepted docs/Architecture.md current. Scope includes conversion and seven Actions, including the owner-requested Compress to ZIP. Exclude File tools. Do not silently reduce requirements to match a backend; record limitations in docs/Conversion-matrix.md.
 
+Starting with 0.4.1, publish Apple Silicon (arm64) releases only, as requested by the owner. Version 0.4.0 remains the last Intel release. Keep its signed legacy x64 feed unchanged; never offer an arm64 archive to Intel clients.
+
 Follow GitFlow through GitHub pull requests: feature/* from develop into develop; release/<version> from develop into main, then back into develop. Wait for CI and use merge commits. Tag the exact main release-PR merge commit. Do not commit or push directly to main or develop. A legacy appcast publication may use a separate PR after its referenced assets are public. The owner's request authorizes publishing to StPashik/Yuzu-converter. Never force push or rewrite published tags/assets. Read docs/Releasing.md before preparing a release.
 
 Publish normal releases as stable GitHub Latest releases. Use prerelease status only when the owner explicitly requests a beta/RC. Ad-hoc signing and missing notarization are documented artifact limitations, not reasons to silently choose prerelease status.

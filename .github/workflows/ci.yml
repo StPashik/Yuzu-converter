@@ -53,7 +53,7 @@ jobs:
         run: |
           # These checks use Node built-ins; the macOS-only installer is not installed on Linux.
           node --test Tests/release/*.test.mjs
-          node scripts/verify-update-feeds.mjs updates
+          node scripts/verify-update-feeds.mjs updates arm64 x64
 
   native:
     name: Native ${{ matrix.arch }}
@@ -66,9 +66,6 @@ jobs:
           - arch: arm64
             cpu: arm64
             runner: macos-26
-          - arch: x64
-            cpu: x86_64
-            runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
     env:
@@ -87,22 +84,6 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - name: Diagnose the published Intel Sandbox on this runner
-        if: matrix.arch == 'x64'
-        timeout-minutes: 5
-        run: |
-          curl --fail --location --retry 2 \
-            https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-x64.zip \
-            --output "$RUNNER_TEMP/yuzu-reference.zip"
-          echo "5230ce75fe48edc56620a91e93272c722d10a58e4f4c8349e9cd2d6032fea2a6  $RUNNER_TEMP/yuzu-reference.zip" | shasum -a 256 --check
-          mkdir "$RUNNER_TEMP/yuzu-reference"
-          ditto -x -k --norsrc "$RUNNER_TEMP/yuzu-reference.zip" "$RUNNER_TEMP/yuzu-reference"
-          codesign --verify --deep --strict "$RUNNER_TEMP/yuzu-reference/Yuzu Converter.app"
-          mkdir -p .build/media-x64/Tools
-          cp "$RUNNER_TEMP/yuzu-reference/Yuzu Converter.app/Contents/Helpers/ffmpeg" .build/media-x64/Tools/
-          cp "$RUNNER_TEMP/yuzu-reference/Yuzu Converter.app/Contents/Helpers/ffprobe" .build/media-x64/Tools/
-          bash scripts/build-app.sh x64
-          python3 scripts/verify-media-release.py --arch x64
       - name: Build pinned media tools for the runner CPU
         run: |
           test "$(uname -m)" = "$APP_CPU"

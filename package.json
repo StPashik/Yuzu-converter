@@ -11,7 +11,7 @@
   "type": "module",
   "engines": { "node": ">=20.11" },
   "os": ["darwin"],
-  "cpu": ["arm64", "x64"],
+  "cpu": ["arm64"],
   "bin": { "yuzu-converter": "npm/cli.mjs" },
   "files": ["npm/", "README.md", "LICENSE"],
   "scripts": {

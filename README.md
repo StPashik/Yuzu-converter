@@ -8,10 +8,11 @@ File conversion and useful file actions from your Mac’s menu bar. Hold a key w
 
 ## Download
 
-Requires **macOS 13 or later**. Choose your Mac:
+Requires **Apple Silicon (M1 or later) and macOS 13 or later**.
 
 - [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-arm64.zip)
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-x64.zip)
+
+Intel Macs can keep [version 0.4.0](https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0), the final Intel release. New releases and updates target Apple Silicon only.
 
 This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-FFmpeg-Sources-0.4.0.tar.xz) is supplied with the release.
 
@@ -39,7 +40,7 @@ See the [wheel design notes](docs/Wheel-design.md) for the visual reference and 
 
 ## Format support
 
-| Area | Preview support |
+| Area | Implemented support |
 | --- | --- |
 | Images and PDF | System image readers/writers; every PDF page to JPG/PNG at 300 DPI; existing PDF text to TXT/MD |
 | Audio and video | Native WAV/AIFF/M4A and MP4/MOV, plus bundled FFmpeg video, GIF, MP3/FLAC/Opus/WMA routes |
@@ -47,9 +48,9 @@ See the [wheel design notes](docs/Wheel-design.md) for the visual reference and 
 | Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; text-based PDF output |
 | Subtitles and archives | SRT/VTT/TXT and ZIP/TAR/TAR.GZ; RAR input where system libarchive supports it |
 
-The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. The preview does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
+The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. Yuzu does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
 
-FFmpeg and FFprobe are included for both architectures; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
+FFmpeg and FFprobe are included for Apple Silicon; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
 
 ## Install with npm
 
@@ -74,13 +75,11 @@ swift test --scratch-path .build/verification
 swift run --scratch-path .build/development YuzuApp
 ```
 
-Build the pinned media engines and the two app archives, then pin their final checksums and package the installer. Build prerequisites and LGPL source obligations are in the [media guide](docs/Bundled-media.md):
+Build the pinned media engines and the Apple Silicon app archive, then pin their final checksums and package the installer. Build prerequisites and LGPL source obligations are in the [media guide](docs/Bundled-media.md):
 
 ```sh
 python3 scripts/build-media.py arm64
-python3 scripts/build-media.py x64
 bash scripts/build-app.sh arm64
-bash scripts/build-app.sh x64
 node scripts/prepare-npm.mjs dist
 node scripts/prepare-updates.mjs dist
 npm pack --pack-destination dist

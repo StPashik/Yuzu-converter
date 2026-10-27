@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPublicKey, verify } from 'node:crypto';
-import { repository } from '../npm/validate-release.mjs';
+import { packageInfo, repository } from '../npm/validate-release.mjs';
 
 function signatureBytes(value) {
   const bytes = Buffer.from(value ?? '', 'base64');
@@ -42,7 +42,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (raw.length !== 32) throw new Error('Missing project update public key.');
   const key = createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), raw]), type: 'spki', format: 'der' });
   // Legacy feeds can intentionally lag source versions until the new release assets are public.
-  for (const arch of ['arm64', 'x64']) {
+  for (const arch of process.argv.length > 3 ? process.argv.slice(3) : packageInfo.cpu) {
     const feed = verifyAppcast(await readFile(resolve(directory, `appcast-${arch}.xml`)), arch, key);
     console.log(`${arch}: signed ${feed.version} / build ${feed.build} feed and pinned download metadata verified`);
   }

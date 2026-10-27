@@ -6,8 +6,7 @@ cd "$project_root"
 app_arch="${1:-arm64}"
 case "$app_arch" in
   arm64) swift_arch=arm64 ;;
-  x64) swift_arch=x86_64 ;;
-  *) echo 'Usage: scripts/build-app.sh arm64|x64' >&2; exit 2 ;;
+  *) echo 'New releases require Apple Silicon. Usage: scripts/build-app.sh [arm64]' >&2; exit 2 ;;
 esac
 
 app_version=$(/usr/bin/plutil -extract version raw -o - package.json)

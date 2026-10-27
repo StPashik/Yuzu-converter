@@ -68,7 +68,7 @@ App-owned UI refreshes live when the setting changes. The app-scoped `AppleLangu
 `AppUpdater.swift` shares the updater between the menu and Settings, retains a postponed installation while jobs run, and restores drag monitoring after cancellation/failure. Its delegate selector tests protect against silently mistyping optional Objective-C methods in Swift. Read [Updates.md](Updates.md) before signing a release; the private signing key stays in Keychain.
 
 - Follow [Releasing.md](Releasing.md): feature PR into develop, release PR into main, tag its exact merge commit, publish stable Latest, and merge back through a PR. Wait for CI and keep merge commits. Do not push shared branches directly, rewrite published tags/assets, or install/restart the owner's app during release work.
-- Check package/plist versions, minimum macOS, both architectures, five-table key/placeholder parity, English fallback, live UI updates, and copied release resources. Keep physical checks explicitly deferred until performed.
+- Check package/plist versions, minimum macOS, Apple Silicon architecture, five-table key/placeholder parity, English fallback, live UI updates, and copied release resources. Keep physical checks explicitly deferred until performed.
 - Run automated checks in separate scratch paths; do not share a Swift build directory between parallel runs:
 
 ```sh
@@ -79,12 +79,11 @@ swift test --scratch-path .build/verification
 
 The armed-wheel regression test uses the public WindowServer hit-test API. Run the App tests in a logged-in graphical macOS session; they do not simulate an end-to-end Finder drag.
 
-- Build the pinned media engines with `python3 scripts/build-media.py arm64` and `x64`; follow [Bundled media](Bundled-media.md). Rebuild them whenever the recipe or source manifest changes. Run Swift tests with the matching `YUZU_FFMPEG`, `YUZU_FFPROBE`, and `YUZU_MEDIA_REQUIRED=1`; the release video fixtures must not skip. Package the complete corresponding media source with `python3 scripts/package-media-sources.py`.
+- Build the pinned media engines with `python3 scripts/build-media.py arm64`; follow [Bundled media](Bundled-media.md). Rebuild them whenever the recipe or source manifest changes. Run Swift tests with the matching `YUZU_FFMPEG`, `YUZU_FFPROBE`, and `YUZU_MEDIA_REQUIRED=1`; the release video fixtures must not skip. Package the complete corresponding media source with `python3 scripts/package-media-sources.py`.
 - Build the archives sequentially, run the signed Sandbox app's `--self-check`, and verify signature/architecture/version and installation into temporary homes. Then pin the final archives and pack the installer:
 
 ```sh
 bash scripts/build-app.sh arm64
-bash scripts/build-app.sh x64
 node scripts/prepare-npm.mjs dist
 node scripts/prepare-updates.mjs dist
 node scripts/verify-update-feeds.mjs dist

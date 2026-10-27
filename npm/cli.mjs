@@ -7,7 +7,7 @@ const argument = process.argv[2];
 if (argument === '--version' || argument === '-v') {
   console.log(packageInfo.version);
 } else if (argument === '--help' || argument === '-h') {
-  console.log('Usage: yuzu-converter [--version | --help]\n\nInstall this release if needed, then launch Yuzu Converter from ~/Applications.\nRequires macOS 13 or later.');
+  console.log('Usage: yuzu-converter [--version | --help]\n\nInstall this release if needed, then launch Yuzu Converter from ~/Applications.\nRequires an Apple Silicon Mac and macOS 13 or later.');
 } else if (argument) {
   console.error(`Unknown argument: ${argument}. Use --help.`);
   process.exitCode = 1;

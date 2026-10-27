@@ -19,7 +19,7 @@ const key = createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b657
 validateRelease(releaseInfo);
 await mkdir(directory, { recursive: true });
 
-for (const arch of ['arm64', 'x64']) {
+for (const arch of packageInfo.cpu) {
   const asset = releaseInfo.assets[arch];
   const path = join(directory, asset.name);
   const bytes = await readFile(path);
