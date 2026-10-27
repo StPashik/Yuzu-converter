@@ -4,17 +4,17 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.4.0 includes FFmpeg and FFprobe for video conversion out of the box.** Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available. File tools remain outside the scope.
+**v0.4.1 brings stable releases and owner-controlled updates on Apple Silicon.** FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available. File tools remain outside the scope.
 
 ## Download
 
 Requires **Apple Silicon (M1 or later) and macOS 13 or later**.
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-arm64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/Yuzu-Converter-0.4.1-arm64.zip)
 
 Intel Macs can keep [version 0.4.0](https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0), the final Intel release. New releases and updates target Apple Silicon only.
 
-This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-FFmpeg-Sources-0.4.0.tar.xz) is supplied with the release.
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/Yuzu-FFmpeg-Sources-0.4.1.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -57,7 +57,7 @@ FFmpeg and FFprobe are included for Apple Silicon; no Homebrew setup is required
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/stpashik-yuzu-converter-0.4.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/stpashik-yuzu-converter-0.4.1.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
