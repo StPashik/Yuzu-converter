@@ -2,7 +2,7 @@
 
 Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
-## v0.2.0 — in-app updates (release preparation)
+## v0.2.0 — in-app updates
 
 Fresh local checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 
@@ -18,10 +18,11 @@ Fresh local checks on October 27, 2026, macOS 26.6.2 on Apple Silicon:
 | Final ZIP installation | Both archives installed into temporary homes; native version 0.2.0 and codesign passed |
 | npm package | Prepack passed with final pinned ZIP hashes; 7 files, no npm dependencies |
 | Sparkle HTTP fixtures | Real probing checks reached the local HTTP server: available update, current version, tampered-feed rejection, and HTTP 500 handling all passed with an isolated ephemeral test key |
+| Production signatures | Sparkle signed and verified both feeds; Node independently verified both feed and archive Ed25519 signatures against the public key embedded in Info.plist, and both archive SHA-256 values matched the npm manifest |
 
 Independent source review covered the shared controller, optional delegate contracts, abort recovery, busy queue/restart handling, Sandbox configuration, signing order, archive aliases, and prevention of npm downgrades. Reported issues were fixed before final builds/tests.
 
-Production archive/feed signing is waiting for the owner's macOS Keychain authorization of `sign_update`. Verification of the production signatures/live feed, the public release, and installation of the published version remain pending. The private release signing key stays in the login Keychain, not Git or release assets; HTTP fixtures used a separate temporary key and did not install anything. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
+Production signing completed after the initial background Keychain access wait. The private release signing key stayed in the login Keychain, not Git or release assets; HTTP fixtures used a separate temporary key and did not install anything. Live feed, public release, and installed-upgrade results are recorded after publication. Full interactive updater installation/relaunch, Finder/Powerbox, VoiceOver, AirDrop/Terminal, shelf drag-out, Intel hardware, and macOS 13 remain unverified. This remains an ad-hoc-signed preview without Apple notarization.
 
 ## v0.1.2 — wheel input fix
 
