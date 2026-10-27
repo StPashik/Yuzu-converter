@@ -94,9 +94,20 @@ jobs:
           python3 scripts/build-media.py "$APP_ARCH"
           echo "YUZU_FFMPEG=$PWD/.build/media-$APP_ARCH/Tools/ffmpeg" >> "$GITHUB_ENV"
           echo "YUZU_FFPROBE=$PWD/.build/media-$APP_ARCH/Tools/ffprobe" >> "$GITHUB_ENV"
-      - name: Run Swift and installer tests in isolated scratch paths
+      - name: Build the native XCTest bundle
+        timeout-minutes: 10
+        run: swift build --build-tests --arch "$APP_CPU" --scratch-path .build/ci-tests
+      - name: Run the native XCTest bundle
+        timeout-minutes: 8
+        env:
+          NSUnbufferedIO: "YES"
         run: |
-          swift test --arch "$APP_CPU" --scratch-path .build/ci-tests
+          # This package uses XCTest only; invoke it directly instead of SwiftPM's additional test runners.
+          test_directory=$(swift build --show-bin-path --arch "$APP_CPU" --scratch-path .build/ci-tests)
+          xcrun xctest "$test_directory/YuzuConverterPackageTests.xctest"
+      - name: Test and inspect the npm installer
+        timeout-minutes: 5
+        run: |
           npm ci --ignore-scripts
           npm test
           npm pack --dry-run
