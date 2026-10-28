@@ -6,6 +6,7 @@ import Combine
 final class AccessStore: ObservableObject {
     @Published private(set) var folders: [URL] = []
     private let defaults: UserDefaults
+    private let requiresShelfFolderGrant: Bool
     private var bookmarks: [String: Data] {
         get { (defaults.dictionary(forKey: "outputBookmarks") ?? [:]).compactMapValues { $0 as? Data } }
         set {
@@ -14,8 +15,10 @@ final class AccessStore: ObservableObject {
         }
     }
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard,
+         requiresShelfFolderGrant: Bool = Bundle.main.object(forInfoDictionaryKey: "YuzuSandboxed") as? Bool == true) {
         self.defaults = defaults
+        self.requiresShelfFolderGrant = requiresShelfFolderGrant
         refresh()
     }
 
@@ -56,12 +59,14 @@ final class AccessStore: ObservableObject {
         var grants: [URL] = []
         var transferred = false
         defer { if !transferred { grants.forEach { $0.stopAccessingSecurityScopedResource() } } }
-        // Finder's Apple event can identify a file without granting Sandbox access to read it.
-        for url in urls where !FileManager.default.isReadableFile(atPath: url.path) {
-            guard let grant = try folder(containing: url, title: "Shelf Access", message:
-                L10n.text("Allow access to selected files in “%@”. Yuzu will remember this folder.",
-                          url.deletingLastPathComponent().lastPathComponent)) else { return nil }
-            grants.append(grant)
+        // Readability may borrow another shelf/job's scope; every Sandbox batch needs its own grant.
+        for url in urls where requiresShelfFolderGrant || !FileManager.default.isReadableFile(atPath: url.path) {
+            if !grants.contains(where: { Self.contains(url, in: $0) }) {
+                guard let grant = try folder(containing: url, title: "Shelf Access", message:
+                    L10n.text("Allow access to selected files in “%@”. Yuzu will remember this folder.",
+                              url.deletingLastPathComponent().lastPathComponent)) else { return nil }
+                grants.append(grant)
+            }
             guard FileManager.default.isReadableFile(atPath: url.path) else { throw CocoaError(.fileReadNoPermission) }
         }
         let authorized = ScopedFiles(urls, activeGrants: grants)

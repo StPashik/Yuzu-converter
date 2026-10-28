@@ -66,7 +66,7 @@ Removing an item from the shelf never deletes the file. Closing the shelf keeps 
 
 Choose **Show Shelf** from the Yuzu menu. Drop files directly onto the panel, or use the Float Action. Each card shows a preview or system icon, its name, and its parent folder. Drag rows into another app when needed. Select multiple rows to drag them together; Delete removes the selection from the shelf.
 
-You can also select files in Finder and press **⌃C**. Change this in **Settings… → General → Actions → Add Finder selection to shelf**: click the field and press your preferred combination. Escape cancels recording; Delete disables the shortcut. It works only in Finder and follows Float Behaviour. Approve Finder access when macOS asks; Yuzu may also request access to the files' parent folder. Your clipboard is preserved.
+You can also select files in Finder and press **⌃C**. Change this in **Settings… → General → Actions → Add Finder selection to shelf**: click the field and press your preferred combination. Escape cancels recording; Delete disables the shortcut. It works only in Finder and follows Float Behaviour. Approve Finder access when macOS asks; the Sandbox build also requests initial access to the files' parent folder and remembers it. Your clipboard is preserved.
 
 The panel opens below Yuzu's menu bar icon, grows through five rows, and scrolls longer lists. The close button or Escape hides a shelf while keeping its contents. **Show Shelf** restores closed shelves; **Clear Shelf** explicitly removes their references. Original files stay in place. The General settings retain the choice between adding to the current shelf and creating a new one. Shelf contents last until you exit Yuzu; they are not saved across app launches.
 

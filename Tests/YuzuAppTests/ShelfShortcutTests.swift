@@ -34,6 +34,9 @@ final class ShelfShortcutTests: XCTestCase {
         XCTAssertTrue(first.update(value))
         first.setEnabled(true)
         XCTAssertNil(first.errorMessage)
+        let sameSavedChord = ShelfShortcutController(defaults: defaults)
+        XCTAssertFalse(sameSavedChord.update(value))
+        XCTAssertNotNil(sameSavedChord.errorMessage)
         XCTAssertFalse(second.update(value))
         XCTAssertEqual(second.shortcut, .default)
         XCTAssertNotNil(second.errorMessage)
@@ -134,5 +137,34 @@ final class ShelfShortcutTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: file), Data("original".utf8))
         XCTAssertTrue(store.folders.isEmpty)
         XCTAssertThrowsError(try store.shelfFiles([URL(string: "https://example.com/photo.png")!]))
+    }
+
+    @MainActor
+    func testEachSandboxBatchOwnsAParentGrantEvenWhenFilesAreAlreadyReadable() throws {
+        let domain = "YuzuShortcutTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { defaults.removePersistentDomain(forName: domain); try? FileManager.default.removeItem(at: folder) }
+        let a = folder.appendingPathComponent("a.txt"), b = folder.appendingPathComponent("b.txt")
+        try Data("a".utf8).write(to: a)
+        try Data("b".utf8).write(to: b)
+        let data = try folder.bookmarkData(options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+        var stale = false
+        let probe = try URL(resolvingBookmarkData: data, options: [.withSecurityScope, .withoutUI, .withoutMounting],
+                            relativeTo: nil, bookmarkDataIsStale: &stale)
+        let active = probe.startAccessingSecurityScopedResource()
+        guard active else { XCTFail("The temporary bookmark fixture cannot start a scope; Powerbox was not opened."); return }
+        probe.stopAccessingSecurityScopedResource()
+        defaults.set([folder.standardizedFileURL.path: data], forKey: "outputBookmarks")
+        let store = AccessStore(defaults: defaults, requiresShelfFolderGrant: true)
+        var first = try store.shelfFiles([a])
+        let second = try XCTUnwrap(store.shelfFiles([a, b]))
+        XCTAssertEqual(try XCTUnwrap(first).granted.filter { AccessStore.isParent($0, of: a) }.count, 1)
+        XCTAssertEqual(second.granted.filter { AccessStore.isParent($0, of: a) }.count, 1)
+        first = nil
+        XCTAssertEqual(second.urls, [a, b])
+        XCTAssertEqual(try Data(contentsOf: a), Data("a".utf8))
+        XCTAssertEqual(try Data(contentsOf: b), Data("b".utf8))
     }
 }

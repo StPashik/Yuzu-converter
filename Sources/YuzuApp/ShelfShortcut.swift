@@ -98,7 +98,7 @@ final class ShelfShortcutController: ObservableObject {
 
     @discardableResult func update(_ value: ShelfShortcut?) -> Bool {
         guard value == nil || value?.isValid == true else { rejectInvalidShortcut(); return false }
-        guard value != shortcut else { errorMessage = nil; return true }
+        if value == shortcut, hotKey != nil { errorMessage = nil; return true }
         var replacement: EventHotKeyRef?
         if let value, register(value, reference: &replacement) != noErr {
             errorMessage = "This shortcut is unavailable. Record another combination."

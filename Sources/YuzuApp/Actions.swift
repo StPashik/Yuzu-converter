@@ -4,7 +4,7 @@ import YuzuCore
 // URLs and their grants are immutable; Foundation permits balancing scopes on another thread.
 final class ScopedFiles: @unchecked Sendable {
     let urls: [URL]
-    private let granted: [URL]
+    let granted: [URL]
 
     /// activeGrants transfers already-started folder scopes from Finder authorization to this lease.
     init(_ urls: [URL], activeGrants: [URL] = []) {
