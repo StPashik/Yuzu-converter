@@ -49,6 +49,8 @@ jobs:
           else
             echo 'native=true' >> "$GITHUB_OUTPUT"
           fi
+      - name: Test portable media cache validation
+        run: python3 -m unittest discover -s Tests/scripts -v
       - name: Verify signed legacy feeds and release metadata tests
         run: |
           # These checks use Node built-ins; the macOS-only installer is not installed on Linux.
@@ -87,11 +89,23 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-      - name: Build pinned media tools for the runner CPU
+      - name: Identify the exact media build
+        id: media
+        run: echo "key=$(python3 scripts/media_cache.py key "$APP_ARCH")" >> "$GITHUB_OUTPUT"
+      # PRs restore trusted base-branch entries but never publish binaries to a shared cache.
+      - uses: actions/cache/restore@v6
+        with:
+          key: ${{ steps.media.outputs.key }}
+          path: |
+            .build/media-${{ matrix.arch }}
+            .build/media-sources
+      - name: Build or verify pinned media tools for the runner CPU
         run: |
           test "$(uname -m)" = "$APP_CPU"
-          brew install pkg-config xz
-          python3 scripts/build-media.py "$APP_ARCH"
+          if ! python3 scripts/media_cache.py verify "$APP_ARCH"; then
+            brew install pkg-config xz
+          fi
+          python3 scripts/build-media.py "$APP_ARCH" --reuse
           echo "YUZU_FFMPEG=$PWD/.build/media-$APP_ARCH/Tools/ffmpeg" >> "$GITHUB_ENV"
           echo "YUZU_FFPROBE=$PWD/.build/media-$APP_ARCH/Tools/ffprobe" >> "$GITHUB_ENV"
       - name: Build the native XCTest bundle

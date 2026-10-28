@@ -99,7 +99,13 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(view.draggingUpdated(drag), .copy)
         XCTAssertEqual(view.draggingUpdated(drag), .copy)
         XCTAssertEqual(feedback, 1)
-        let backdrop = try XCTUnwrap(view.subviews.first { $0 is NSVisualEffectView })
+        let backdrop = try XCTUnwrap(view.subviews.first { $0 is WheelMaterialView })
+        #if compiler(>=6.2)
+        if #available(macOS 26.0, *) { XCTAssertTrue(backdrop.subviews.first is NSGlassEffectView) }
+        else { XCTAssertTrue(backdrop.subviews.first is NSVisualEffectView) }
+        #else
+        XCTAssertTrue(backdrop.subviews.first is NSVisualEffectView)
+        #endif
         XCTAssertNil(backdrop.hitTest(drag.draggingLocation))
         let mask = try XCTUnwrap(backdrop.layer?.mask as? CAShapeLayer)
         XCTAssertFalse(try XCTUnwrap(mask.path).contains(drag.draggingLocation))

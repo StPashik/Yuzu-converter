@@ -197,3 +197,26 @@
 "Shelf Access" = "Доступ для полки";
 "Allow access to selected files in “%@”. Yuzu will remember this folder." = "Разрешите доступ к выделенным файлам в папке «%@». Yuzu запомнит эту папку.";
 "Choose “%@” to allow access to the selected files." = "Выберите «%@», чтобы разрешить доступ к выделенным файлам.";
+
+"Show Operations" = "Показать операции";
+"Operations" = "Операции";
+"%ld active" = "Активных: %ld";
+"Close Operations" = "Закрыть операции";
+"No operations yet" = "Операций пока нет";
+"Convert files or choose Move or ZIP to see their progress here." = "Конвертируйте файлы или выберите перенос либо ZIP — ход работы появится здесь.";
+"Cancel All" = "Отменить все";
+"Clear Finished" = "Убрать завершённые";
+"Waiting" = "Ожидает";
+"Running" = "Выполняется";
+"Cancelling…" = "Отмена…";
+"Completed" = "Завершено";
+"Failed" = "Ошибка";
+"%ld of %ld files completed" = "Завершено файлов: %ld из %ld";
+"Show Results" = "Показать результаты";
+"New Shelf with Selection" = "Новая полка с выбранным";
+"Copy Files" = "Копировать файлы";
+"Open Terminal" = "Открыть терминал";
+"Compress to ZIP" = "Сжать в ZIP";
+"Commands apply to selected files." = "Команды применяются к выбранным файлам.";
+"Select files to use Conversion and Actions." = "Выберите файлы для конвертации и действий.";
+"Files on the floating shelf. Select files to convert or run Actions; drag to share." = "Файлы на полке. Выберите файлы для конвертации или действий; перетащите для передачи.";

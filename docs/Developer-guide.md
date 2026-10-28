@@ -6,9 +6,10 @@ Start with the [requirements](Requirements.md), [architecture](Architecture.md),
 
 | Entry point | Responsibility |
 | --- | --- |
-| [App.swift](../Sources/YuzuApp/App.swift) | `YuzuMain`, app startup, source detection, the serial job queue, progress, and termination |
+| [App.swift](../Sources/YuzuApp/App.swift) | `YuzuMain`, app startup, source detection, shared shelf/wheel request preparation, and termination |
 | [Wheel.swift](../Sources/YuzuApp/Wheel.swift) | Modifier trigger, geometry, real AppKit drag callbacks, source revalidation, and accessible sectors |
 | [AccessStore.swift](../Sources/YuzuApp/AccessStore.swift) and [Actions.swift](../Sources/YuzuApp/Actions.swift) | Powerbox/bookmarks, `ScopedFiles`, system Actions, clipboard leases, and shelf presentation |
+| [JobQueue.swift](../Sources/YuzuApp/JobQueue.swift) and [QueueWindow.swift](../Sources/YuzuApp/QueueWindow.swift) | Serial worker, cancellation, publication history, and the shared-style operations panel |
 | [Shelf.swift](../Sources/YuzuApp/Shelf.swift) | Menu-bar anchoring, native glass/material/opaque surfaces, lazy Quick Look previews, file drops/drag-out, and reference/grant ownership |
 | [ShelfShortcut.swift](../Sources/YuzuApp/ShelfShortcut.swift) and [FinderSelection.swift](../Sources/YuzuApp/FinderSelection.swift) | In-app chord recording, Finder-only native registration, fixed-source selection requests, and strict file-descriptor validation |
 | [SourceFile.swift](../Sources/YuzuCore/SourceFile.swift), [FileFormat.swift](../Sources/YuzuCore/FileFormat.swift), and [ConversionEngine.swift](../Sources/YuzuCore/ConversionEngine.swift) | Content identification, format identity, available targets, dispatch, and output validation |
@@ -39,9 +40,9 @@ The shelf hotkey uses `RegisterEventHotKey` with exclusive registration so a rep
 
 ## Jobs, cancellation, and publication
 
-PendingJob also captures ConversionOptions by value. Read a profile for the selected output format before queueing, including ZIP Action compression. Do not read mutable preferences from background encoders. Keep UI applicability aligned with validation and actual backend execution; an unavailable layout must not become an enabled control that does nothing. [Settings.md](Settings.md) records the encoding choices and limits.
+JobRequest also captures ConversionOptions by value. Read a profile for the selected output format before queueing, including ZIP Action compression. Do not read mutable preferences from background encoders. Keep UI applicability aligned with validation and actual backend execution; an unavailable layout must not become an enabled control that does nothing. [Settings.md](Settings.md) records the encoding choices and limits.
 
-`AppDelegate` queues `PendingJob` values for conversion, move, or compression. Work runs in `Task.detached`; `withTaskCancellationHandler` forwards UI cancellation to the worker. Format detection uses a generation identifier to discard stale results. Termination cancels queued/active work and waits for the current job and detection before answering AppKit.
+`AppDelegate` submits `JobRequest` values to `JobQueue` for conversion, move, or compression. Work runs in `Task.detached`; `withTaskCancellationHandler` forwards UI cancellation to the worker. Format detection uses a generation identifier to discard stale results. Termination cancels queued/active work and waits for the current job and detection before answering AppKit.
 
 Keep cancellation checks around expensive stages and before publication. `ProcessRunner` bounds output and time, terminates cancelled processes, and escalates termination when necessary. Conversion uses private scratch with `defer` cleanup. Multi-page output is validated and published as one folder. `FileOperations.publish` uses `RENAME_EXCL` and available-name retries, avoiding a check-then-overwrite race.
 
@@ -98,3 +99,9 @@ npm pack --pack-destination dist
 ```
 
 - If an archive changes, regenerate its manifest/package/checksums. Keep `Release-checksums-0.1.0.txt` immutable. Check the actual final ZIPs and npm package, license notices, and English release notes before publishing. Record new results by version in [Validation.md](Validation.md); historical passes are not new verification.
+
+### Shelf/queue verification and media caching
+
+[Shelf workflow](Shelf-workflow.md) describes selection, output, cancellation, and session lifetime. The injected queue executor lets regressions suspend work deterministically, verify serial ordering/cancellation, and assert grant lifetime without system dialogs. Real request fixtures also cover conversion, normalized Move, partial publication, ZIP, and invalid destination counts. Material/layout fixtures render five languages in both appearances and inspect native glass structurally; physical Finder/Sandbox and visual checks on other Macs remain separate gates.
+
+Run `python3 -m unittest discover -s Tests/scripts -v` for cache validation. `python3 scripts/build-media.py arm64 --reuse` verifies an exact receipt before reuse; omit `--reuse` to force a fresh build. Never restore `.build` wholesale or cache signing identities. See [CI.md](CI.md) for architecture/toolchain keys and trusted cache warming.

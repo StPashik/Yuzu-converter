@@ -9,7 +9,8 @@ public enum FileOperations {
     /// is published atomically; a later failure or cancellation does not roll back completed batch items.
     /// Folder moves across volumes are rejected; cross-volume file moves copy before removing the original.
     /// This blocks during filesystem work. Run off the main thread; cancellation is checked between stages.
-    public static func copy(_ sources: [URL], to directory: URL, move: Bool) throws -> [URL] {
+    public static func copy(_ sources: [URL], to directory: URL, move: Bool,
+                            onPublish: (URL, URL) -> Void = { _, _ in }) throws -> [URL] {
         var isDirectory: ObjCBool = false
         guard !sources.isEmpty, FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
             throw ConversionError.invalid("Choose an existing destination folder.")
@@ -28,9 +29,13 @@ public enum FileOperations {
                 throw ConversionError.invalid("A folder cannot be placed inside itself.")
             }
             if move {
-                if source.deletingLastPathComponent().resolvingSymlinksInPath() == destination.resolvingSymlinksInPath() { outputs.append(source); continue }
+                if source.deletingLastPathComponent().resolvingSymlinksInPath() == destination.resolvingSymlinksInPath() {
+                    outputs.append(source); onPublish(source, source); continue
+                }
                 do {
-                    outputs.append(try publish(source, named: source.lastPathComponent, in: destination))
+                    let output = try publish(source, named: source.lastPathComponent, in: destination)
+                    outputs.append(output)
+                    onPublish(source, output)
                     continue
                 } catch let error as POSIXError where error.code == .EXDEV {
                     // shortcut: cross-volume folder moves need coordinated recursive verification before deletion.
@@ -46,6 +51,8 @@ public enum FileOperations {
             try Task.checkCancellation()
             let output = try publish(scratch, named: source.lastPathComponent, in: destination)
             outputs.append(output)
+            // Report publication before removal: a later failure must still expose the preserved copy.
+            onPublish(source, output)
             if move {
                 // Publish the complete copy before removing anything from the original location.
                 let after = try source.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])

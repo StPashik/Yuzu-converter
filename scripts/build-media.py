@@ -11,6 +11,8 @@ import subprocess
 import tarfile
 import tempfile
 
+import media_cache
+
 
 def run(arguments, directory, environment):
     print("Running:", " ".join(map(str, arguments)), flush=True)
@@ -20,8 +22,13 @@ def run(arguments, directory, environment):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("arch", choices=["arm64", "x64"])
+    parser.add_argument("--reuse", action="store_true", help="Verify and reuse an exact local or CI cache hit.")
     arguments = parser.parse_args()
     root = Path(__file__).resolve().parent.parent
+    if arguments.reuse and media_cache.verify(root, arguments.arch):
+        print(f"Verified media cache hit: {arguments.arch}", flush=True)
+        return
+    print(f"Building media cache miss: {arguments.arch}", flush=True)
     sources = json.loads((root / "Resources/Media-sources.json").read_text())
     downloads = root / ".build/media-sources"
     # Upstream makefiles do not support spaces in their build/prefix paths.
@@ -91,7 +98,7 @@ def main():
         if any(not line.strip().startswith(("/usr/lib/", "/System/Library/"))
                for line in libraries.splitlines()[1:]):
             raise SystemExit(f"Non-system runtime dependency in {executable}: {libraries}")
-    (output / "build-path.txt").write_text(str(work) + "\n")
+    media_cache.record(root, arguments.arch, work)
     print(f"Built {tools}", flush=True)
 
 

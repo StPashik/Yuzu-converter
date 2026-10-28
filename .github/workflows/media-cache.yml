@@ -1,0 +1,66 @@
+name: Warm media cache
+
+on:
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: media-cache-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  media:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    name: Cache ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            cpu: arm64
+            runner: macos-26
+          - arch: x64
+            cpu: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      APP_ARCH: ${{ matrix.arch }}
+      APP_CPU: ${{ matrix.cpu }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Identify the exact media build
+        id: media
+        run: echo "key=$(python3 scripts/media_cache.py key "$APP_ARCH")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v6
+        id: cache
+        with:
+          key: ${{ steps.media.outputs.key }}
+          path: |
+            .build/media-${{ matrix.arch }}
+            .build/media-sources
+      - name: Build or verify pinned media tools
+        run: |
+          test "$(uname -m)" = "$APP_CPU"
+          if ! python3 scripts/media_cache.py verify "$APP_ARCH"; then
+            brew install pkg-config xz
+          fi
+          python3 scripts/build-media.py "$APP_ARCH" --reuse
+      # Only reviewed main/develop commits can populate entries reused by future PRs.
+      - uses: actions/cache/save@v6
+        if: steps.cache.outputs.cache-hit != 'true'
+        with:
+          key: ${{ steps.media.outputs.key }}
+          path: |
+            .build/media-${{ matrix.arch }}
+            .build/media-sources

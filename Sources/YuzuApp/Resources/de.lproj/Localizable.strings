@@ -197,3 +197,26 @@
 "Shelf Access" = "Zugriff für die Ablage";
 "Allow access to selected files in “%@”. Yuzu will remember this folder." = "Erlauben Sie den Zugriff auf die ausgewählten Dateien in „%@“. Yuzu merkt sich diesen Ordner.";
 "Choose “%@” to allow access to the selected files." = "Wählen Sie „%@“, um Zugriff auf die ausgewählten Dateien zu erlauben.";
+
+"Show Operations" = "Vorgänge anzeigen";
+"Operations" = "Vorgänge";
+"%ld active" = "%ld aktiv";
+"Close Operations" = "Vorgänge schließen";
+"No operations yet" = "Noch keine Vorgänge";
+"Convert files or choose Move or ZIP to see their progress here." = "Konvertiere Dateien oder wähle Verschieben oder ZIP, um hier den Fortschritt zu sehen.";
+"Cancel All" = "Alle abbrechen";
+"Clear Finished" = "Abgeschlossene entfernen";
+"Waiting" = "Wartet";
+"Running" = "Wird ausgeführt";
+"Cancelling…" = "Wird abgebrochen…";
+"Completed" = "Abgeschlossen";
+"Failed" = "Fehlgeschlagen";
+"%ld of %ld files completed" = "Dateien abgeschlossen: %ld von %ld";
+"Show Results" = "Ergebnisse anzeigen";
+"New Shelf with Selection" = "Neue Ablage mit Auswahl";
+"Copy Files" = "Dateien kopieren";
+"Open Terminal" = "Terminal öffnen";
+"Compress to ZIP" = "Als ZIP komprimieren";
+"Commands apply to selected files." = "Befehle gelten für die ausgewählten Dateien.";
+"Select files to use Conversion and Actions." = "Dateien für Konvertierung und Aktionen auswählen.";
+"Files on the floating shelf. Select files to convert or run Actions; drag to share." = "Dateien in der Ablage. Zum Konvertieren oder für Aktionen auswählen; zum Teilen ziehen.";

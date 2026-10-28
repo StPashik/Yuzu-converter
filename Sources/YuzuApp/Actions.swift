@@ -5,11 +5,14 @@ import YuzuCore
 final class ScopedFiles: @unchecked Sendable {
     let urls: [URL]
     let granted: [URL]
+    private let retainedBatches: [ScopedFiles]
 
     /// activeGrants transfers already-started folder scopes from Finder authorization to this lease.
-    init(_ urls: [URL], activeGrants: [URL] = []) {
+    init(_ urls: [URL], activeGrants: [URL] = [], retaining batches: [ScopedFiles] = []) {
         self.urls = urls
         granted = activeGrants + urls.filter { $0.startAccessingSecurityScopedResource() }
+        // A shelf selection can span batches whose parent grants must outlive removal from the shelf.
+        retainedBatches = batches
     }
     deinit { granted.forEach { $0.stopAccessingSecurityScopedResource() } }
 }
@@ -26,6 +29,7 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
     private var shelves: [ShelfController] = []
     var onMove: ((ScopedFiles, URL) -> Void)?
     var onCompress: ((ScopedFiles, URL) -> Void)?
+    var onShelfRequest: ((ScopedFiles, WheelOption) -> Void)?
     var shelfAnchor: (() -> NSView?)?
 
     init(access: AccessStore, settings: Settings) {
@@ -43,8 +47,15 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
 
     private func makeShelf() -> ShelfController {
         let shelf = ShelfController()
+        shelf.onRequest = { [weak self] files, option in self?.onShelfRequest?(files, option) }
         shelves.append(shelf)
         return shelf
+    }
+
+    func newShelf(with files: ScopedFiles) {
+        let shelf = makeShelf()
+        shelf.add(files)
+        present(shelf)
     }
 
     private func present(_ shelf: ShelfController) {
