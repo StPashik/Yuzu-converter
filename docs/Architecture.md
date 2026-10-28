@@ -69,13 +69,13 @@ A small Node installer and launch command select the declared macOS architecture
 
 Release changes move through feature/develop, release/main, and release/develop pull requests with CI and merge commits. Tag the main release-PR merge commit. Stable Latest is the default; a beta/RC requires an explicit owner request. Publication does not install, quit, or relaunch the owner's app. [Releasing.md](Releasing.md) defines the release/legacy-feed sequence.
 
-The published 0.4.1 release is Apple Silicon only. The owner reopened Intel support on October 28, 2026. Native x64 CI and signed Sandbox verification gate restoration in a future release. Public npm metadata, downloads, and the 0.4.0 Intel bridge stay unchanged until that release is prepared and published.
+Version 0.4.1 was Apple Silicon only. Native Intel CI and signed Sandbox verification passed after the owner reopened support on October 28, 2026. Version 0.4.2 restores separate arm64/x64 app archives, CPU-matched npm assets, corresponding source/configuration records, and signed feeds. Both native architectures remain required CI targets. Legacy feeds advance only after their compatible assets are public.
 
-A release contains the arm64 app ZIP, the npm `.tgz`, checksums, and license notices. The `.tgz` can be installed by release URL without npm registry publication. Generate checksums from the final archives and check package version/tag/asset names. Describe architecture support, signing, and notarization only after validating the actual artifacts.
+A release contains separate arm64 and x64 app ZIPs, the npm `.tgz`, checksums, and license notices. The `.tgz` can be installed by release URL without npm registry publication. Generate checksums from the final archives and check package version/tag/asset names. Describe architecture support, signing, and notarization only after validating the actual artifacts.
 
 ## In-app updates
 
-Version 0.2.0 adds a shared `AppUpdater` to the menu and Settings. Sparkle 2.10.1 owns network checks, update UI, Ed25519 verification, installation, and relaunch. Checks are manual and installation requires user confirmation. New builds read their signed arm64 appcast from GitHub's Latest release assets. Versions through 0.4.0 retain the main/updates bridge, advanced by a PR only after the referenced assets are public. Both the feed and archive must verify against the public key embedded in the app, before archive extraction.
+Version 0.2.0 adds a shared `AppUpdater` to the menu and Settings. Sparkle 2.10.1 owns network checks, update UI, Ed25519 verification, installation, and relaunch. Checks are manual and installation requires user confirmation. New builds read their signed architecture-specific appcast from GitHub's Latest release assets. Versions through 0.4.0 retain the main/updates bridge, advanced by a PR only after the referenced assets are public. Both the feed and archive must verify against the public key embedded in the app, before archive extraction.
 
 Postpone relaunch while the file queue is nonempty. When the queue drains, stop new drags/jobs before resuming Sparkle's installation handler. A finished/cancelled/failed cycle clears the retained handler and restores the monitor if the application is still alive. Normal termination retains its cancellation/cleanup safety net.
 
