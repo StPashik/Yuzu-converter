@@ -66,6 +66,9 @@ jobs:
           - arch: arm64
             cpu: arm64
             runner: macos-26
+          - arch: x64
+            cpu: x86_64
+            runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 40
     env:
@@ -105,9 +108,14 @@ jobs:
       - name: Test and inspect the npm installer
         timeout-minutes: 5
         run: |
-          npm ci --ignore-scripts
-          npm test
-          npm pack --dry-run
+          installer_supported=$(node -p 'require("./package.json").cpu.includes(process.arch)')
+          if [[ "$installer_supported" == true ]]; then
+            npm ci --ignore-scripts
+            npm test
+            npm pack --dry-run
+          else
+            echo 'This published npm version does not target the experimental native CPU; its app is checked separately.'
+          fi
       - name: Build and verify the signed Sandbox archive
         run: |
           bash scripts/build-app.sh "$APP_ARCH"

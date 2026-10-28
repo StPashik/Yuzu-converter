@@ -4,7 +4,7 @@ Communicate with the owner in Russian. Use English for documentation, code comme
 
 Keep docs/Requirements.md and the accepted docs/Architecture.md current. Scope includes conversion and seven Actions, including the owner-requested Compress to ZIP. Exclude File tools. Do not silently reduce requirements to match a backend; record limitations in docs/Conversion-matrix.md.
 
-Starting with 0.4.1, publish Apple Silicon (arm64) releases only, as requested by the owner. Version 0.4.0 remains the last Intel release. Keep its signed legacy x64 feed unchanged; never offer an arm64 archive to Intel clients.
+Version 0.4.1 is Apple Silicon only. On October 28, 2026, the owner reopened Intel support work. Restore Intel publication only after native x64 CI and the signed Sandbox archive pass; until a validated new release is public, keep its legacy feed at 0.4.0. Never offer an arm64 archive to Intel clients or rewrite historical tags/assets.
 
 Follow GitFlow through GitHub pull requests: feature/* from develop into develop; release/<version> from develop into main, then back into develop. Wait for CI and use merge commits. Tag the exact main release-PR merge commit. Do not commit or push directly to main or develop. A legacy appcast publication may use a separate PR after its referenced assets are public. The owner's request authorizes publishing to StPashik/Yuzu-converter. Never force push or rewrite published tags/assets. Read docs/Releasing.md before preparing a release.
 

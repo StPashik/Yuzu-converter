@@ -1,5 +1,7 @@
 import Foundation
 import XCTest
+import AVFoundation
+import VideoToolbox
 @testable import YuzuCore
 
 final class MediaTests: XCTestCase {
@@ -11,6 +13,40 @@ final class MediaTests: XCTestCase {
     }
 
     override func tearDownWithError() throws { try FileManager.default.removeItem(at: directory) }
+
+    func testOnlyTheKnownVideoToolboxParameterFailurePermitsRetry() {
+        func failure(_ domain: String, _ code: Int) -> NSError {
+            NSError(domain: AVFoundationErrorDomain, code: AVError.unknown.rawValue,
+                    userInfo: [NSUnderlyingErrorKey: NSError(domain: domain, code: code)])
+        }
+        XCTAssertTrue(NativeMedia.hasVideoToolboxParameterFailure(failure(NSOSStatusErrorDomain, Int(kVTParameterErr))))
+        XCTAssertFalse(NativeMedia.hasVideoToolboxParameterFailure(failure(NSOSStatusErrorDomain, Int(kVTAllocationFailedErr))))
+        XCTAssertFalse(NativeMedia.hasVideoToolboxParameterFailure(failure(NSPOSIXErrorDomain, Int(ENOSPC))))
+        XCTAssertFalse(NativeMedia.hasVideoToolboxParameterFailure(CancellationError()))
+        XCTAssertFalse(NativeMedia.hasVideoToolboxParameterFailure(NSError(domain: NSOSStatusErrorDomain, code: Int(kVTParameterErr))))
+    }
+
+    func testSmallMPEG4VideoProfilesProduceDecodableMP4AndMOV() async throws {
+        let (ffmpeg, ffprobe) = try tools()
+        let input = try fixture(ffmpeg)
+        let original = try Data(contentsOf: input)
+        let engine = ConversionEngine()
+        let options = ConversionOptions(quality: .high, preserveMetadata: false, videoMaxHeight: 72)
+        let mp4 = try await engine.convert(SourceFile(url: input), to: .mp4, in: directory, options: options)[0]
+        let mov = try await engine.convert(SourceFile(url: mp4), to: .mov, in: directory, options: options)[0]
+        for output in [mp4, mov] {
+            let data = try ProcessRunner.checked(ffprobe, ["-v", "error", "-count_frames", "-select_streams", "v:0",
+                "-show_entries", "stream=width,height,nb_read_frames", "-of", "json", output.path])
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(data.utf8)) as? [String: Any])
+            let tracks = try XCTUnwrap(object["streams"] as? [[String: Any]])
+            let track = try XCTUnwrap(tracks.first)
+            XCTAssertEqual(track["width"] as? Int, 96)
+            XCTAssertEqual(track["height"] as? Int, 72)
+            XCTAssertGreaterThan(Int(track["nb_read_frames"] as? String ?? "0") ?? 0, 1)
+            _ = try ProcessRunner.checked(ffmpeg, ["-v", "error", "-i", output.path, "-f", "null", "-"])
+        }
+        XCTAssertEqual(try Data(contentsOf: input), original)
+    }
 
     private func tools() throws -> (URL, URL) {
         guard let ffmpeg = Tools().ffmpeg, let ffprobe = Tools().ffprobe else {

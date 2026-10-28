@@ -13,7 +13,7 @@ import zipfile
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("--arch", choices=["arm64"], help="Verify the Apple Silicon release archive.")
+parser.add_argument("--arch", choices=["arm64", "x64"], help="Verify one native architecture; the default verifies both.")
 selected_arch = parser.parse_args().arch
 version = json.loads((root / "package.json").read_text())["version"]
 build = plistlib.loads((root / "Resources/Info.plist").read_bytes())["CFBundleVersion"]
@@ -30,7 +30,7 @@ def run(arguments, timeout=180):
         raise
 
 
-for arch, cpu in [("arm64", "arm64")]:
+for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
     if selected_arch and arch != selected_arch:
         continue
     path = root / f"dist/Yuzu-Converter-{version}-{arch}.zip"
@@ -67,8 +67,9 @@ for arch, cpu in [("arm64", "arm64")]:
             assert (contents / f"Resources/{language}.lproj/Localizable.strings").read_bytes() == (
                 root / f"Sources/YuzuApp/Resources/{language}.lproj/Localizable.strings").read_bytes()
         executable = contents / "MacOS/YuzuApp"
-        assert run([executable, "--version"]).strip() == version
-        result = run([executable, "--self-check"])
+        prefix = ["/usr/bin/arch", "-x86_64"] if arch == "x64" else []
+        assert run([*prefix, executable, "--version"]).strip() == version
+        result = run([*prefix, executable, "--self-check"])
         assert "Sandbox self-check passed" in result, result
         print(result.strip(), flush=True)
         print(f"{arch}: final ZIP, signatures, helper entitlements, macOS target, dependencies, resources, and Sandbox media passed", flush=True)
