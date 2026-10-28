@@ -12,7 +12,30 @@ The final local run passed **78 Swift tests**, with required bundled-media fixtu
 
 The scope-ownership regression failed two assertions before the fix: already-readable inputs had no independently owned parent scopes. With Sandbox policy explicitly enabled in the fixture, each batch now starts its own real Foundation bookmark scope and deduplicates parents within the batch. This runs without Finder or Powerbox and does not establish physical Sandbox grant recovery. A separate native registration regression failed two assertions before re-recording an inactive saved chord was checked for conflicts. Both fixes are included in the final 78-test pass. The shipped fixed Finder query also compiled with the system AppleScript compiler without being executed.
 
-Final native arm64/x64 CI is the feature merge gate. Physical Finder selection/Automation approval or denial, external-file Sandbox grants, VoiceOver, macOS 13, macOS 26 Intel appearance, and a complete interactive updater installation remain unverified. No owner app was installed, quit, or relaunched.
+[Feature PR #13](https://github.com/StPashik/Yuzu-converter/pull/13) merged into develop after [final-head native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40729337089): each CPU passed 78 Swift tests, 22 Node tests without skips, and the signed Sandbox archive. Local optimized builds also passed for both architectures using Xcode 26 in separate scratch paths. A system AppleScript fixture returned the real `alis` descriptor expected by the parser, using only a probe-owned temporary file and no Finder request.
+
+| Release preparation | Recorded result |
+| --- | --- |
+| Metadata | Package, lockfile, both final executables/plists agree on 0.5.1 / build 11; separate arm64 and x64 archives |
+| Final ZIPs | Deep strict signatures, exact main/helper CPU slices, macOS 13 minimum, SDK 26+, and weak native-glass class imports passed |
+| Permissions/resources | Finder-only Apple-event exception, Automation capability, five permission explanation tables, UI strings, media manifests/licenses, unchanged icons, and notices match the reviewed source |
+| Signed Sandbox | Both final extracted apps passed bundled media/probe/decode/return conversion, image metadata, documents, spreadsheets, archives, and Compress to ZIP with external tools disabled |
+| npm/source | All seven npm files match source and pinned ZIP hashes; launcher mode/shebang verified; all four upstream source hashes, recipe/manifest/guide, and both actual CPU configurations match the 23-file corresponding-source archive |
+| Temporary installation | Both final ZIPs installed only into temporary homes, passed signature/version checks, and were removed |
+| Update signing | Both archive signatures independently verified against the production public key; both build-11 appcasts signed and verified using the existing project Keychain account; live legacy feeds remain unchanged |
+| HTTP fixtures | Real Sparkle available/current/tampered/HTTP-500 requests passed with an ephemeral key and isolated app identity; no update installation |
+| Staging | Nine final files; eight payload SHA-256 values rechecked and recorded in [Release-checksums-0.5.1.txt](Release-checksums-0.5.1.txt) |
+| Signing limitation | Actual code signatures are ad hoc without a Team ID; Developer ID and Apple notarization remain absent |
+| Release PR/tag | [PR #14](https://github.com/StPashik/Yuzu-converter/pull/14) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40733121773); v0.5.1 tags its exact main merge commit `edd9765f78d8732070d20ad7b484c62675693b74`, whose tree matches the verified release head |
+| Release CI | Each native CPU passed 78 Swift tests, 22 Node tests without skips, and the actual 0.5.1 signed Sandbox archive |
+| Public release | Stable Latest v0.5.1, draft=false/prerelease=false; exact English notes and all nine uploaded asset sizes/digests matched staging, then all nine unauthenticated public downloads passed size/SHA-256 verification |
+| Latest feeds/Sparkle | Both normal Latest XML URLs matched the signed release assets exactly; real production-key checks found build 11 from builds 7/9/10 and reported build 11 current on both CPUs without installing |
+| Historical preservation | All ten prior release bodies/statuses, asset IDs/digests/sizes/dates, and existing remote tag objects/dereferenced commits remained unchanged |
+| Legacy feeds/Sparkle | [PR #15](https://github.com/StPashik/Yuzu-converter/pull/15) passed [feed-only CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40738168128) and merged; both normal main/updates URLs then matched the public signed XML exactly, and real production-key checks found build 11 from builds 7/9/10 and reported build 11 current on both CPUs without installing |
+
+Both native release gates passed before tagging the exact main merge commit and publishing. The legacy XML was copied unchanged from the verified public signed assets only after every public download and normal Latest endpoint passed. Its separate publication PR merged after feed CI, then both normal legacy URLs and information-only Sparkle checks passed. The application tag remains unchanged. The release branch returns to develop through a PR with native CI and a merge commit.
+
+Physical Finder selection/Automation approval or denial, external-file Sandbox grants, VoiceOver, macOS 13, macOS 26 Intel appearance, and a complete interactive updater installation remain unverified. No owner app was installed, quit, or relaunched.
 
 ## v0.5.0 — A menu bar shelf
 
