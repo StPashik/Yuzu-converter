@@ -2,6 +2,29 @@
 
 Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.5.0 — A menu bar shelf
+
+Fresh local checks on October 28, 2026, macOS 26.6.2 on Apple Silicon: 70 Swift tests passed without failures, including four shelf regressions and the existing conversion/settings/wheel suite. All bundled-media fixtures were required. Eighteen layout snapshots cover five languages, both appearances, empty/single/scrolling states, and opaque surfaces, with a color-content check that rejects blank compositor masks.
+
+A separate temporary app compiled production `Shelf.swift` with Xcode 26 and displayed native Liquid Glass over its own synthetic backdrop. The actual WindowServer capture and its limits are in [Shelf-design.md](Shelf-design.md). The active-selection contrast regression failed in both appearances before the row-style correction, then the full 70-test suite passed. All 22 Node installer/feed tests also passed locally.
+
+[Feature PR #9](https://github.com/StPashik/Yuzu-converter/pull/9) merged into develop after [final-head native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40694585829): each CPU passed 70 Swift tests, 22 Node tests without skips, and the signed Sandbox app. Apple Silicon CI used native glass on macOS 26; Intel macOS 15/Xcode 16 compiled the older material fallback. Both release archives use Xcode 26; their SDK/weak-import/version/resource/signature checks are separate gates. No installed app was updated, quit, or relaunched. Physical Finder/Sandbox, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified.
+
+| Release preparation | Recorded result |
+| --- | --- |
+| Metadata | Package, lockfile, both final executables/plists agree on 0.5.0 / build 10; CPU list remains arm64 and x64 |
+| Native glass and deployment | Both main executables have SDK 26+, minimum macOS 13, and a weak `NSGlassEffectView` class import; main/helper CPU slices are exact |
+| Final signed ZIPs | Deep strict signatures, helper Sandbox/inherit entitlements, helper macOS 13 targets/system libraries, exact manifests/licenses/localizations, and unchanged icon bytes passed |
+| Signed Sandbox | Both extracted final apps passed bundled media, actual probe/decode/return conversions, image metadata, documents, spreadsheets, archives, and Compress to ZIP with external developer tools disabled |
+| Temporary installation | Both final ZIPs installed into isolated temporary homes, passed code-signature and executable-version checks, and were removed |
+| Update signing | Both archive signatures independently verified against the production public key; both signed appcasts verified for build 10 and CPU-compatible pinned downloads |
+| HTTP fixtures | Real Sparkle available/current/tampered/HTTP-500 requests passed with an ephemeral test key and isolated app identity; no update installation |
+| npm/source | Exactly seven npm files match tested source/metadata and final ZIP hashes; all four upstream source hashes, recipe/manifest/guide, and actual configurations for both CPUs match the source archive |
+| Staging | Nine final assets; eight payload checksums recorded in [Release-checksums-0.5.0.txt](Release-checksums-0.5.0.txt) |
+| Owner control | Primary 0.4.2 / build 9 and home 0.4.0 / build 7 executable hashes remained unchanged during preparation; no global npm install, quit, or relaunch |
+
+Release CI must pass before tagging the exact main release-PR merge commit. Verify all public bytes and Latest Sparkle checks after publication, then advance the exact signed legacy feeds through a separate PR. Historical tags/assets remain immutable. Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel appearance, external-file Sandbox Quick Look, and a full interactive updater installation remain unverified. Signing is ad hoc, without Developer ID or Apple notarization.
+
 ## v0.4.2 — Intel support restored
 
 Fresh checks on October 28, 2026. The owner reopened Intel support; [Intel-compatibility.md](Intel-compatibility.md) separates the observed error, recovery policy, verified results, and remaining unknowns.
@@ -25,9 +48,11 @@ Fresh checks on October 28, 2026. The owner reopened Intel support; [Intel-compa
 | Release CI | Both native CPU jobs passed 66 Swift tests, 22 Node tests without skips, and the signed Sandbox archive including the former Intel MOV → MP4 failure |
 | Public release | Stable Latest v0.4.2, draft=false/prerelease=false; the English body and all nine uploaded sizes/digests matched staging; all nine unauthenticated public downloads passed SHA-256/size verification |
 | Latest feeds/Sparkle | Both public XML files matched the signed assets exactly; production-key probes found build 9 from arm64 build 8 and x64 build 7, and reported build 9 current on both CPUs; no installation |
+| Legacy feeds/Sparkle | [PR #7](https://github.com/StPashik/Yuzu-converter/pull/7) passed [feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40681334121) and merged; both normal main/updates URLs matched the public signed assets; real production-key Sparkle checks found build 9 from arm64 build 8 and x64 build 7, and reported build 9 current on both CPUs without installing |
+| Historical preservation | Original v0.4.0/v0.4.1 tags, release bodies/statuses, asset IDs, sizes, SHA-256 values, and publication timestamps remained unchanged after publication |
 | Owner control | Installed executable hashes stayed unchanged during preparation: primary 0.4.1 / build 8, home copy 0.4.0 / build 7; no global install, quit, or relaunch |
 
-The release passed both native CI gates before its exact main release-PR merge commit was tagged. Public downloads and Latest feeds passed verification before copying the exact signed XML into both legacy bridges for a separate publication PR. Legacy Sparkle checks follow that PR's merge. Historical 0.4.0/0.4.1 tags and assets remain immutable.
+The release passed both native CI gates before its exact main release-PR merge commit was tagged. Public downloads and Latest feeds passed verification before copying the exact signed XML into both legacy bridges through a separate publication PR. After that merge, real information-only Sparkle checks passed against both normal legacy URLs. The release branch returns to develop through the same CI and merge-commit requirement. Historical 0.4.0/0.4.1 tags and assets remain immutable.
 
 Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel UI behavior, and a full interactive Intel Sparkle installation remain unverified. The internal Apple reason for the VideoToolbox parameter rejection remains unknown. Builds are ad-hoc signed without Developer ID or notarization. FFmpeg's existing codec, first-stream, metadata, and transparency limits remain in [Bundled-media.md](Bundled-media.md).
 

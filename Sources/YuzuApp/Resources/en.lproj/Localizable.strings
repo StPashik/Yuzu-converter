@@ -173,3 +173,12 @@
 "GIF exports are animated and contain no audio." = "GIF exports are animated and contain no audio.";
 "Media conversion uses FFmpeg under LGPL 2.1 or later." = "Media conversion uses FFmpeg under LGPL 2.1 or later.";
 "Media engine source and licenses" = "Media engine source and licenses";
+
+/* Floating shelf */
+"Show Shelf" = "Show Shelf";
+"Clear Shelf" = "Clear Shelf";
+"Close Shelf" = "Close Shelf";
+"Drop files here" = "Drop files here";
+"Files stay in their original locations." = "Files stay in their original locations.";
+"Drag files into another app" = "Drag files into another app";
+"1 file" = "1 file";

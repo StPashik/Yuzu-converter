@@ -25,6 +25,7 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
     private var shelves: [ShelfController] = []
     var onMove: ((ScopedFiles, URL) -> Void)?
     var onCompress: ((ScopedFiles, URL) -> Void)?
+    var shelfAnchor: (() -> NSView?)?
 
     init(access: AccessStore, settings: Settings) {
         self.access = access
@@ -32,6 +33,22 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
     }
 
     func refreshLanguage() { shelves.forEach { $0.refreshLanguage() } }
+
+    func showShelf() {
+        shelves.removeAll { $0.window?.isVisible != true }
+        present(shelves.last ?? makeShelf())
+    }
+
+    private func makeShelf() -> ShelfController {
+        let shelf = ShelfController()
+        shelves.append(shelf)
+        return shelf
+    }
+
+    private func present(_ shelf: ShelfController) {
+        let index = shelves.firstIndex { $0 === shelf } ?? 0
+        shelf.present(relativeTo: shelfAnchor?(), offset: CGFloat(min(index, 4)) * 18)
+    }
 
     func perform(_ action: FileAction, files: ScopedFiles) {
         do {
@@ -82,8 +99,9 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
                 shelves.removeAll { $0.window?.isVisible != true }
                 let shelf: ShelfController
                 if settings.addToShelf, let existing = shelves.last { shelf = existing }
-                else { shelf = ShelfController(); shelves.append(shelf) }
+                else { shelf = makeShelf() }
                 shelf.add(files)
+                present(shelf)
             }
         } catch { Self.show(error) }
     }
@@ -141,83 +159,4 @@ private enum ActionError: LocalizedError {
             return L10n.text("%@ could not be found. Choose another terminal app in Settings.", name)
         }
     }
-}
-
-@MainActor
-private final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate,
-                                     NSWindowDelegate {
-    // The shelf retains URLs and their grants for this session; it never owns or deletes the files.
-    private let table = NSTableView()
-    private var files: [URL] = []
-    private var leases: [ScopedFiles] = []
-
-    init() {
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 310, height: 260),
-                            styleMask: [.titled, .closable, .resizable, .utilityWindow],
-                            backing: .buffered, defer: false)
-        panel.title = L10n.text("Yuzu Shelf")
-        panel.level = .floating
-        panel.isReleasedWhenClosed = false
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        super.init(window: panel)
-        panel.delegate = self
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("file"))
-        column.width = 286
-        table.addTableColumn(column)
-        table.headerView = nil
-        table.rowHeight = 38
-        table.allowsMultipleSelection = true
-        table.dataSource = self
-        table.delegate = self
-        table.setDraggingSourceOperationMask(.copy, forLocal: false)
-        table.setAccessibilityLabel(L10n.text("Files on the floating shelf. Drag them into another app."))
-        let menu = NSMenu()
-        let remove = menu.addItem(withTitle: L10n.text("Remove from Shelf"), action: #selector(removeSelected), keyEquivalent: "")
-        remove.target = self
-        table.menu = menu
-        let scroll = NSScrollView(frame: panel.contentView!.bounds)
-        scroll.autoresizingMask = [.width, .height]
-        scroll.hasVerticalScroller = true
-        scroll.documentView = table
-        panel.contentView?.addSubview(scroll)
-        panel.center()
-    }
-    required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
-
-    func refreshLanguage() {
-        window?.title = L10n.text("Yuzu Shelf")
-        table.setAccessibilityLabel(L10n.text("Files on the floating shelf. Drag them into another app."))
-        table.menu?.items.first?.title = L10n.text("Remove from Shelf")
-    }
-
-    func add(_ incoming: ScopedFiles) {
-        files.append(contentsOf: incoming.urls.filter { !files.contains($0) })
-        leases.append(incoming)
-        table.reloadData()
-        window?.orderFrontRegardless()
-    }
-    func numberOfRows(in tableView: NSTableView) -> Int { files.count }
-    func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let view = NSTableCellView()
-        let icon = NSImageView(frame: NSRect(x: 7, y: 5, width: 28, height: 28))
-        icon.image = NSWorkspace.shared.icon(forFile: files[row].path)
-        let label = NSTextField(labelWithString: files[row].lastPathComponent)
-        label.frame = NSRect(x: 44, y: 10, width: 238, height: 20)
-        label.lineBreakMode = .byTruncatingMiddle
-        label.setAccessibilityLabel(files[row].path)
-        view.addSubview(icon)
-        view.addSubview(label)
-        return view
-    }
-    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-        files[row] as NSURL
-    }
-    @objc private func removeSelected() {
-        let rows = table.selectedRowIndexes
-        files = files.enumerated().filter { !rows.contains($0.offset) }.map(\.element)
-        // Closing or removing a reference never deletes the original file.
-        if files.isEmpty { leases.removeAll() }
-        table.reloadData()
-    }
-    func windowWillClose(_ notification: Notification) { files.removeAll(); leases.removeAll() }
 }
