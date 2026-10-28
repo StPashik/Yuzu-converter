@@ -187,9 +187,9 @@
 "Press shortcut…" = "Tastenkürzel drücken…";
 "Record Shortcut…" = "Tastenkürzel festlegen…";
 "Click to record. Escape cancels; Delete disables the shortcut." = "Zum Festlegen klicken. Escape bricht ab; die Löschtaste deaktiviert das Tastenkürzel.";
-"Works while Finder is active. ⌘⇧C replaces Finder’s Computer command. First use may ask for Finder and folder access." = "Funktioniert bei aktivem Finder. ⌘⇧C ersetzt dessen Befehl „Computer“. Bei der ersten Verwendung kann Zugriff auf Finder und Ordner erforderlich sein.";
+"Works while Finder is active. First use may ask for Finder and folder access." = "Funktioniert bei aktivem Finder. Bei der ersten Verwendung kann Zugriff auf Finder und Ordner erforderlich sein.";
 "This shortcut is unavailable. Record another combination." = "Dieses Tastenkürzel ist nicht verfügbar. Wählen Sie eine andere Kombination.";
-"Use a letter, number, Space, or F-key with at least two modifiers, including Command or Control." = "Verwenden Sie einen Buchstaben, eine Zahl, die Leertaste oder eine F-Taste mit mindestens zwei Zusatztasten, darunter Command oder Control.";
+"Use a letter, number, Space, or F-key with Control, or Command plus another modifier." = "Verwenden Sie einen Buchstaben, eine Zahl, die Leertaste oder eine F-Taste mit Control oder mit Command und einer weiteren Zusatztaste.";
 "Allow Yuzu Converter to access Finder in System Settings → Privacy & Security → Automation, then try again." = "Erlauben Sie Yuzu Converter den Finder-Zugriff unter Systemeinstellungen → Datenschutz & Sicherheit → Automation und versuchen Sie es erneut.";
 "Finder did not respond in time. Try again." = "Finder hat nicht rechtzeitig geantwortet. Versuchen Sie es erneut.";
 "Could not read the selected Finder files. Try selecting them again." = "Die ausgewählten Finder-Dateien konnten nicht gelesen werden. Wählen Sie sie erneut aus.";

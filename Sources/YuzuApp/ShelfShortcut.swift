@@ -6,7 +6,7 @@ struct ShelfShortcut: Codable, Equatable {
     let keyCode: UInt16
     let modifiers: UInt
     static let modifierMask: NSEvent.ModifierFlags = [.control, .option, .shift, .command]
-    static let `default` = ShelfShortcut(keyCode: UInt16(kVK_ANSI_C), modifiers: [.command, .shift])!
+    static let `default` = ShelfShortcut(keyCode: UInt16(kVK_ANSI_C), modifiers: .control)!
     private static let functionKeys: [UInt16: String] = [
         122: "F1", 120: "F2", 99: "F3", 118: "F4", 96: "F5", 97: "F6", 98: "F7", 100: "F8",
         101: "F9", 109: "F10", 103: "F11", 111: "F12", 105: "F13", 107: "F14", 113: "F15",
@@ -22,9 +22,9 @@ struct ShelfShortcut: Codable, Equatable {
     var flags: NSEvent.ModifierFlags { NSEvent.ModifierFlags(rawValue: modifiers) }
     var isValid: Bool {
         let supportedKey = (keyCode <= 50 && keyCode != 36 && keyCode != 48) || Self.functionKeys[keyCode] != nil
-        // Avoid stealing ordinary typing/editing chords, and work with macOS 15's hotkey restrictions.
+        // Control chords work only in Finder; bare Command chords keep their common editing roles.
         return supportedKey && flags.intersection(Self.modifierMask).rawValue == modifiers &&
-            modifiers.nonzeroBitCount >= 2 && !flags.intersection([.command, .control]).isEmpty
+            (flags.contains(.control) || (flags.contains(.command) && modifiers.nonzeroBitCount >= 2))
     }
     var carbonModifiers: UInt32 {
         var result: UInt32 = 0
@@ -114,7 +114,7 @@ final class ShelfShortcutController: ObservableObject {
     }
 
     func rejectInvalidShortcut() {
-        errorMessage = "Use a letter, number, Space, or F-key with at least two modifiers, including Command or Control."
+        errorMessage = "Use a letter, number, Space, or F-key with Control, or Command plus another modifier."
     }
 
     private func register(_ value: ShelfShortcut, reference: inout EventHotKeyRef?) -> OSStatus {

@@ -187,9 +187,9 @@
 "Press shortcut…" = "Appuyez sur le raccourci…";
 "Record Shortcut…" = "Définir le raccourci…";
 "Click to record. Escape cancels; Delete disables the shortcut." = "Cliquez pour définir les touches. Échap annule ; Suppr désactive le raccourci.";
-"Works while Finder is active. ⌘⇧C replaces Finder’s Computer command. First use may ask for Finder and folder access." = "Fonctionne lorsque le Finder est actif. ⌘⇧C remplace sa commande « Ordinateur ». Un accès au Finder et au dossier peut être demandé à la première utilisation.";
+"Works while Finder is active. First use may ask for Finder and folder access." = "Fonctionne lorsque le Finder est actif. Un accès au Finder et au dossier peut être demandé à la première utilisation.";
 "This shortcut is unavailable. Record another combination." = "Ce raccourci est indisponible. Choisissez une autre combinaison.";
-"Use a letter, number, Space, or F-key with at least two modifiers, including Command or Control." = "Utilisez une lettre, un chiffre, Espace ou une touche F avec au moins deux modificateurs, dont Command ou Control.";
+"Use a letter, number, Space, or F-key with Control, or Command plus another modifier." = "Utilisez une lettre, un chiffre, Espace ou une touche F avec Control, ou avec Command et un autre modificateur.";
 "Allow Yuzu Converter to access Finder in System Settings → Privacy & Security → Automation, then try again." = "Autorisez Yuzu Converter à accéder au Finder dans Réglages Système → Confidentialité et sécurité → Automatisation, puis réessayez.";
 "Finder did not respond in time. Try again." = "Le Finder n’a pas répondu à temps. Réessayez.";
 "Could not read the selected Finder files. Try selecting them again." = "Impossible de lire les fichiers sélectionnés dans le Finder. Sélectionnez-les à nouveau.";

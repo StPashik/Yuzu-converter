@@ -347,7 +347,7 @@ private struct ShelfShortcutSettingsView: View {
         }
         Text(L10n.text("Click to record. Escape cancels; Delete disables the shortcut."))
             .font(.caption).foregroundStyle(.secondary)
-        Text(L10n.text("Works while Finder is active. ⌘⇧C replaces Finder’s Computer command. First use may ask for Finder and folder access."))
+        Text(L10n.text("Works while Finder is active. First use may ask for Finder and folder access."))
             .font(.caption).foregroundStyle(.secondary)
         if let message = controller.errorMessage {
             Text(L10n.text(message)).font(.caption).foregroundStyle(.red)

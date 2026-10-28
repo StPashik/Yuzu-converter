@@ -187,9 +187,9 @@
 "Press shortcut…" = "Нажмите клавиши…";
 "Record Shortcut…" = "Задать сочетание…";
 "Click to record. Escape cancels; Delete disables the shortcut." = "Нажмите, чтобы задать клавиши. Escape отменяет запись, Delete отключает сочетание.";
-"Works while Finder is active. ⌘⇧C replaces Finder’s Computer command. First use may ask for Finder and folder access." = "Работает в активном Finder. ⌘⇧C заменяет его команду «Компьютер». При первом использовании может потребоваться доступ к Finder и папке.";
+"Works while Finder is active. First use may ask for Finder and folder access." = "Работает в активном Finder. При первом использовании может потребоваться доступ к Finder и папке.";
 "This shortcut is unavailable. Record another combination." = "Это сочетание недоступно. Задайте другое.";
-"Use a letter, number, Space, or F-key with at least two modifiers, including Command or Control." = "Используйте букву, цифру, пробел или F-клавишу с двумя или более модификаторами, включая Command или Control.";
+"Use a letter, number, Space, or F-key with Control, or Command plus another modifier." = "Используйте букву, цифру, пробел или F-клавишу с Control либо с Command и ещё одним модификатором.";
 "Allow Yuzu Converter to access Finder in System Settings → Privacy & Security → Automation, then try again." = "Разрешите Yuzu Converter доступ к Finder: Системные настройки → Конфиденциальность и безопасность → Автоматизация. Затем повторите попытку.";
 "Finder did not respond in time. Try again." = "Finder не ответил вовремя. Повторите попытку.";
 "Could not read the selected Finder files. Try selecting them again." = "Не удалось получить выделенные файлы Finder. Выделите их ещё раз.";

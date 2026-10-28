@@ -5,7 +5,8 @@ import XCTest
 
 final class ShelfShortcutTests: XCTestCase {
     func testShortcutValidationDoesNotCaptureTypingOrModifierOnlyKeys() throws {
-        XCTAssertEqual(ShelfShortcut.default.flags, [.command, .shift])
+        XCTAssertEqual(ShelfShortcut.default.flags, .control)
+        XCTAssertEqual(ShelfShortcut(keyCode: UInt16(kVK_ANSI_C), modifiers: .control), .default)
         XCTAssertNil(ShelfShortcut(keyCode: UInt16(kVK_ANSI_C), modifiers: .command))
         XCTAssertNil(ShelfShortcut(keyCode: UInt16(kVK_ANSI_C), modifiers: [.option, .shift]))
         for key in [kVK_Command, kVK_Shift, kVK_CapsLock, kVK_Escape, kVK_Delete, kVK_Return, kVK_Tab] {
