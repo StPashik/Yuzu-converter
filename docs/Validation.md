@@ -1,6 +1,37 @@
 # Release validation record
 
-Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
+Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
+
+## v0.4.2 — Intel support restored
+
+Fresh checks on October 28, 2026. The owner reopened Intel support; [Intel-compatibility.md](Intel-compatibility.md) separates the observed error, recovery policy, verified results, and remaining unknowns.
+
+| Check | Recorded result |
+| --- | --- |
+| Feature review | [PR #5](https://github.com/StPashik/Yuzu-converter/pull/5) merged into develop after [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40674356437) passed |
+| Swift tests | 66 passed on native macOS 15 Intel, 66 on native macOS 26 Apple Silicon; local Apple Silicon also passed all 66 with no skips |
+| Former failure | Both signed Sandbox apps passed the small MPEG-4 MOV → MP4 high-quality/metadata-off/72-pixel profile, probe/decode, and return conversion |
+| Safety regressions | Exact native error classification and actual MP4/MOV profile dimensions/frames/original bytes are checked; existing gain, disabled-track, cancellation, and malformed-input tests remain |
+| Installer tests | 22 Node tests passed locally without skips, including Intel x64 selection, preservation of the previous app during download, and rejection of unsupported CPUs before writes |
+| Metadata | Package, lockfile, both final executables/plists agree on 0.4.2 / build 9; CPU list is arm64 and x64 |
+| Final archives | Both extracted ZIPs passed deep strict signatures, exact main/helper CPU slices, helper entitlements, macOS 13 helper targets, system runtime dependencies, and exact license/manifest/localization bytes |
+| Signed Sandbox | Both final apps passed media targets, decoding/return conversion, image metadata, documents, spreadsheets, archives, and Compress to ZIP with developer tool overrides disabled |
+| Temporary installation | Both final ZIPs installed into temporary homes, passed signature/version checks, and were removed without modifying installed copies |
+| Signing | Both final archive signatures independently verified against the production public key; both signed appcasts verified for build 9 and compatible CPU-specific URLs |
+| HTTP fixtures | Real Sparkle available/current/tampered/HTTP-500 requests passed using a temporary test key and isolated identity; no update install |
+| Source/package | All four upstream source hashes and actual configuration records for both CPUs are included; npm tarball bytes/metadata/pinned archive hashes match tested source |
+| Staging | Nine assets staged; eight payload SHA-256 values are in [Release-checksums-0.4.2.txt](Release-checksums-0.4.2.txt) |
+| Release PR/tag | [PR #6](https://github.com/StPashik/Yuzu-converter/pull/6) passed [release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40678614523); v0.4.2 tags its exact main merge commit `25bec80dc406de5633bdbd55bf001f190c4478bb` |
+| Release CI | Both native CPU jobs passed 66 Swift tests, 22 Node tests without skips, and the signed Sandbox archive including the former Intel MOV → MP4 failure |
+| Public release | Stable Latest v0.4.2, draft=false/prerelease=false; the English body and all nine uploaded sizes/digests matched staging; all nine unauthenticated public downloads passed SHA-256/size verification |
+| Latest feeds/Sparkle | Both public XML files matched the signed assets exactly; production-key probes found build 9 from arm64 build 8 and x64 build 7, and reported build 9 current on both CPUs; no installation |
+| Legacy feeds/Sparkle | [PR #7](https://github.com/StPashik/Yuzu-converter/pull/7) passed [feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40681334121) and merged; both normal main/updates URLs matched the public signed assets; real production-key Sparkle checks found build 9 from arm64 build 8 and x64 build 7, and reported build 9 current on both CPUs without installing |
+| Historical preservation | Original v0.4.0/v0.4.1 tags, release bodies/statuses, asset IDs, sizes, SHA-256 values, and publication timestamps remained unchanged after publication |
+| Owner control | Installed executable hashes stayed unchanged during preparation: primary 0.4.1 / build 8, home copy 0.4.0 / build 7; no global install, quit, or relaunch |
+
+The release passed both native CI gates before its exact main release-PR merge commit was tagged. Public downloads and Latest feeds passed verification before copying the exact signed XML into both legacy bridges through a separate publication PR. After that merge, real information-only Sparkle checks passed against both normal legacy URLs. The release branch returns to develop through the same CI and merge-commit requirement. Historical 0.4.0/0.4.1 tags and assets remain immutable.
+
+Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel UI behavior, and a full interactive Intel Sparkle installation remain unverified. The internal Apple reason for the VideoToolbox parameter rejection remains unknown. Builds are ad-hoc signed without Developer ID or notarization. FFmpeg's existing codec, first-stream, metadata, and transparency limits remain in [Bundled-media.md](Bundled-media.md).
 
 ## v0.4.1 — Stable Apple Silicon releases and manual updates
 

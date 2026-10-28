@@ -56,9 +56,9 @@ Use Powerbox and security-scoped bookmarks in the Sandbox. Reuse and restore exi
 
 ## Distribution
 
-Version 0.4.1 targets Apple Silicon (arm64) only. On October 28, 2026, the owner requested renewed Intel support. Native x64 CI and signed Sandbox checks must pass before a new Intel release is published. Until then, 0.4.0 remains the current Intel download and signed legacy feed. Never deliver an arm64 update to an Intel client.
+Version 0.4.1 was Apple Silicon only. The owner requested renewed Intel support on October 28, 2026. Native x64 CI and signed Sandbox checks passed; version 0.4.2 restores separate arm64/x64 releases and native CI for both. Advance the Intel legacy feed only after new compatible signed assets are public. Never deliver an arm64 update to an Intel client.
 
-Provide a native `.app`, installable through `npm install -g`, and a direct Apple Silicon app download. GitHub Releases contain the finished app archives, npm installer `.tgz`, SHA-256 checksums, and applicable dependency licenses. Installing the release `.tgz` URL is supported; do not assume an npm registry account.
+Provide a native `.app`, installable through `npm install -g`, and direct Apple Silicon and Intel app downloads. GitHub Releases contain the finished app archives, npm installer `.tgz`, SHA-256 checksums, and applicable dependency licenses. Installing the release `.tgz` URL is supported; do not assume an npm registry account.
 
 The owner installs updates personally through Check for Updates. Release work must not install globally, replace either installed copy, quit, or relaunch the owner's app. Use isolated installation fixtures. New clients use signed appcasts attached to the Latest release; older main/updates clients receive a signed bridge only after assets are public.
 

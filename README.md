@@ -4,17 +4,19 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.4.1 brings stable releases and owner-controlled updates on Apple Silicon.** FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available. File tools remain outside the scope.
+**v0.4.2 restores Intel builds and recovers rejected native video profiles through bundled FFmpeg.** FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available. File tools remain outside the scope.
 
 ## Download
 
-Requires **Apple Silicon (M1 or later) and macOS 13 or later**.
+Requires **macOS 13 or later**, on Apple Silicon or Intel.
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/Yuzu-Converter-0.4.1-arm64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-arm64.zip)
 
-Intel Macs can keep [version 0.4.0](https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0), the final Intel release. New releases and updates target Apple Silicon only.
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-x64.zip)
 
-This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/Yuzu-FFmpeg-Sources-0.4.1.tar.xz) is supplied with the release.
+Intel users on 0.4.0 can update directly through **Check for Updates…**. Version 0.4.1 was Apple Silicon only.
+
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-FFmpeg-Sources-0.4.2.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -50,14 +52,14 @@ See the [wheel design notes](docs/Wheel-design.md) for the visual reference and 
 
 The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. Yuzu does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
 
-FFmpeg and FFprobe are included for Apple Silicon; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
+FFmpeg and FFprobe are included for both architectures; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
 
 ## Install with npm
 
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.1/stpashik-yuzu-converter-0.4.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/stpashik-yuzu-converter-0.4.2.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -75,11 +77,13 @@ swift test --scratch-path .build/verification
 swift run --scratch-path .build/development YuzuApp
 ```
 
-Build the pinned media engines and the Apple Silicon app archive, then pin their final checksums and package the installer. Build prerequisites and LGPL source obligations are in the [media guide](docs/Bundled-media.md):
+Build the pinned media engines and both architecture-specific app archives, then pin their final checksums and package the installer. Build prerequisites and LGPL source obligations are in the [media guide](docs/Bundled-media.md):
 
 ```sh
 python3 scripts/build-media.py arm64
+python3 scripts/build-media.py x64
 bash scripts/build-app.sh arm64
+bash scripts/build-app.sh x64
 node scripts/prepare-npm.mjs dist
 node scripts/prepare-updates.mjs dist
 npm pack --pack-destination dist
