@@ -2,6 +2,12 @@
 
 Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## Glass shelf — feature validation
+
+Fresh local checks on October 28, 2026, macOS 26.6.2 on Apple Silicon: 70 Swift tests passed without failures, including four shelf regressions and the existing conversion/settings/wheel suite. All bundled-media fixtures were required. Eighteen layout snapshots cover five languages, both appearances, empty/single/scrolling states, and opaque surfaces, with a color-content check that rejects blank compositor masks.
+
+A separate temporary app compiled production `Shelf.swift` with Xcode 26 and displayed native Liquid Glass over its own synthetic backdrop. The actual WindowServer capture and its limits are in [Shelf-design.md](Shelf-design.md). No installed app was updated, quit, or relaunched. Native arm64/x64 CI remains the feature-PR merge gate; physical Finder/Sandbox, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified.
+
 ## v0.4.2 — Intel support restored
 
 Fresh checks on October 28, 2026. The owner reopened Intel support; [Intel-compatibility.md](Intel-compatibility.md) separates the observed error, recovery policy, verified results, and remaining unknowns.

@@ -173,3 +173,12 @@
 "GIF exports are animated and contain no audio." = "GIF сохраняет анимацию и не содержит звука.";
 "Media conversion uses FFmpeg under LGPL 2.1 or later." = "Для конвертации используется FFmpeg под лицензией LGPL 2.1 или более поздней версии.";
 "Media engine source and licenses" = "Исходники и лицензии медиадвижка";
+
+/* Floating shelf */
+"Show Shelf" = "Показать полку";
+"Clear Shelf" = "Очистить полку";
+"Close Shelf" = "Закрыть полку";
+"Drop files here" = "Перетащите файлы сюда";
+"Files stay in their original locations." = "Файлы останутся на своих местах.";
+"Drag files into another app" = "Перетащите файлы в другое приложение";
+"1 file" = "1 файл";

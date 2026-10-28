@@ -1,6 +1,6 @@
 # Yuzu Converter architecture
 
-Updated October 27, 2026. The manager accepted this architecture. It describes the design and intended contracts; it is not evidence that every capability has been verified. Version 0.1.1 added English project documentation and five selectable UI languages. Version 0.1.2 corrects wheel hit-testing; see [Validation.md](Validation.md) for version-specific evidence.
+Updated October 28, 2026. The manager accepted this architecture. It describes the design and intended contracts; it is not evidence that every capability has been verified. Version 0.1.1 added English project documentation and five selectable UI languages. Version 0.1.2 corrects wheel hit-testing; see [Validation.md](Validation.md) for version-specific evidence.
 
 ## Structure
 
@@ -58,6 +58,10 @@ Shift/Control switch the current wheel; Escape closes selection. Sectors expose 
 Version 0.2.1 applies the owner-authorized Yuzu Mac App visual reference: rounded translucent petals, a separate three-line center, top-first ordering, orange/white selection, text-only format labels, and SF Symbols for Actions. Drawing and selection share the same rounded `CGPath`. The content fade respects Reduce Motion while the armed destination remains hit-testable. See [Wheel-design.md](Wheel-design.md) for dimensions and rendered previews.
 
 Compress to ZIP is an additional wheel Action. It neither introduces File tools nor changes the 46-case target conversion inventory.
+
+`ShelfController` owns a compact nonactivating panel positioned under the current status-bar button. Clamp its frame to that display's visible area, follow status-window/display changes, grow through five rows, and scroll longer lists. The menu's Show Shelf command reuses an open shelf; Float still follows the existing add-to-current/new-shelf setting. Closing releases the shelf's references rather than keeping an invisible session alive.
+
+On macOS 26+, embed the shelf content in `NSGlassEffectView.contentView`; earlier systems use an active behind-window `NSVisualEffectView` with the popover material. Reduce Transparency replaces either with an opaque surface and responds to accessibility changes live. Quick Look thumbnails are requested lazily for displayed rows, retain their source grants through completion, and fall back to system icons. Cancel and reject stale requests when references are removed. Incoming file drops use only the supplied dragging pasteboard; outgoing drags remain URL copies. Clear/remove/close never delete files, and grants remain tied to the references and pending work that need them.
 
 AppKit owns system sharing, pasteboard, workspace calls, and dialogs. Persist file access through scoped bookmarks. A file grant does not imply permission to write to its parent; use Powerbox when needed. Verify the distributed app’s signature, entitlements, and subprocess access rather than inferring them from developer runs.
 
