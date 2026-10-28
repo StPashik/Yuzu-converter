@@ -3,18 +3,18 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.0</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.1</link>
     <description>Signed x64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.5.0</title>
-      <sparkle:version>10</sparkle:version>
-      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.5.1</title>
+      <sparkle:version>11</sparkle:version>
+      <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Yuzu Converter 0.5.0 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.0">Read the release notes on GitHub</a>.</p>]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-x64.zip" sparkle:edSignature="BqsVCcrkeU5LM7vfiXo0aI+cTLo/rWs2b+VCp3j4MzLVI2ProCI/y0MZSIeFBA10WKAD2tiV+7amFi8KQp0ZDA==" length="25223458" type="application/octet-stream"></enclosure>
+      <description><![CDATA[<p>Yuzu Converter 0.5.1 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.1">Read the release notes on GitHub</a>.</p>]]></description>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-x64.zip" sparkle:edSignature="N2NcNa2n00tSEiDzddpy9QFxRBdesdkADFjUBAMA1l0OuaQJRxLSbBFlv73a5yZQYyegGprN/IXahJqMh9geCQ==" length="25259198" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: m3SoOAdIkHWR22tEwSPb/g6COxMwK4hYtIv2mbdY3NoF/9u60Pyv+xPP989komEi7O7H8UHVr6VYQwbsYZwSDg==
+edSignature: 5Al6zwOwwo76dgPEwPC1K/zxKHU68Ok7qrjH1AO2gPqW33zAVKCvFtshzojyPFCTGfvtkq1LjB0uHYzn9OOwDA==
 length: 1357
 -->
