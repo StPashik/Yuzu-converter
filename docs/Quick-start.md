@@ -6,10 +6,10 @@ Yuzu Converter lives in your Mac's menu bar. Drag a file, hold a shortcut key, a
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-arm64.zip) |
-| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-x64.zip) |
+| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-arm64.zip) |
+| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-x64.zip) |
 
-Requires macOS 13+. Version 0.4.2 supports both architectures; Intel 0.4.0 users can use **Check for Updates…** directly.
+Requires macOS 13+. Version 0.5.0 supports both architectures; existing Intel 0.4.0 and later clients can use **Check for Updates…** directly.
 
 Open the ZIP and move **Yuzu Converter.app** into your Applications folder. Open the app; its icon appears in the menu bar. There is no Dock icon or main window.
 
@@ -22,7 +22,7 @@ Node.js 20.11+ and npm are needed for installation and the launcher. The app its
 For npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/stpashik-yuzu-converter-0.4.2.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/stpashik-yuzu-converter-0.5.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -30,7 +30,7 @@ yuzu-converter
 For npm 10/11:
 
 ```sh
-npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/stpashik-yuzu-converter-0.4.2.tgz
+npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/stpashik-yuzu-converter-0.5.0.tgz
 yuzu-converter
 ```
 
@@ -61,6 +61,14 @@ Hold **Control** while dragging files or folders:
 | ZIP | Create one ZIP beside the first selected item, preserving every original. |
 
 Removing an item from the shelf never deletes the file. Closing the shelf clears its references. ZIP creation rejects symbolic links and matching top-level filenames; rename those inputs first. Moving a folder between volumes is currently unavailable.
+
+## Keep files on the shelf
+
+Choose **Show Shelf** from the Yuzu menu. Drop files directly onto the panel, or use the Float Action. Each card shows a preview or system icon, its name, and its parent folder. Drag rows into another app when needed. Select multiple rows to drag them together; Delete removes the selection from the shelf.
+
+The panel opens below Yuzu's menu bar icon, grows through five rows, and scrolls longer lists. **Clear Shelf** and the close button remove references while preserving originals. The General settings retain the choice between adding to the current shelf and creating a new one.
+
+macOS 26+ uses Liquid Glass; macOS 13–15 use a native translucent material. The system's **Reduce Transparency** preference switches the shelf to an opaque surface. All shelf controls follow the app's selected language. See the [shelf guide](Shelf-design.md) for previews and verification limits.
 
 ## Choose your language
 

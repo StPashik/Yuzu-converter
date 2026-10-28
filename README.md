@@ -4,19 +4,23 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.4.2 restores Intel builds and recovers rejected native video profiles through bundled FFmpeg.** FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available. File tools remain outside the scope.
+**v0.5.0 brings a compact glass shelf to your menu bar.** Choose **Show Shelf**, drop files onto the panel, and drag them into another app when needed. Previews, parent-folder labels, and a layout that grows through five rows keep the shelf useful without a large empty window. Native Liquid Glass is used on macOS 26+; earlier systems use a translucent material, and Reduce Transparency uses an opaque surface.
+
+<img src="docs/images/shelf-glass.png" width="460" alt="Yuzu Shelf with native Liquid Glass over a synthetic test backdrop">
+
+FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available on Apple Silicon and Intel. File tools remain outside the scope.
 
 ## Download
 
 Requires **macOS 13 or later**, on Apple Silicon or Intel.
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-arm64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-arm64.zip)
 
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-x64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-x64.zip)
 
 Intel users on 0.4.0 can update directly through **Check for Updates…**. Version 0.4.1 was Apple Silicon only.
 
-This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-FFmpeg-Sources-0.4.2.tar.xz) is supplied with the release.
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-FFmpeg-Sources-0.5.0.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -32,13 +36,13 @@ Open **Settings… → General** to choose independent shortcut combinations, Gl
 
 Choose the interface language in Settings: **English** (default), **Russian**, **German**, **French**, or **Spanish**. App-owned UI updates live; some system dialogs use the new language after an app restart. Your Mac's global language is unchanged. Technical converter diagnostics, project documentation, code comments, and releases remain English.
 
-Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
+Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. **Show Shelf** reopens an existing shelf or an empty drop area below the menu bar icon. Remove, Clear Shelf, and Close Shelf remove references and preserve original files. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
 
 ## Keep the app up to date
 
 Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu after your confirmation. Release publication leaves your installed copy alone. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
-See the [wheel design notes](docs/Wheel-design.md) for the visual reference and native AppKit previews.
+See the [shelf design](docs/Shelf-design.md) and [wheel design notes](docs/Wheel-design.md) for appearance, ownership, and native AppKit previews.
 
 ## Format support
 
@@ -59,7 +63,7 @@ FFmpeg and FFprobe are included for both architectures; no Homebrew setup is req
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/stpashik-yuzu-converter-0.4.2.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/stpashik-yuzu-converter-0.5.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -68,7 +72,7 @@ Older npm versions can use `npm install -g "$YUZU_PACKAGE_URL"` without those np
 
 ## Development
 
-Use macOS, Xcode/Swift 5.9+, and Node/npm:
+Use macOS, Xcode/Swift 5.9+, and Node/npm. Build release archives with **Xcode 26 or later** to include native Liquid Glass; older developer toolchains compile the native material fallback:
 
 ```sh
 npm ci --ignore-scripts
@@ -96,4 +100,4 @@ Rebuilding an app archive requires rerunning `prepare-npm` and `npm pack`. Devel
 
 The code was written from scratch after [Tangerine research with REA](docs/TangerineResearch.md), including [five observed Settings pages](docs/Tangerine-settings.md). Observed UI and static field names remain separate from unknown proprietary defaults. Compress to ZIP is a separate owner-requested feature. The owner authorized the Yuzu Mac App icons and wheel design reference; no old engines, settings, caches, source modules, or Git history were carried over. See [component notices](THIRD_PARTY_NOTICES.md). Normal releases are stable GitHub Latest releases; signing limitations are documented separately. Contributors and maintainers follow the [PR/release workflow](docs/Releasing.md).
 
-The wheel regression test exercises real WindowServer hit-testing before a drag is confirmed: it fails with the old fully transparent window and passes with the corrected background. Fresh release checks are recorded in [validation](docs/Validation.md); [app QA](docs/QA.md) and [installer QA](docs/NpmQA.md) retain historical review results. Physical Finder drag, Powerbox/bookmark recovery, AirDrop, Terminal, VoiceOver, shelf drag-out, Intel hardware, and macOS 13 remain unverified.
+The wheel regression test exercises real WindowServer hit-testing before a drag is confirmed: it fails with the old fully transparent window and passes with the corrected background. Shelf tests cover placement, drag callbacks, source preservation, material/selection changes, and five-language layouts. Fresh release checks are recorded in [validation](docs/Validation.md); [app QA](docs/QA.md) and [installer QA](docs/NpmQA.md) retain historical review results. Physical Finder/Powerbox, AirDrop/Terminal, VoiceOver, shelf drag-out, external-file Sandbox Quick Look, macOS 13, and macOS 26 Intel appearance remain unverified.
