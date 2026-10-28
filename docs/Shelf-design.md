@@ -6,6 +6,8 @@ Choose **Show Shelf** in the Yuzu menu, or use **Float** in Actions. The panel o
 
 Drop files directly on the panel, or add them through Float. Each row has a lazy Quick Look preview with system-icon fallback, the filename, its parent folder, and a remove button. Drag rows into another app using normal file-URL copy dragging. Delete removes selected references, and Clear Shelf removes every reference. Close Shelf or Escape hides the panel while retaining its contents and file grants; Show Shelf reopens all retained shelves. The owner requested this retention only within the current app session, ending when Yuzu exits. None of these operations deletes or moves originals. The panel remains visible while Finder or another destination app is active.
 
+The configurable **⌘⇧C** shortcut adds Finder's selection through the same Float path. Record or disable it directly in **Settings → General → Actions**. It is registered only while Finder is active and preserves the clipboard. The default replaces Finder's Computer command; Automation and folder access may be requested on first use. See [Settings.md](Settings.md) for supported combinations and permissions.
+
 ## Materials and accessibility
 
 Release archives built with Xcode 26 include Apple's [NSGlassEffectView](https://developer.apple.com/documentation/appkit/nsglasseffectview) for macOS 26+. Earlier macOS versions use the native active popover material behind the window. Older Xcode 16 developer/Intel CI builds compile that fallback without requiring newer SDK symbols. The minimum runtime stays macOS 13.

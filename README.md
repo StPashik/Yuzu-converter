@@ -38,6 +38,8 @@ Choose the interface language in Settings: **English** (default), **Russian**, *
 
 Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. **Show Shelf** restores retained shelves or an empty drop area below the menu bar icon. Close Shelf and Escape hide a shelf while keeping its files available for reopening; Remove and Clear Shelf explicitly remove references. Exiting Yuzu ends the session. Original files stay in place. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
 
+Select files in Finder and press **⌘⇧C** to add them to the shelf. Record a different combination directly in **Settings → General → Actions**, or press Delete while recording to disable it. The shortcut is active only in Finder, where its default replaces the Computer command; first use can request Finder and folder access. It preserves your clipboard. See the [quick start](docs/Quick-start.md#keep-files-on-the-shelf).
+
 ## Keep the app up to date
 
 Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu after your confirmation. Release publication leaves your installed copy alone. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.

@@ -314,6 +314,7 @@ private struct GeneralSettingsView: View {
                     Text(L10n.text("Create a New Float")).tag(false)
                     Text(L10n.text("Add to Existing Float")).tag(true)
                 }
+                ShelfShortcutSettingsView(controller: settings.shelfShortcut)
                 Picker(L10n.text("Terminal app"), selection: $settings.terminalApplication) {
                     ForEach(TerminalApplication.allCases) { Text($0.name).tag($0) }
                 }
@@ -332,6 +333,24 @@ private struct GeneralSettingsView: View {
             ForEach(DragModifier.allCases) { modifier in
                 Text(modifier.displayName).tag(modifier).accessibilityLabel(modifier.title)
             }
+        }
+    }
+}
+
+private struct ShelfShortcutSettingsView: View {
+    @ObservedObject var controller: ShelfShortcutController
+    var body: some View {
+        HStack {
+            Text(L10n.text("Add Finder selection to shelf"))
+            Spacer()
+            ShelfShortcutRecorder(controller: controller).fixedSize()
+        }
+        Text(L10n.text("Click to record. Escape cancels; Delete disables the shortcut."))
+            .font(.caption).foregroundStyle(.secondary)
+        Text(L10n.text("Works while Finder is active. ⌘⇧C replaces Finder’s Computer command. First use may ask for Finder and folder access."))
+            .font(.caption).foregroundStyle(.secondary)
+        if let message = controller.errorMessage {
+            Text(L10n.text(message)).font(.caption).foregroundStyle(.red)
         }
     }
 }

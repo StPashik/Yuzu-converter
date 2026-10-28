@@ -45,6 +45,31 @@ final class AccessStore: ObservableObject {
 
     /// Returns an active grant for the actual output parent; the caller must stop that exact URL.
     func outputFolder(beside source: URL) throws -> URL? {
+        try folder(containing: source, title: "Output Folder",
+                   message: L10n.text("Allow saving beside “%@”. Yuzu will remember this folder.", source.lastPathComponent))
+    }
+
+    func shelfFiles(_ urls: [URL]) throws -> ScopedFiles? {
+        guard !urls.isEmpty, urls.allSatisfy(\.isFileURL) else { throw CocoaError(.fileReadUnsupportedScheme) }
+        let files = ScopedFiles(urls)
+        defer { withExtendedLifetime(files) {} }
+        var grants: [URL] = []
+        var transferred = false
+        defer { if !transferred { grants.forEach { $0.stopAccessingSecurityScopedResource() } } }
+        // Finder's Apple event can identify a file without granting Sandbox access to read it.
+        for url in urls where !FileManager.default.isReadableFile(atPath: url.path) {
+            guard let grant = try folder(containing: url, title: "Shelf Access", message:
+                L10n.text("Allow access to selected files in “%@”. Yuzu will remember this folder.",
+                          url.deletingLastPathComponent().lastPathComponent)) else { return nil }
+            grants.append(grant)
+            guard FileManager.default.isReadableFile(atPath: url.path) else { throw CocoaError(.fileReadNoPermission) }
+        }
+        let authorized = ScopedFiles(urls, activeGrants: grants)
+        transferred = true
+        return authorized
+    }
+
+    private func folder(containing source: URL, title: String, message: String) throws -> URL? {
         guard source.isFileURL else { throw CocoaError(.fileReadUnsupportedScheme) }
         let parent = source.deletingLastPathComponent().standardizedFileURL
         for key in bookmarks.keys.sorted(by: { $0.count > $1.count }) {
@@ -76,10 +101,10 @@ final class AccessStore: ObservableObject {
             return child
         }
 
-        // A file drop does not grant Sandbox write access to its parent folder.
+        // Identifying a source does not grant Sandbox read/write access to its parent folder.
         let panel = NSOpenPanel()
-        panel.title = L10n.text("Output Folder")
-        panel.message = L10n.text("Allow saving beside “%@”. Yuzu will remember this folder.", source.lastPathComponent)
+        panel.title = L10n.text(title)
+        panel.message = message
         panel.directoryURL = parent
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
@@ -135,7 +160,7 @@ private enum AccessError: LocalizedError {
     case wrongFolder(String)
     var errorDescription: String? {
         if case .wrongFolder(let name) = self {
-            return L10n.text("Choose “%@”. Converted files are saved beside the original.", name)
+            return L10n.text("Choose “%@” to allow access to the selected files.", name)
         }
         return nil
     }

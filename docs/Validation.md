@@ -2,11 +2,15 @@
 
 Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
-## v0.5.1 — Shelf close/reopen retention
+## v0.5.1 — Shelf retention and a configurable Finder shortcut
 
-The owner requested retention when closing/reopening shelf windows within the running app, without persistence after exiting Yuzu. The new ActionController regression failed eight assertions against 0.5.0 behavior, demonstrating both collection clearing and removal of hidden controllers. After the minimal fix, all 71 local Swift tests passed with required bundled-media fixtures, and all 22 Node installer/feed tests passed without skips.
+The owner requested retention when closing/reopening shelf windows within the running app, without persistence after exiting Yuzu. The new ActionController regression failed eight assertions against 0.5.0 behavior, demonstrating both collection clearing and removal of hidden controllers. The retention fix first passed all 71 local Swift tests with required bundled media; the previous feature head also passed both native CI jobs. The subsequent shortcut work requires its own final-head CI below.
 
-Five shelf tests now include the actual close button, Escape, Show Shelf, same-window reopening, a retained source lease, appending to a hidden shelf, independent shelves in new-shelf mode, and original-byte preservation. Existing geometry, material, selection-contrast, drag/drop, and 18 layout-snapshot checks remain. Native arm64/x64 CI is the feature merge gate. Physical Finder/Sandbox grants, VoiceOver, macOS 13, macOS 26 Intel appearance, and a complete interactive updater installation remain unverified. No owner app was installed, quit, or relaunched.
+Five shelf tests now include the actual close button, Escape, Show Shelf, same-window reopening, a retained source lease, appending to a hidden shelf, independent shelves in new-shelf mode, and original-byte preservation. Existing geometry, material, selection-contrast, drag/drop, and 18 shelf layout-snapshot checks remain.
+
+The final local run passed **77 Swift tests**, with required bundled-media fixtures, and **22 Node tests** without skips. The new shortcut checks exercise native exclusive registration and release, conflicting replacements without losing previous registrations/preferences, recording/cancel/disable, invalid or unsafe chords, persisted disable and corrupt preferences, strict Finder file-descriptor parsing including real aliases and Unicode paths, readable source preservation, and all five Automation explanation resources. The descriptor regression caught Foundation coercing arbitrary text into a file URL; parsing now rejects text before coercion. Real alias tests compare canonical paths because macOS resolves `/var` to `/private/var`. Settings previews also scroll to the new control in every language and both appearances.
+
+Final native arm64/x64 CI is the feature merge gate. Physical Finder selection/Automation approval or denial, external-file Sandbox grants, VoiceOver, macOS 13, macOS 26 Intel appearance, and a complete interactive updater installation remain unverified. No owner app was installed, quit, or relaunched.
 
 ## v0.5.0 — A menu bar shelf
 

@@ -6,9 +6,10 @@ final class ScopedFiles: @unchecked Sendable {
     let urls: [URL]
     private let granted: [URL]
 
-    init(_ urls: [URL]) {
+    /// activeGrants transfers already-started folder scopes from Finder authorization to this lease.
+    init(_ urls: [URL], activeGrants: [URL] = []) {
         self.urls = urls
-        granted = urls.filter { $0.startAccessingSecurityScopedResource() }
+        granted = activeGrants + urls.filter { $0.startAccessingSecurityScopedResource() }
     }
     deinit { granted.forEach { $0.stopAccessingSecurityScopedResource() } }
 }
