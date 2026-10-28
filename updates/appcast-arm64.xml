@@ -3,18 +3,18 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.0</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.1</link>
     <description>Signed arm64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.5.0</title>
-      <sparkle:version>10</sparkle:version>
-      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.5.1</title>
+      <sparkle:version>11</sparkle:version>
+      <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Yuzu Converter 0.5.0 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.0">Read the release notes on GitHub</a>.</p>]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-arm64.zip" sparkle:edSignature="TdNYMOriPj2AeAgXqcdiVZU2kd9fvK4qunGZJE9THgkAk+jC5VdXlgYvnlmws2j7Rj06iyC5G5m7FmR0+AZ4Dg==" length="24069066" type="application/octet-stream"></enclosure>
+      <description><![CDATA[<p>Yuzu Converter 0.5.1 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.1">Read the release notes on GitHub</a>.</p>]]></description>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-arm64.zip" sparkle:edSignature="xU5IrzOq0oDyKUkS74hpRMDva+IL8C7PH438xDejgsigH1HsszwB2h03hi99iVEItsFBBjyPh//3qUfJGNzPBA==" length="24104878" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: jN9XTvq63B31W0WH0eiRld0p/HyUeBVJk4Rerj6qBtk2LCYwRiUSsO5wIYITyE3WE6Vuf1X5FgMiWvTIhG1+Dg==
+edSignature: cc5g49petTGyo65+P2E6lIx6Fb4pEXxBZ5l2pFilstIWTyXv+4tvvmuLEnu4YSfjhzhj0Ao3fes3z0oD3exMCw==
 length: 1361
 -->

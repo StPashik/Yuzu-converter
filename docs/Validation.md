@@ -26,8 +26,13 @@ The scope-ownership regression failed two assertions before the fix: already-rea
 | HTTP fixtures | Real Sparkle available/current/tampered/HTTP-500 requests passed with an ephemeral key and isolated app identity; no update installation |
 | Staging | Nine final files; eight payload SHA-256 values rechecked and recorded in [Release-checksums-0.5.1.txt](Release-checksums-0.5.1.txt) |
 | Signing limitation | Actual code signatures are ad hoc without a Team ID; Developer ID and Apple notarization remain absent |
+| Release PR/tag | [PR #14](https://github.com/StPashik/Yuzu-converter/pull/14) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40733121773); v0.5.1 tags its exact main merge commit `edd9765f78d8732070d20ad7b484c62675693b74`, whose tree matches the verified release head |
+| Release CI | Each native CPU passed 78 Swift tests, 22 Node tests without skips, and the actual 0.5.1 signed Sandbox archive |
+| Public release | Stable Latest v0.5.1, draft=false/prerelease=false; exact English notes and all nine uploaded asset sizes/digests matched staging, then all nine unauthenticated public downloads passed size/SHA-256 verification |
+| Latest feeds/Sparkle | Both normal Latest XML URLs matched the signed release assets exactly; real production-key checks found build 11 from builds 7/9/10 and reported build 11 current on both CPUs without installing |
+| Historical preservation | All ten prior release bodies/statuses, asset IDs/digests/sizes/dates, and existing remote tag objects/dereferenced commits remained unchanged |
 
-Release-PR native CI must pass before tagging its exact main merge commit and publishing stable Latest. The legacy bridges advance only after the matching signed assets are public.
+Both native release gates passed before tagging the exact main merge commit and publishing. The legacy XML was copied unchanged from the verified public signed assets only after every public download and normal Latest endpoint passed. Its separate publication PR and normal legacy-URL checks remain the next gate; the application tag is never moved. The release branch returns to develop through a PR with native CI and a merge commit.
 
 Physical Finder selection/Automation approval or denial, external-file Sandbox grants, VoiceOver, macOS 13, macOS 26 Intel appearance, and a complete interactive updater installation remain unverified. No owner app was installed, quit, or relaunched.
 
