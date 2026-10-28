@@ -3,18 +3,18 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.2</link>
     <description>Signed x64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.4.0</title>
-      <sparkle:version>7</sparkle:version>
-      <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.4.2</title>
+      <sparkle:version>9</sparkle:version>
+      <sparkle:shortVersionString>0.4.2</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Yuzu Converter 0.4.0 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.0">Read the release notes on GitHub</a>.</p>]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.0/Yuzu-Converter-0.4.0-x64.zip" sparkle:edSignature="DqJzEhbIt4k4um0Zw0sqvXjgiqZ31hN2BFnlPVtYksdPjG52pOA0cfQG+lHjVbrepxehv8uqnxLpCpZGnw/+Dw==" length="25191215" type="application/octet-stream"></enclosure>
+      <description><![CDATA[<p>Yuzu Converter 0.4.2 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.2">Read the release notes on GitHub</a>.</p>]]></description>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-x64.zip" sparkle:edSignature="gje8XZUAnHyJFZ6zV/C7IFFCwyAHiJHQUEKzQ/k9oxp6JR08gVlomoy3LLzAXAA9oo3Kzdj+iRxvE0xBPH1jAA==" length="25193139" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: aRHD9CCzvFGZS+OF8KHSrzdAbzxfmwomjnCpxGzlMMK2UCPXY8SLrFw4uv1dzRGvBsQyYAMvT/dH9xwBki1vCA==
+edSignature: DcdWc/n0osx5oT0dbirUttu5Y6E7TmQj25jTd7fIcLTIdCdnloECJqcacHuuT7EiIc7HYhczRFYXfMlazR/fBg==
 length: 1356
 -->

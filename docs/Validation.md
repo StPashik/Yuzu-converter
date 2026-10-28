@@ -1,6 +1,6 @@
 # Release validation record
 
-Updated October 27, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
+Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
 ## v0.4.2 — Intel support restored
 
@@ -21,9 +21,13 @@ Fresh checks on October 28, 2026. The owner reopened Intel support; [Intel-compa
 | HTTP fixtures | Real Sparkle available/current/tampered/HTTP-500 requests passed using a temporary test key and isolated identity; no update install |
 | Source/package | All four upstream source hashes and actual configuration records for both CPUs are included; npm tarball bytes/metadata/pinned archive hashes match tested source |
 | Staging | Nine assets staged; eight payload SHA-256 values are in [Release-checksums-0.4.2.txt](Release-checksums-0.4.2.txt) |
+| Release PR/tag | [PR #6](https://github.com/StPashik/Yuzu-converter/pull/6) passed [release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40678614523); v0.4.2 tags its exact main merge commit `25bec80dc406de5633bdbd55bf001f190c4478bb` |
+| Release CI | Both native CPU jobs passed 66 Swift tests, 22 Node tests without skips, and the signed Sandbox archive including the former Intel MOV → MP4 failure |
+| Public release | Stable Latest v0.4.2, draft=false/prerelease=false; the English body and all nine uploaded sizes/digests matched staging; all nine unauthenticated public downloads passed SHA-256/size verification |
+| Latest feeds/Sparkle | Both public XML files matched the signed assets exactly; production-key probes found build 9 from arm64 build 8 and x64 build 7, and reported build 9 current on both CPUs; no installation |
 | Owner control | Installed executable hashes stayed unchanged during preparation: primary 0.4.1 / build 8, home copy 0.4.0 / build 7; no global install, quit, or relaunch |
 
-Release CI must pass before tagging the exact main release-PR merge commit. Public files are verified after publication, and legacy feeds advance through a separate PR only after their compatible signed assets are public. Historical 0.4.0/0.4.1 tags and assets remain immutable.
+The release passed both native CI gates before its exact main release-PR merge commit was tagged. Public downloads and Latest feeds passed verification before copying the exact signed XML into both legacy bridges for a separate publication PR. Legacy Sparkle checks follow that PR's merge. Historical 0.4.0/0.4.1 tags and assets remain immutable.
 
 Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel UI behavior, and a full interactive Intel Sparkle installation remain unverified. The internal Apple reason for the VideoToolbox parameter rejection remains unknown. Builds are ad-hoc signed without Developer ID or notarization. FFmpeg's existing codec, first-stream, metadata, and transparency limits remain in [Bundled-media.md](Bundled-media.md).
 
