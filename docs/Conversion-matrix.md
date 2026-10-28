@@ -1,6 +1,6 @@
 # Conversion matrix: target inventory and implemented support
 
-Updated October 27, 2026 for v0.4.1. Starting with 0.4.1, new releases target Apple Silicon only; 0.4.0 remains the final Intel release. This owner-approved architecture change does not reduce the conversion inventory. The target remains Tangerine's 46-case format inventory. Missing capabilities remain requirements; they are not removed to match a backend. All candidate rows and research evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory). Version-specific build/test results and remaining physical gates are in [Validation.md](Validation.md).
+Updated October 28, 2026 for v0.4.2. Version 0.4.1 was Apple Silicon only; version 0.4.2 restores separate Intel builds after native CI and signed Sandbox validation. The format inventory remains unchanged. The target remains Tangerine's 46-case format inventory. Missing capabilities remain requirements; they are not removed to match a backend. All candidate rows and research evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory). Version-specific build/test results and remaining physical gates are in [Validation.md](Validation.md).
 
 ## Packaged Sandbox app and developer runs
 
@@ -53,7 +53,7 @@ The named fixtures in [ConversionTests.swift](../Tests/YuzuCoreTests/ConversionT
 | `testArchiveRoundTripAndRejectsSymlink` | ZIP → TAR.GZ, contents, link/traversal rejection, and standalone-GZIP rejection |
 | `testNativeAudioBaselineWithoutExternalTools` | WAV → AIFF/M4A and AIFF → WAV, readability/frame count without external engines |
 | `testNativeVideoBaselineWithoutExternalTools` | MOV → MP4 → MOV and a readable video stream without external engines |
-| `testFFmpegWAVToFLACWhenAvailable` | WAV → FLAC with an available engine; v0.4.1 release checks use the bundled build and do not skip |
+| `testFFmpegWAVToFLACWhenAvailable` | WAV → FLAC with an available engine; v0.4.2 release checks use the bundled build and do not skip |
 | `MediaTests.testEveryVideoInputAndOutputWithRealStreams` | 48 real directed video/MP3 routes, frame/stream checks, full decoding, and unchanged source bytes |
 | `MediaTests` descriptor/silent/damaged fixtures | Seekable inherited files, exclusive output creation, silent MP3 filtering, and no partial publication |
 | Cancellation/FileOperations fixtures | No published result after cancellation, subprocess termination, available names, move deduplication/ancestor filtering, and recursive-destination rejection |
