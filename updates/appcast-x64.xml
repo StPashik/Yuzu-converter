@@ -3,18 +3,18 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.1</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.6.0</link>
     <description>Signed x64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.5.1</title>
-      <sparkle:version>11</sparkle:version>
-      <sparkle:shortVersionString>0.5.1</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.6.0</title>
+      <sparkle:version>12</sparkle:version>
+      <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Yuzu Converter 0.5.1 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.1">Read the release notes on GitHub</a>.</p>]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-x64.zip" sparkle:edSignature="N2NcNa2n00tSEiDzddpy9QFxRBdesdkADFjUBAMA1l0OuaQJRxLSbBFlv73a5yZQYyegGprN/IXahJqMh9geCQ==" length="25259198" type="application/octet-stream"></enclosure>
+      <description><![CDATA[<p>Yuzu Converter 0.6.0 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.6.0">Read the release notes on GitHub</a>.</p>]]></description>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-Converter-0.6.0-x64.zip" sparkle:edSignature="k16tT+Gk1ee0JbgFMwL/zGhV70/kadbKHq0bdhjrPZl+6GJKfCkwua3tk3KPdlhW8OfyHj6DJeBOQOLne5UfDw==" length="25327250" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: 5Al6zwOwwo76dgPEwPC1K/zxKHU68Ok7qrjH1AO2gPqW33zAVKCvFtshzojyPFCTGfvtkq1LjB0uHYzn9OOwDA==
+edSignature: v6wpcU83X/+DRGFWihs4+4eO8Ifmf/Za9Zhz8wYgvr3qgTKFU9pUC3Gxfd+AbkaxL0e4tPRN2QMob64UXuZGAA==
 length: 1357
 -->
