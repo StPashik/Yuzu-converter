@@ -24,6 +24,10 @@ Cache tests reject recipe/toolchain/architecture changes, missing/corrupt files,
 | Licenses | All seven media license/notice copies matched their exact pinned upstream archive bytes |
 | Frozen publication set | Nine assets, eight payload SHA-256 values in [Release-checksums-0.6.0.txt](Release-checksums-0.6.0.txt); historical releases/tags/assets are not replaced |
 
+[Release PR #18](https://github.com/StPashik/Yuzu-converter/pull/18) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40751460121) on both CPUs, again with 86 Swift tests, 22 Node tests without skips, and signed Sandbox archive/media verification. Tag `v0.6.0` points to its exact main merge commit, `c58d5f4058c3413e70d8d7b7c0482b8b53461bf1`, whose tree matches the verified release head.
+
+The draft's nine asset sizes/digests and English body matched the prepared files before stable Latest publication. All nine public unauthenticated versioned downloads then matched final SHA-256 values. Both normal Latest feed URLs returned the exact signed XML. Real production-key Sparkle checks passed for arm64/x64: builds 7, 10, and 11 see build 12; build 12 reports current. These eight checks used temporary identities and performed no installation. Legacy bridge files are copied from those exact public signed bytes through their own publication PR.
+
 Physical Finder/Powerbox, real Clipboard/AirDrop/Terminal, external-file Sandbox Quick Look, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Source rows may become stale after Move. Session-only history/references and cooperative filesystem cancellation are documented limits. Developer ID/notarization are still absent. The owner's installed copies are not release test targets.
 
 ## v0.5.1 — Shelf retention and a configurable Finder shortcut
