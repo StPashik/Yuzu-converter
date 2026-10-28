@@ -35,8 +35,9 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
     func refreshLanguage() { shelves.forEach { $0.refreshLanguage() } }
 
     func showShelf() {
-        shelves.removeAll { $0.window?.isVisible != true }
-        present(shelves.last ?? makeShelf())
+        shelves.removeAll { $0.files.isEmpty && $0.window?.isVisible != true }
+        if shelves.isEmpty { _ = makeShelf() }
+        shelves.forEach(present)
     }
 
     private func makeShelf() -> ShelfController {
@@ -96,7 +97,7 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
                     } catch { Self.show(error) }
                 }
             case .float:
-                shelves.removeAll { $0.window?.isVisible != true }
+                shelves.removeAll { $0.files.isEmpty && $0.window?.isVisible != true }
                 let shelf: ShelfController
                 if settings.addToShelf, let existing = shelves.last { shelf = existing }
                 else { shelf = makeShelf() }

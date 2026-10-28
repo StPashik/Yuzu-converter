@@ -32,7 +32,7 @@ Keep shared contracts small. Existing public entry points include `SourceFile(ur
 4. `ScopedFiles` retains the immutable URLs and only the grants successfully started; deinitialization balances those grants. Retain this object for the operation's full lifetime rather than retaining bare URLs alone.
 5. `AccessStore.outputFolder(beside:)` restores or requests the actual parent folder and checks it with `isParent`. A dropped file does not grant write access to its parent. Queued jobs retain destination access and release it after completion or queue cancellation.
 
-AirDrop retains source scopes until its sharing delegate completes. Clipboard Copy retains its lease until pasteboard `changeCount` changes. Shelves retain leases for their referenced files and pending Quick Look requests. Clearing/closing removes only references; stale preview callbacks cannot repopulate removed rows. These code paths do not replace the deferred physical Finder/Sandbox integration checks.
+AirDrop retains source scopes until its sharing delegate completes. Clipboard Copy retains its lease until pasteboard `changeCount` changes. Shelves retain leases for their referenced files and pending Quick Look requests, including while a shelf window is closed. Closing cancels preview work but keeps the session's collection; remove/clear explicitly releases references, and exiting Yuzu ends the session. Stale preview callbacks cannot repopulate removed rows. These code paths do not replace the deferred physical Finder/Sandbox integration checks.
 
 ## Jobs, cancellation, and publication
 

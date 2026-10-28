@@ -2,6 +2,12 @@
 
 Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.5.1 — Shelf close/reopen retention
+
+The owner requested retention when closing/reopening shelf windows within the running app, without persistence after exiting Yuzu. The new ActionController regression failed eight assertions against 0.5.0 behavior, demonstrating both collection clearing and removal of hidden controllers. After the minimal fix, all 71 local Swift tests passed with required bundled-media fixtures, and all 22 Node installer/feed tests passed without skips.
+
+Five shelf tests now include the actual close button, Escape, Show Shelf, same-window reopening, a retained source lease, appending to a hidden shelf, independent shelves in new-shelf mode, and original-byte preservation. Existing geometry, material, selection-contrast, drag/drop, and 18 layout-snapshot checks remain. Native arm64/x64 CI is the feature merge gate. Physical Finder/Sandbox grants, VoiceOver, macOS 13, macOS 26 Intel appearance, and a complete interactive updater installation remain unverified. No owner app was installed, quit, or relaunched.
+
 ## v0.5.0 — A menu bar shelf
 
 Fresh local checks on October 28, 2026, macOS 26.6.2 on Apple Silicon: 70 Swift tests passed without failures, including four shelf regressions and the existing conversion/settings/wheel suite. All bundled-media fixtures were required. Eighteen layout snapshots cover five languages, both appearances, empty/single/scrolling states, and opaque surfaces, with a color-content check that rejects blank compositor masks.
