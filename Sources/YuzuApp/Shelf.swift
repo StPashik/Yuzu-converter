@@ -358,6 +358,8 @@ private final class ShelfTable: NSTableView {
 }
 
 private final class ShelfRow: NSTableRowView {
+    // Translucent selection needs normal label contrast instead of white text for an opaque accent fill.
+    override var interiorBackgroundStyle: NSView.BackgroundStyle { .normal }
     override func drawBackground(in dirtyRect: NSRect) {
         NSColor.labelColor.withAlphaComponent(0.045).setFill()
         NSBezierPath(roundedRect: bounds.insetBy(dx: 1, dy: 2), xRadius: 12, yRadius: 12).fill()

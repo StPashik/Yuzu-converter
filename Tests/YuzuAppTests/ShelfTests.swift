@@ -163,6 +163,12 @@ final class ShelfTests: XCTestCase {
             L10n.language = .english
             shelf.refreshLanguage()
             shelf.setMaterial(reduceTransparency: true)
+            let selectedTable = try XCTUnwrap(descendants(try XCTUnwrap(shelf.window?.contentView)).compactMap { $0 as? NSTableView }.first)
+            selectedTable.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+            let selectedRow = try XCTUnwrap(selectedTable.rowView(atRow: 0, makeIfNecessary: true))
+            selectedRow.isEmphasized = true
+            XCTAssertEqual(selectedRow.interiorBackgroundStyle, .normal,
+                           "Translucent selection must retain readable normal label colors")
             try render("en-solid-\(theme)")
             shelf.removeFiles(at: IndexSet(shelf.files.indices))
             try render("en-empty-\(theme)")
