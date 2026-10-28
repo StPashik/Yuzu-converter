@@ -55,12 +55,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.button?.setAccessibilityLabel("Yuzu Converter")
         item.button?.image?.isTemplate = true
         let menu = NSMenu()
+        menu.addItem(withTitle: L10n.text("Show Shelf"), action: #selector(showShelf), keyEquivalent: "").target = self
         menu.addItem(withTitle: L10n.text("Settings…"), action: #selector(showSettings), keyEquivalent: ",").target = self
         menu.addItem(withTitle: L10n.text("Check for Updates…"),
                      action: #selector(SPUStandardUpdaterController.checkForUpdates(_:)), keyEquivalent: "").target = updater.controller
         menu.addItem(withTitle: L10n.text("Quit"), action: #selector(quit), keyEquivalent: "q").target = self
         item.menu = menu
         statusItem = item
+        actions.shelfAnchor = { [weak self] in self?.statusItem?.button }
         settingsSubscription = settings.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async { self?.refreshLanguage() }
         }
@@ -100,15 +102,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshLanguage() {
-        statusItem?.menu?.item(at: 0)?.title = L10n.text("Settings…")
-        statusItem?.menu?.item(at: 1)?.title = L10n.text("Check for Updates…")
-        statusItem?.menu?.item(at: 2)?.title = L10n.text("Quit")
+        statusItem?.menu?.item(at: 0)?.title = L10n.text("Show Shelf")
+        statusItem?.menu?.item(at: 1)?.title = L10n.text("Settings…")
+        statusItem?.menu?.item(at: 2)?.title = L10n.text("Check for Updates…")
+        statusItem?.menu?.item(at: 3)?.title = L10n.text("Quit")
         updateTooltip()
         settings.refreshLanguage()
         monitor.refreshLanguage()
         actions.refreshLanguage()
         progress.refreshLanguage()
     }
+    @objc private func showShelf() { actions.showShelf() }
     @objc private func showSettings() { settings.show(updater: updater, access: access) }
     @objc private func quit() { NSApp.terminate(nil) }
 

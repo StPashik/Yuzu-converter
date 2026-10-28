@@ -1,6 +1,6 @@
 # Yuzu Converter requirements
 
-Updated October 27, 2026. Repository: https://github.com/StPashik/Yuzu-converter.
+Updated October 28, 2026. Repository: https://github.com/StPashik/Yuzu-converter.
 
 ## Goal and scope
 
@@ -42,7 +42,9 @@ Persist output-format profiles and capture immutable values when queueing jobs. 
 
 Formats and Compatibility must use Yuzu's own backend checks, distinguish file-dependent media support, and retain the full documented target inventory. Folders lists/adds/forgets only Yuzu's own bookmarks. A user-approved ancestor may cover descendants after canonical containment checks, but the returned output URL must remain the actual source parent with balanced scope ownership. Forgetting future access must preserve files and active jobs. [Settings.md](Settings.md) documents implemented choices and limits.
 
-Run as a menu bar app without a Dock icon or main window. The menu contains **Settings…**, **Check for Updates…**, and **Quit**. Open settings and the shelf only in response to an explicit user action.
+Run as a menu bar app without a Dock icon or main window. The menu contains **Show Shelf**, **Settings…**, **Check for Updates…**, and **Quit**. Open settings and the shelf only in response to an explicit user action.
+
+The owner requested a compact shelf attached visually to the menu bar icon. Open it below that icon, constrain it to the current display, and size it to its contents with scrolling for longer lists. Use native Liquid Glass on macOS 26+, a native translucent material on macOS 13–15, and an opaque surface when Reduce Transparency is enabled. Include file previews with icon fallback, parent-folder labels, direct file drops, drag-out, removal of references, and a clear empty state in all five languages. Preserve the existing add-to-current/new-shelf preference. Closing or clearing a shelf releases its references and never deletes original files.
 
 Provide the same update check in Settings. Checks are user-initiated, and downloading/installing a new version requires confirmation. Authenticate the feed and archives, select the correct architecture, and finish queued file work before restarting. A failed or cancelled installation must restore normal operation. A stale npm launcher must not downgrade an app updated in place. See [Updates.md](Updates.md).
 

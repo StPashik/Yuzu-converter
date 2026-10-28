@@ -8,7 +8,8 @@ Start with the [requirements](Requirements.md), [architecture](Architecture.md),
 | --- | --- |
 | [App.swift](../Sources/YuzuApp/App.swift) | `YuzuMain`, app startup, source detection, the serial job queue, progress, and termination |
 | [Wheel.swift](../Sources/YuzuApp/Wheel.swift) | Modifier trigger, geometry, real AppKit drag callbacks, source revalidation, and accessible sectors |
-| [AccessStore.swift](../Sources/YuzuApp/AccessStore.swift) and [Actions.swift](../Sources/YuzuApp/Actions.swift) | Powerbox/bookmarks, `ScopedFiles`, system Actions, clipboard leases, and the shelf |
+| [AccessStore.swift](../Sources/YuzuApp/AccessStore.swift) and [Actions.swift](../Sources/YuzuApp/Actions.swift) | Powerbox/bookmarks, `ScopedFiles`, system Actions, clipboard leases, and shelf presentation |
+| [Shelf.swift](../Sources/YuzuApp/Shelf.swift) | Menu-bar anchoring, native glass/material/opaque surfaces, lazy Quick Look previews, file drops/drag-out, and reference/grant ownership |
 | [SourceFile.swift](../Sources/YuzuCore/SourceFile.swift), [FileFormat.swift](../Sources/YuzuCore/FileFormat.swift), and [ConversionEngine.swift](../Sources/YuzuCore/ConversionEngine.swift) | Content identification, format identity, available targets, dispatch, and output validation |
 | [FileOperations.swift](../Sources/YuzuCore/FileOperations.swift), [Archive.swift](../Sources/YuzuCore/Archive.swift), and [ProcessRunner.swift](../Sources/YuzuCore/ProcessRunner.swift) | Safe file publication, ZIP creation, archive validation, bounded subprocesses, and cancellation |
 | [Settings.swift](../Sources/YuzuApp/Settings.swift), [SettingsView.swift](../Sources/YuzuApp/SettingsView.swift), and [SystemPreferences.swift](../Sources/YuzuApp/SystemPreferences.swift) | Five-tab settings, per-output profiles, shortcut migration, folder access, and real login-item/terminal choices |
@@ -31,7 +32,7 @@ Keep shared contracts small. Existing public entry points include `SourceFile(ur
 4. `ScopedFiles` retains the immutable URLs and only the grants successfully started; deinitialization balances those grants. Retain this object for the operation's full lifetime rather than retaining bare URLs alone.
 5. `AccessStore.outputFolder(beside:)` restores or requests the actual parent folder and checks it with `isParent`. A dropped file does not grant write access to its parent. Queued jobs retain destination access and release it after completion or queue cancellation.
 
-AirDrop retains source scopes until its sharing delegate completes. Clipboard Copy retains its lease until pasteboard `changeCount` changes. Shelves retain leases for their referenced files. These code paths do not replace the deferred physical Finder/Sandbox integration checks.
+AirDrop retains source scopes until its sharing delegate completes. Clipboard Copy retains its lease until pasteboard `changeCount` changes. Shelves retain leases for their referenced files and pending Quick Look requests. Clearing/closing removes only references; stale preview callbacks cannot repopulate removed rows. These code paths do not replace the deferred physical Finder/Sandbox integration checks.
 
 ## Jobs, cancellation, and publication
 
@@ -64,6 +65,8 @@ The five sibling `Resources/<code>.lproj/Localizable.strings` tables must have i
 App-owned UI refreshes live when the setting changes. The app-scoped `AppleLanguages` preference lets some standard system dialogs use the new language after restart; it does not change the Mac's global language. Preserve that distinction when testing or documenting localization.
 
 ## Build and release checklist
+
+Build release archives with Xcode 26 or later to include the native `NSGlassEffectView` implementation. Its runtime availability check keeps those binaries compatible with macOS 13+. Xcode 16 builds, including native macOS 15 Intel CI, compile the same shelf with the older popover material. Offscreen bitmap tests verify shelf content/layout and opaque surfaces; WindowServer's dynamic glass composition and physical Finder interaction remain separate verification gates.
 
 `AppUpdater.swift` shares the updater between the menu and Settings, retains a postponed installation while jobs run, and restores drag monitoring after cancellation/failure. Its delegate selector tests protect against silently mistyping optional Objective-C methods in Swift. Read [Updates.md](Updates.md) before signing a release; the private signing key stays in Keychain.
 
