@@ -44,6 +44,8 @@ Select files in Finder and press **⌃C** to add them to the shelf. Record a dif
 
 Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu after your confirmation. Release publication leaves your installed copy alone. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
+Version 0.6.0 adds Convert/Actions menus for selected shelf rows and a shared-style Operations panel with cancellation and result history. The [shelf workflow](docs/Shelf-workflow.md) explains output and cancellation; the [CI guide](docs/CI.md) describes verified FFmpeg reuse.
+
 See the [shelf design](docs/Shelf-design.md) and [wheel design notes](docs/Wheel-design.md) for appearance, ownership, and native AppKit previews.
 
 ## Format support

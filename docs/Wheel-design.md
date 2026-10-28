@@ -27,3 +27,7 @@ These images retain the v0.2.1 AppKit appearance with a private test pasteboard.
 | ![Light Actions wheel](images/wheel-actions-light.png) | ![Dark conversion wheel](images/wheel-conversion-dark.png) |
 
 `WheelTests` renders both modes in both appearances to `.build/wheel-preview`, checks rounded hit regions, top-first labels, white selection, the armed window's hit-testing, and changing to a smaller option list while hovering. The localization suite checks the same keys/placeholders in all five languages. Physical drag/drop and VoiceOver checks remain tracked separately in [Validation.md](Validation.md).
+
+## Native Liquid Glass (0.6.0)
+
+The glass backdrop uses the same `AppSurface` factory as shelf and operations. On macOS 26+ builds with the macOS 26 SDK, it embeds `NSGlassEffectView`; older systems use `NSVisualEffectView`. A shape mask preserves the existing center and petal geometry, excluding the selected petal so orange remains unfiltered. The backdrop returns no hit-test target. Solid mode and live Reduce Transparency changes keep an opaque drawing. The glass API is availability-guarded and weak-linked; native visual parity on macOS 13 and macOS 26 Intel remains unverified.

@@ -2,6 +2,18 @@
 
 Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.6.0 — Shelf commands, operations, and shared glass
+
+Local checks on October 28, 2026, macOS 26.6.2 / Apple Silicon: **86 Swift tests**, **22 Node tests**, and **9 Python cache tests** passed, with no skips. Swift used the rebuilt bundled media tools with `YUZU_MEDIA_REQUIRED=1`. Both media architectures were rebuilt from the pinned source and final cache recipe. Verified local cache hits took 0.21 seconds (arm64) and 0.26 seconds (x64); these are local verification timings, not an end-to-end CI claim.
+
+New fixtures check serial execution, waiting/running cancellation, grant lifetime, continuation after errors, real conversion without overwriting an existing result, preserved earlier outputs, normalized folder Move, partial Move publication, ZIP, and invalid destinations. Shelf commands check actual target intersection, all seven Actions, stale conversion-menu rejection, cross-batch leases after removal, and contextual row selection. Closing/material changes leave jobs intact. Layout previews cover five languages in both appearances and the opaque accessibility fallback; native glass is inspected structurally.
+
+Reviewing the rendered queue exposed intrinsic host sizing and cached mixed-language labels; the host now fills a constrained scrollable panel and receives an explicit language snapshot. A new language-refresh assertion also reproduced shelf selection loss; reload now preserves selected URLs while suppressing transient selection notifications. The final 86-test pass includes those fixes. Previews are in [Shelf workflow](Shelf-workflow.md).
+
+Cache tests reject recipe/toolchain/architecture changes, missing/corrupt files, malformed/extra-path receipts, symlinked tools, changed upstream archives, and runtime dependency/CPU failures. Portable configurations remain verifiable after the original temporary build directory is removed. Native CI and final release-asset results will be recorded below when complete.
+
+Physical Finder/Powerbox, real Clipboard/AirDrop/Terminal, external-file Sandbox Quick Look, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Source rows may become stale after Move. Session-only history/references and cooperative filesystem cancellation are documented limits. Developer ID/notarization are still absent. The owner's installed copies are not release test targets.
+
 ## v0.5.1 — Shelf retention and a configurable Finder shortcut
 
 The owner requested retention when closing/reopening shelf windows within the running app, without persistence after exiting Yuzu. The new ActionController regression failed eight assertions against 0.5.0 behavior, demonstrating both collection clearing and removal of hidden controllers. The retention fix first passed all 71 local Swift tests with required bundled media; the previous feature head also passed both native CI jobs. The subsequent shortcut work requires its own final-head CI below.

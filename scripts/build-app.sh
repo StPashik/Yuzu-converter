@@ -33,7 +33,7 @@ cp Resources/YuzuAppIcon.icns "$app/Contents/Resources/Yuzu.icns"
 cp Sources/YuzuApp/Resources/YuzuMenuBar.pdf "$app/Contents/Resources/YuzuMenuBar.pdf"
 cp -R Sources/YuzuApp/Resources/*.lproj "$app/Contents/Resources/"
 media="$project_root/.build/media-$app_arch/Tools"
-test -x "$media/ffmpeg" && test -x "$media/ffprobe" || python3 scripts/build-media.py "$app_arch"
+python3 scripts/build-media.py "$app_arch" --reuse
 mkdir -p "$app/Contents/Helpers" "$app/Contents/Resources/Media-Licenses"
 cp "$media/ffmpeg" "$media/ffprobe" "$app/Contents/Helpers/"
 cp Resources/Media-sources.json "$app/Contents/Resources/"

@@ -30,6 +30,18 @@ enum FileAction: String, CaseIterable {
         }
     }
 
+    var shelfTitle: String {
+        switch self {
+        case .airDrop: return L10n.text("AirDrop")
+        case .float: return L10n.text("New Shelf with Selection")
+        case .copy: return L10n.text("Copy Files")
+        case .move: return L10n.text("Move to Folder") + "…"
+        case .copyPath: return L10n.text("Copy Path")
+        case .openTerminal: return L10n.text("Open Terminal")
+        case .compress: return L10n.text("Compress to ZIP")
+        }
+    }
+
     var help: String {
         switch self {
         case .airDrop: return L10n.text("Share the selected files with AirDrop.")
@@ -196,9 +208,6 @@ final class WheelDragView: NSView {
         super.init(frame: frame)
         wantsLayer = true
         registerForDraggedTypes([.fileURL])
-        material.material = .hudWindow
-        material.blendingMode = .behindWindow
-        material.state = .active
         material.wantsLayer = true
         material.isHidden = true
         addSubview(material, positioned: .below, relativeTo: nil)
@@ -213,8 +222,13 @@ final class WheelDragView: NSView {
         cancelHint.font = .systemFont(ofSize: 9)
         cancelHint.textColor = .secondaryLabelColor
         for field in [summary, caption, cancelHint] { field.isHidden = true; addSubview(field) }
+        NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(accessibilityChanged),
+            name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
+    deinit { NSWorkspace.shared.notificationCenter.removeObserver(self) }
+
+    @objc private func accessibilityChanged() { updateMaterial(); needsDisplay = true }
 
     private var paths: [CGPath] {
         let radius = WheelGeometry.centerRadius
@@ -372,7 +386,15 @@ final class WheelDragView: NSView {
 
 /// The backdrop follows the wheel without intercepting its drag destination or accessible buttons.
 @MainActor
-private final class WheelMaterialView: NSVisualEffectView {
+final class WheelMaterialView: NSView {
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        let surface = AppSurface.make(content: NSView(), opaque: false, cornerRadius: 0)
+        surface.frame = bounds
+        surface.autoresizingMask = [.width, .height]
+        addSubview(surface)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
 }
 
