@@ -1,5 +1,6 @@
 import AppKit
 import QuickLookThumbnailing
+import YuzuCore
 
 @MainActor
 final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate {
@@ -11,6 +12,12 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
     private var requests: [URL: (id: UUID, request: QLThumbnailGenerator.Request)] = [:]
     private weak var anchor: NSView?
     private var offset: CGFloat = 0
+    var onRequest: ((ScopedFiles, WheelOption) -> Void)?
+    private var formatTask: Task<Void, Never>?
+    private var formatGeneration = UUID()
+    private var formatSources: [URL] = []
+    private(set) var availableFormats: [FileFormat] = []
+    private var reloadingTable = false
 
     init() {
         let panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: Self.contentSize(fileCount: 0)),
@@ -30,13 +37,11 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
         content.table.delegate = self
         content.onDrop = { [weak self] in self?.add($0) }
         content.table.onRemove = { [weak self] in self?.removeSelected() }
+        content.table.onContextSelection = { [weak self] in self?.rebuildMenus() }
         content.closeButton.target = self
         content.closeButton.action = #selector(close)
         content.clearButton.target = self
         content.clearButton.action = #selector(clearShelf)
-        let menu = NSMenu()
-        menu.addItem(withTitle: "", action: #selector(removeSelected), keyEquivalent: "").target = self
-        content.table.menu = menu
         NotificationCenter.default.addObserver(self, selector: #selector(reposition),
                                                name: NSApplication.didChangeScreenParametersNotification, object: nil)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(refreshMaterial),
@@ -73,7 +78,8 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
                                                    name: NSWindow.didMoveNotification, object: anchorWindow)
         }
         reposition()
-        content.table.reloadData()
+        reloadTable()
+        refreshCommands()
         window?.makeKeyAndOrderFront(nil)
     }
 
@@ -89,21 +95,7 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
     }
 
     func setMaterial(reduceTransparency: Bool) {
-        content.removeFromSuperview()
-        let surface: NSView
-        if reduceTransparency {
-            let solid = NSBox()
-            solid.boxType = .custom
-            solid.titlePosition = .noTitle
-            solid.cornerRadius = 24
-            solid.fillColor = .windowBackgroundColor
-            solid.borderColor = .separatorColor
-            solid.contentViewMargins = .zero
-            solid.contentView = content
-            surface = solid
-        } else {
-            surface = translucentSurface()
-        }
+        let surface = AppSurface.make(content: content, opaque: reduceTransparency)
         surface.frame = NSRect(origin: .zero, size: window?.contentView?.bounds.size ?? Self.contentSize(fileCount: files.count))
         content.frame = surface.bounds
         content.autoresizingMask = [.width, .height]
@@ -111,45 +103,27 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
         window?.invalidateShadow()
     }
 
-    private func translucentSurface() -> NSView {
-        // Intel CI also builds with Xcode 16; release archives use Xcode 26 and the native glass API.
-        #if compiler(>=6.2)
-        if #available(macOS 26.0, *) {
-            let glass = NSGlassEffectView()
-            glass.style = .regular
-            glass.cornerRadius = 24
-            // AppKit only guarantees glass ordering for contentView, not arbitrary glass subviews.
-            glass.contentView = content
-            return glass
-        }
-        #endif
-        let material = NSVisualEffectView()
-        material.material = .popover
-        material.blendingMode = .behindWindow
-        material.state = .active
-        material.wantsLayer = true
-        material.layer?.cornerRadius = 24
-        material.layer?.masksToBounds = true
-        material.addSubview(content)
-        return material
-    }
-
     func refreshLanguage() {
         window?.title = L10n.text("Yuzu Shelf")
         content.refreshLanguage(fileCount: files.count)
-        content.table.menu?.items.first?.title = L10n.text("Remove from Shelf")
-        content.table.reloadData()
+        reloadTable()
+        rebuildMenus()
     }
 
     func add(_ incoming: ScopedFiles) {
+        var added = IndexSet()
         for url in incoming.urls where url.isFileURL && !files.contains(url) {
+            added.insert(files.count)
             files.append(url)
             leases[url] = incoming
         }
         reload()
+        if !added.isEmpty { content.table.selectRowIndexes(added, byExtendingSelection: false) }
+        refreshCommands()
     }
 
     func removeFiles(at rows: IndexSet) {
+        let selection = selectedFiles().filter { url in !rows.contains(where: { files.indices.contains($0) && files[$0] == url }) }
         for index in rows.reversed() where files.indices.contains(index) {
             let url = files.remove(at: index)
             if let pending = requests.removeValue(forKey: url) { QLThumbnailGenerator.shared.cancel(pending.request) }
@@ -157,11 +131,115 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
             leases[url] = nil
         }
         reload()
+        content.table.selectRowIndexes(IndexSet(files.indices.filter { selection.contains(files[$0]) }), byExtendingSelection: false)
+        refreshCommands()
+    }
+
+    private func selectedFiles() -> [URL] {
+        content.table.selectedRowIndexes.compactMap { files.indices.contains($0) ? files[$0] : nil }
+    }
+
+    private func selectionLease() -> ScopedFiles {
+        let urls = selectedFiles()
+        return ScopedFiles(urls, retaining: urls.compactMap { leases[$0] })
+    }
+
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        if !reloadingTable { refreshCommands() }
+    }
+
+    private func reloadTable() {
+        let selection = selectedFiles()
+        // AppKit clears selection on reload; language/preview refresh must not invalidate a user's command.
+        reloadingTable = true
+        content.table.reloadData()
+        content.table.selectRowIndexes(IndexSet(files.indices.filter { selection.contains(files[$0]) }), byExtendingSelection: false)
+        reloadingTable = false
+    }
+
+    private func refreshCommands() {
+        formatTask?.cancel()
+        let generation = UUID()
+        formatGeneration = generation
+        formatSources = []
+        availableFormats = []
+        rebuildMenus()
+        let selection = selectionLease()
+        guard !selection.urls.isEmpty else { return }
+        formatTask = Task { [weak self] in
+            let worker = Task.detached(priority: .userInitiated) {
+                defer { withExtendedLifetime(selection) {} }
+                let sources = try selection.urls.map { try SourceFile(url: $0) }
+                try Task.checkCancellation()
+                return ConversionEngine().targets(for: sources)
+            }
+            let formats = try? await withTaskCancellationHandler(operation: { try await worker.value },
+                                                                 onCancel: { worker.cancel() })
+            guard !Task.isCancelled, let self, formatGeneration == generation else { return }
+            formatSources = selection.urls
+            availableFormats = formats ?? []
+            rebuildMenus()
+        }
+    }
+
+    private func rebuildMenus() {
+        let hasSelection = !selectedFiles().isEmpty
+        func menu(title: String, options: [WheelOption]) -> NSMenu {
+            let menu = NSMenu(title: title)
+            menu.autoenablesItems = false
+            for option in options {
+                let label: String
+                if case .action(let action) = option { label = action.shelfTitle } else { label = option.title }
+                let item = menu.addItem(withTitle: label, action: #selector(runCommand(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = option
+                item.toolTip = option.help
+            }
+            if options.isEmpty {
+                let item = menu.addItem(withTitle: L10n.text("No available formats"), action: nil, keyEquivalent: "")
+                item.isEnabled = false
+            }
+            return menu
+        }
+        let conversions = availableFormats.map(WheelOption.conversion)
+        let actions = FileAction.allCases.map(WheelOption.action)
+        for (button, title, options) in [(content.convertButton, "Convert", conversions),
+                                         (content.actionsButton, "Actions", actions)] {
+            let popup = menu(title: L10n.text(title), options: options)
+            popup.insertItem(withTitle: L10n.text(title), action: nil, keyEquivalent: "", at: 0)
+            button.menu = popup
+            button.setAccessibilityLabel(L10n.text(title))
+            button.isEnabled = hasSelection && (title != "Convert" || !conversions.isEmpty)
+            button.toolTip = hasSelection ? L10n.text("Commands apply to selected files.") : L10n.text("Select files to use Conversion and Actions.")
+        }
+        let context = NSMenu()
+        context.autoenablesItems = false
+        for (title, options) in [("Convert", conversions), ("Actions", actions)] {
+            let item = context.addItem(withTitle: L10n.text(title), action: nil, keyEquivalent: "")
+            item.submenu = menu(title: item.title, options: options)
+            item.isEnabled = hasSelection && (title != "Convert" || !conversions.isEmpty)
+        }
+        context.addItem(.separator())
+        let remove = context.addItem(withTitle: L10n.text("Remove from Shelf"), action: #selector(removeSelected), keyEquivalent: "")
+        remove.target = self
+        remove.isEnabled = hasSelection
+        content.table.menu = context
+    }
+
+    @objc private func runCommand(_ sender: NSMenuItem) {
+        guard let option = sender.representedObject as? WheelOption else { return }
+        let selection = selectionLease()
+        guard !selection.urls.isEmpty else { return }
+        // A menu may outlive an asynchronous selection change; never use its stale format list.
+        if case .conversion(let target) = option {
+            guard selection.urls == formatSources, availableFormats.contains(target) else { return }
+        }
+        onRequest?(selection, option)
     }
 
     private func reload() {
         content.refreshLanguage(fileCount: files.count)
-        content.table.reloadData()
+        reloadTable()
         reposition()
     }
 
@@ -210,6 +288,11 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
         // Show Shelf needs this session's references and grants; closing only cancels pending previews.
         requests.values.forEach { QLThumbnailGenerator.shared.cancel($0.request) }
         requests.removeAll()
+        formatTask?.cancel()
+        formatGeneration = UUID()
+        availableFormats = []
+        formatSources = []
+        rebuildMenus()
     }
 }
 
@@ -231,7 +314,8 @@ private final class ShelfView: NSView {
     private let emptySymbol = NSImageView(image: NSImage(systemSymbolName: "tray.and.arrow.down", accessibilityDescription: nil)!)
     private let emptyTitle = NSTextField(labelWithString: "")
     private let emptyHint = NSTextField(wrappingLabelWithString: "")
-    private let footer = NSTextField(wrappingLabelWithString: "")
+    let convertButton = NSPopUpButton(frame: .zero, pullsDown: true)
+    let actionsButton = NSPopUpButton(frame: .zero, pullsDown: true)
     private var receivingDrop = false { didSet { needsDisplay = true } }
     override var isFlipped: Bool { true }
 
@@ -250,9 +334,7 @@ private final class ShelfView: NSView {
         emptyHint.font = .systemFont(ofSize: 11)
         emptyHint.textColor = .secondaryLabelColor
         emptyHint.alignment = .center
-        footer.font = .systemFont(ofSize: 11)
-        footer.textColor = .secondaryLabelColor
-        footer.alignment = .center
+        for button in [convertButton, actionsButton] { button.controlSize = .small; button.bezelStyle = .rounded }
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("file"))
         table.addTableColumn(column)
         table.headerView = nil
@@ -268,7 +350,7 @@ private final class ShelfView: NSView {
         scroll.scrollerStyle = .overlay
         scroll.borderType = .noBorder
         scroll.documentView = table
-        [symbol, title, count, clearButton, closeButton, scroll, emptySymbol, emptyTitle, emptyHint, footer].forEach(addSubview)
+        [symbol, title, count, clearButton, closeButton, scroll, emptySymbol, emptyTitle, emptyHint, convertButton, actionsButton].forEach(addSubview)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
@@ -290,10 +372,9 @@ private final class ShelfView: NSView {
         clearButton.isEnabled = fileCount > 0
         closeButton.toolTip = L10n.text("Close Shelf")
         closeButton.setAccessibilityLabel(L10n.text("Close Shelf"))
-        table.setAccessibilityLabel(L10n.text("Files on the floating shelf. Drag them into another app."))
+        table.setAccessibilityLabel(L10n.text("Files on the floating shelf. Select files to convert or run Actions; drag to share."))
         emptyTitle.stringValue = L10n.text("Drop files here")
         emptyHint.stringValue = L10n.text("Files stay in their original locations.")
-        footer.stringValue = L10n.text("Drag files into another app")
         [emptySymbol, emptyTitle, emptyHint].forEach { $0.isHidden = fileCount != 0 }
         scroll.isHidden = fileCount == 0
         needsLayout = true
@@ -314,7 +395,9 @@ private final class ShelfView: NSView {
         emptySymbol.frame = NSRect(x: (width - 44) / 2, y: 76, width: 44, height: 44)
         emptyTitle.frame = NSRect(x: 20, y: 132, width: width - 40, height: 22)
         emptyHint.frame = NSRect(x: 28, y: 159, width: width - 56, height: 32)
-        footer.frame = NSRect(x: 20, y: height - 36, width: width - 40, height: 28)
+        let buttonWidth = (width - 52) / 2
+        convertButton.frame = NSRect(x: 20, y: height - 40, width: buttonWidth, height: 28)
+        actionsButton.frame = NSRect(x: 32 + buttonWidth, y: height - 40, width: buttonWidth, height: 28)
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -350,6 +433,15 @@ private final class ShelfView: NSView {
 
 private final class ShelfTable: NSTableView {
     var onRemove: (() -> Void)?
+    var onContextSelection: (() -> Void)?
+    override func menu(for event: NSEvent) -> NSMenu? {
+        let row = row(at: convert(event.locationInWindow, from: nil))
+        if row >= 0 && !selectedRowIndexes.contains(row) {
+            selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        } else if row < 0 { deselectAll(nil) }
+        onContextSelection?()
+        return super.menu(for: event)
+    }
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 51 || event.keyCode == 117 { onRemove?() }
         else { super.keyDown(with: event) }

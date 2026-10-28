@@ -1,6 +1,6 @@
 # Bundled video conversion
 
-Current releases include FFmpeg and FFprobe for both Apple Silicon and Intel. Version 0.4.1 was Apple Silicon only; 0.4.2 restored Intel after native Intel CI and signed Sandbox checks passed. Version 0.5.1 retains the same media engines and codec policy. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
+Current releases include FFmpeg and FFprobe for both Apple Silicon and Intel. Version 0.4.1 was Apple Silicon only; 0.4.2 restored Intel after native Intel CI and signed Sandbox checks passed. Version 0.6.0 retains the same media engines and codec policy; the cache/build receipt and portable configuration packaging have changed. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
 
 ## What appears in the wheel
 
@@ -31,7 +31,7 @@ Outputs are written exclusively into private staging, validated, and published u
 | Opus | 1.6.1 | BSD license and upstream patent notices |
 | LAME | 3.100 | LGPL 2 or later |
 
-This software uses code from [FFmpeg](https://ffmpeg.org/) under LGPL 2.1 or later. [Download the complete corresponding media source package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-FFmpeg-Sources-0.5.1.tar.xz). The same GitHub Release hosts the application binaries and source. The package includes the exact upstream archives, checksums, build script, manifest, build configurations, and this guide. No upstream source patches are applied. License/notice copies are in [docs/licenses](licenses) and inside the app's `Contents/Resources/Media-Licenses` folder. Yuzu's own code and npm installer remain MIT; they invoke separate executables rather than link FFmpeg libraries into the application.
+This software uses code from [FFmpeg](https://ffmpeg.org/) under LGPL 2.1 or later. [Download the complete corresponding media source package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-FFmpeg-Sources-0.6.0.tar.xz). The same GitHub Release hosts the application binaries and source. The package includes the exact upstream archives, checksums, build script, manifest, build configurations, and this guide. No upstream source patches are applied. License/notice copies are in [docs/licenses](licenses) and inside the app's `Contents/Resources/Media-Licenses` folder. Yuzu's own code and npm installer remain MIT; they invoke separate executables rather than link FFmpeg libraries into the application.
 
 The helper executables statically link these codec libraries and have only macOS system runtime dependencies. Source and build instructions are provided so the helpers can be rebuilt, modified, and relinked. There is no restriction on reverse engineering needed to debug modifications to LGPL components. Replacing signed app contents requires signing the modified bundle again; the application build script supports an ad-hoc development signature. A rebuilt helper is not a production update and cannot use the owner's private update-signing key.
 
@@ -46,6 +46,6 @@ python3 scripts/build-media.py arm64
 python3 scripts/build-media.py x64
 ```
 
-The source package includes `.build/media-sources` with the four exact archives for an offline rebuild. Release helpers are placed in `.build/media-arm64/Tools` and `.build/media-x64/Tools`. Re-run the media build after changing its source manifest or recipe; remove stale generated tools before packaging. In the full Yuzu repository, `bash scripts/build-app.sh arm64` or `x64` copies and signs the matching helpers. The native app has no Python, pkg-config, or Node runtime dependency.
+The source package includes `.build/media-sources` with the four exact archives for an offline rebuild. Release helpers are placed in `.build/media-arm64/Tools` and `.build/media-x64/Tools`. Use `--reuse` to reuse only a verified exact build. Changes to its source manifest, build/cache recipe, architecture, SDK, or compiler invalidate the receipt. Configurations travel beside the tools, so source packaging works after the temporary build directory is gone. Application packaging verifies the receipt before copying tools. [CI.md](CI.md) explains trusted warming and validation. In the full Yuzu repository, `bash scripts/build-app.sh arm64` or `x64` copies and signs the matching helpers. The native app has no Python, pkg-config, or Node runtime dependency.
 
 For release verification, point `YUZU_FFMPEG`/`YUZU_FFPROBE` at the matching newly built tools and set `YUZU_MEDIA_REQUIRED=1` while running Swift tests in an isolated scratch path. The video matrix fixture must run, not skip. Then run each signed app's `--self-check`: this resolves only bundled helpers inside the real Sandbox. [Validation](Validation.md) records actual results and the remaining physical/hardware limits.

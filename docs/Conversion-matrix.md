@@ -75,3 +75,7 @@ The researched behavior and Yuzu’s implementation have separate evidence. [Tan
 | Compress to ZIP | One archive beside the first input, ZIP compression profile, available name, originals preserved | Owner-requested feature; version-specific creation/cancellation/compression fixtures and Sandbox results are recorded in Validation |
 
 Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual parity are not established. The owner deferred new manual Finder/Sandbox/AirDrop/Terminal checks; those checks remain unverified.
+
+## Shelf entry points (0.6.0)
+
+Shelf Convert uses the same actual-source target intersection as the wheel, and exposes the same limitations above. Shelf Actions expose the existing seven actions without additional backends. New Shelf with Selection creates an independent reference collection. Conversion, Move, and ZIP use the shared serial queue; earlier published results remain available after failure/cancellation. Move can leave stale references on a shelf because the originals have moved; references are not silently replaced. See [Shelf workflow](Shelf-workflow.md).

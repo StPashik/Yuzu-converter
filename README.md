@@ -4,9 +4,9 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.5.1 adds a configurable Finder shortcut and keeps shelves when you close them.** Select files in Finder and press **Control+C**, or record your own combination in Settings. **Show Shelf** restores closed collections for the current app session. The compact panel keeps its previews, parent-folder labels, and layout that grows through five rows. Native Liquid Glass is used on macOS 26+; earlier systems use a translucent material, and Reduce Transparency uses an opaque surface.
+**v0.6.0 brings Conversion and Actions to the shelf, a clear operation queue, and consistent glass styling.** Select shelf rows and use Convert or Actions, follow work in Operations, and cancel requests or reveal results when needed. The shelf and wheel use native Liquid Glass on macOS 26+, a translucent fallback on earlier systems, and an opaque appearance with Reduce Transparency.
 
-<img src="docs/images/shelf-glass.png" width="460" alt="Yuzu Shelf with native Liquid Glass over a synthetic test backdrop">
+<img src="docs/images/shelf-workflow.png" width="460" alt="Yuzu Shelf with selected files and Convert and Actions menus in the opaque accessibility appearance">
 
 FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available on Apple Silicon and Intel. File tools remain outside the scope.
 
@@ -14,13 +14,13 @@ FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MK
 
 Requires **macOS 13 or later**, on Apple Silicon or Intel.
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-arm64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-Converter-0.6.0-arm64.zip)
 
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-x64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-Converter-0.6.0-x64.zip)
 
 Intel users on 0.4.0 can update directly through **Check for Updates…**. Version 0.4.1 was Apple Silicon only.
 
-This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-FFmpeg-Sources-0.5.1.tar.xz) is supplied with the release.
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-FFmpeg-Sources-0.6.0.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -44,6 +44,8 @@ Select files in Finder and press **⌃C** to add them to the shelf. Record a dif
 
 Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and lets you download and install it. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu after your confirmation. Release publication leaves your installed copy alone. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
+Version 0.6.0 adds Convert/Actions menus for selected shelf rows and a shared-style Operations panel with cancellation and result history. The [shelf workflow](docs/Shelf-workflow.md) explains output and cancellation; the [CI guide](docs/CI.md) describes verified FFmpeg reuse.
+
 See the [shelf design](docs/Shelf-design.md) and [wheel design notes](docs/Wheel-design.md) for appearance, ownership, and native AppKit previews.
 
 ## Format support
@@ -65,7 +67,7 @@ FFmpeg and FFprobe are included for both architectures; no Homebrew setup is req
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/stpashik-yuzu-converter-0.5.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/stpashik-yuzu-converter-0.6.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```

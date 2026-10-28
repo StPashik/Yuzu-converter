@@ -6,10 +6,10 @@ Yuzu Converter lives in your Mac's menu bar. Drag a file, hold a shortcut key, a
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-arm64.zip) |
-| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-x64.zip) |
+| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-Converter-0.6.0-arm64.zip) |
+| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-Converter-0.6.0-x64.zip) |
 
-Requires macOS 13+. Version 0.5.1 supports both architectures; existing Intel 0.4.0 and later clients can use **Check for Updates…** directly.
+Requires macOS 13+. Version 0.6.0 supports both architectures; existing Intel 0.4.0 and later clients can use **Check for Updates…** directly.
 
 Open the ZIP and move **Yuzu Converter.app** into your Applications folder. Open the app; its icon appears in the menu bar. There is no Dock icon or main window.
 
@@ -22,7 +22,7 @@ Node.js 20.11+ and npm are needed for installation and the launcher. The app its
 For npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/stpashik-yuzu-converter-0.5.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/stpashik-yuzu-converter-0.6.0.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -30,7 +30,7 @@ yuzu-converter
 For npm 10/11:
 
 ```sh
-npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/stpashik-yuzu-converter-0.5.1.tgz
+npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/stpashik-yuzu-converter-0.6.0.tgz
 yuzu-converter
 ```
 
@@ -64,7 +64,7 @@ Removing an item from the shelf never deletes the file. Closing the shelf keeps 
 
 ## Keep files on the shelf
 
-Choose **Show Shelf** from the Yuzu menu. Drop files directly onto the panel, or use the Float Action. Each card shows a preview or system icon, its name, and its parent folder. Drag rows into another app when needed. Select multiple rows to drag them together; Delete removes the selection from the shelf.
+Choose **Show Shelf** from the Yuzu menu. Drop files directly onto the panel, or use the Float Action. Each card shows a preview or system icon, its name, and its parent folder. Select rows and use **Convert** or **Actions**, or right-click a row. Commands apply to the selection, and formats reflect the files you selected. **New Shelf with Selection** creates an independent collection. Drag rows into another app when needed. Select multiple rows to drag them together; Delete removes the selection from the shelf.
 
 You can also select files in Finder and press **⌃C**. Change this in **Settings… → General → Actions → Add Finder selection to shelf**: click the field and press your preferred combination. Escape cancels recording; Delete disables the shortcut. It works only in Finder and follows Float Behaviour. Approve Finder access when macOS asks; the Sandbox build also requests initial access to the files' parent folder and remembers it. Your clipboard is preserved.
 
@@ -99,3 +99,9 @@ For a useful bug report, include your macOS version, chip, input/output formats,
 ## Video conversion without extra setup
 
 Both current architecture-specific releases include FFmpeg and FFprobe. Drag a supported video, hold Shift, and choose MP4, MOV, MKV, WebM, AVI, WMV, animated GIF, or MP3 audio. The current format and targets unavailable for the actual selection are hidden. MP3 requires sound; GIF exports are silent. See [codec limits, licenses, and complete corresponding source](Bundled-media.md). This software uses FFmpeg under LGPL 2.1 or later.
+
+## Follow operations
+
+Conversion, Move, and Compress to ZIP open **Operations**. You can also reopen it from **Show Operations** in the menu bar. Jobs run in order; each row shows its state, filenames, and completed input count. A spinner means the current export or filesystem operation is still running; it is not a time estimate. **Cancel** affects one request, **Cancel All** includes waiting requests, and **Clear Finished** removes only history rows.
+
+**Show Results** reveals files already created, including results completed before a later failure. Cancellation discards unfinished staging and keeps completed results. Move may already have moved earlier items in the batch; it does not roll them back. Closing Operations leaves the queue working. History lasts until Yuzu exits. See the [workflow guide](Shelf-workflow.md).

@@ -197,3 +197,26 @@
 "Shelf Access" = "Accès pour l’étagère";
 "Allow access to selected files in “%@”. Yuzu will remember this folder." = "Autorisez l’accès aux fichiers sélectionnés dans « %@ ». Yuzu mémorisera ce dossier.";
 "Choose “%@” to allow access to the selected files." = "Choisissez « %@ » pour autoriser l’accès aux fichiers sélectionnés.";
+
+"Show Operations" = "Afficher les opérations";
+"Operations" = "Opérations";
+"%ld active" = "%ld en cours";
+"Close Operations" = "Fermer les opérations";
+"No operations yet" = "Aucune opération pour le moment";
+"Convert files or choose Move or ZIP to see their progress here." = "Convertissez des fichiers ou choisissez Déplacer ou ZIP pour suivre leur progression ici.";
+"Cancel All" = "Tout annuler";
+"Clear Finished" = "Effacer les opérations terminées";
+"Waiting" = "En attente";
+"Running" = "En cours";
+"Cancelling…" = "Annulation…";
+"Completed" = "Terminé";
+"Failed" = "Échec";
+"%ld of %ld files completed" = "Fichiers terminés : %ld sur %ld";
+"Show Results" = "Afficher les résultats";
+"New Shelf with Selection" = "Nouvelle étagère avec la sélection";
+"Copy Files" = "Copier les fichiers";
+"Open Terminal" = "Ouvrir le terminal";
+"Compress to ZIP" = "Compresser en ZIP";
+"Commands apply to selected files." = "Les commandes concernent les fichiers sélectionnés.";
+"Select files to use Conversion and Actions." = "Sélectionnez des fichiers pour les convertir ou exécuter des actions.";
+"Files on the floating shelf. Select files to convert or run Actions; drag to share." = "Fichiers sur l’étagère. Sélectionnez-les pour les convertir ou exécuter des actions ; faites-les glisser pour les partager.";
