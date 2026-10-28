@@ -2,7 +2,7 @@
 
 Normal versions are stable GitHub **Latest** releases. Use prerelease status only for an explicitly requested beta/RC. Signing/notarization limitations belong in the release notes and do not select GitHub's release status. Historical preview releases and their assets remain unchanged.
 
-Starting with 0.4.1, publish Apple Silicon (arm64) only, as requested by the owner. Version 0.4.0 is the final Intel release. Keep its archives and signed `updates/appcast-x64.xml` unchanged; never offer an arm64 download to Intel clients.
+Version 0.4.1 was published for Apple Silicon only. The owner reopened Intel work on October 28, 2026. A future release may restore x64 only after native Intel CI and its signed Sandbox archive pass. Until its validated assets are public, keep the Intel bridge on 0.4.0. Published tags/assets remain immutable; never offer an arm64 archive to Intel clients.
 
 The owner updates the installed app personally through **Check for Updates…**. Release work must leave `/Applications`, `~/Applications`, the global npm installation, and the running app alone. Test downloads, installs, and restarts only in isolated fixtures. Do not run a global installer or quit/relaunch the owner's app as a release step.
 

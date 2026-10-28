@@ -1,9 +1,17 @@
 import Foundation
 import AVFoundation
+import VideoToolbox
 
 /// Dependency-free media fallback: AVAudioFile encodes audio, while AVFoundation remuxes M4A and exports video.
 /// These routes depend on system decoders and presets; they are not equivalent to the broader FFmpeg routes.
 enum NativeMedia {
+    static func hasVideoToolboxParameterFailure(_ error: Error) -> Bool {
+        let failure = error as NSError
+        guard failure.domain == AVFoundationErrorDomain, failure.code == AVError.unknown.rawValue,
+              let underlying = failure.userInfo[NSUnderlyingErrorKey] as? NSError else { return false }
+        return underlying.domain == NSOSStatusErrorDomain && underlying.code == Int(kVTParameterErr)
+    }
+
     static func supportsFFmpegPlayback(_ source: SourceFile) -> Bool {
         guard source.format.category == "Video", source.format != .gif else { return true }
         // FFmpeg does not preserve QuickTime's disabled-track/volume flags. Never reveal muted or hidden content.

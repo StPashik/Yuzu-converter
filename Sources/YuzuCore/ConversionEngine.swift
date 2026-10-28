@@ -54,7 +54,18 @@ public struct ConversionEngine: Sendable {
             } else { try media(source, to: target, output: output, options: options) }
         } else if source.format.category == "Audio" || source.format.category == "Video" {
             // Keep existing native export semantics (including PCM precision and playback gain) when supported.
-            if NativeMedia.supports(source, to: target) { try await NativeMedia.convert(source, to: target, output: output, options: options) }
+            if NativeMedia.supports(source, to: target) {
+                do { try await NativeMedia.convert(source, to: target, output: output, options: options) }
+                catch {
+                    try Task.checkCancellation()
+                    // Native preflight can succeed before VideoToolbox rejects the requested video profile.
+                    guard source.format.category == "Video", [.mp4, .mov].contains(target),
+                          NativeMedia.hasVideoToolboxParameterFailure(error), supported(source.format, target),
+                          NativeMedia.supportsFFmpegPlayback(source) else { throw error }
+                    if FileManager.default.fileExists(atPath: output.path) { try FileManager.default.removeItem(at: output) }
+                    try media(source, to: target, output: output, options: options)
+                }
+            }
             else { try media(source, to: target, output: output, options: options) }
         } else if source.format.category == "Subtitles" {
             let cues = try Subtitles.parse(TextFile.read(source.url), format: source.format)
