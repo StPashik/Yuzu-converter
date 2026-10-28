@@ -3,18 +3,18 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.2</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.0</link>
     <description>Signed x64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.4.2</title>
-      <sparkle:version>9</sparkle:version>
-      <sparkle:shortVersionString>0.4.2</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.5.0</title>
+      <sparkle:version>10</sparkle:version>
+      <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Yuzu Converter 0.4.2 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.4.2">Read the release notes on GitHub</a>.</p>]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.4.2/Yuzu-Converter-0.4.2-x64.zip" sparkle:edSignature="gje8XZUAnHyJFZ6zV/C7IFFCwyAHiJHQUEKzQ/k9oxp6JR08gVlomoy3LLzAXAA9oo3Kzdj+iRxvE0xBPH1jAA==" length="25193139" type="application/octet-stream"></enclosure>
+      <description><![CDATA[<p>Yuzu Converter 0.5.0 is ready to install.</p><p><a href="https://github.com/StPashik/Yuzu-converter/releases/tag/v0.5.0">Read the release notes on GitHub</a>.</p>]]></description>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-x64.zip" sparkle:edSignature="BqsVCcrkeU5LM7vfiXo0aI+cTLo/rWs2b+VCp3j4MzLVI2ProCI/y0MZSIeFBA10WKAD2tiV+7amFi8KQp0ZDA==" length="25223458" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: DcdWc/n0osx5oT0dbirUttu5Y6E7TmQj25jTd7fIcLTIdCdnloECJqcacHuuT7EiIc7HYhczRFYXfMlazR/fBg==
-length: 1356
+edSignature: m3SoOAdIkHWR22tEwSPb/g6COxMwK4hYtIv2mbdY3NoF/9u60Pyv+xPP989komEi7O7H8UHVr6VYQwbsYZwSDg==
+length: 1357
 -->

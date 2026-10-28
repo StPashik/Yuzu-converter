@@ -21,9 +21,14 @@ A separate temporary app compiled production `Shelf.swift` with Xcode 26 and dis
 | HTTP fixtures | Real Sparkle available/current/tampered/HTTP-500 requests passed with an ephemeral test key and isolated app identity; no update installation |
 | npm/source | Exactly seven npm files match tested source/metadata and final ZIP hashes; all four upstream source hashes, recipe/manifest/guide, and actual configurations for both CPUs match the source archive |
 | Staging | Nine final assets; eight payload checksums recorded in [Release-checksums-0.5.0.txt](Release-checksums-0.5.0.txt) |
+| Release PR/tag | [PR #10](https://github.com/StPashik/Yuzu-converter/pull/10) passed [release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40700794201); v0.5.0 tags its exact main merge commit `6061e1163fafd16b05d6f95b142e53f7fa58f4f1` |
+| Release CI | Each native CPU passed 70 Swift tests, 22 Node tests without skips, and the signed Sandbox archive |
+| Public release | Stable Latest v0.5.0, draft=false/prerelease=false; exact English notes and all nine uploaded sizes/digests matched staging; all nine unauthenticated public downloads passed size/SHA-256 verification |
+| Latest feeds/Sparkle | Both normal Latest XML URLs matched the signed assets exactly; real production-key checks found build 10 from builds 7 and 9 and reported build 10 current on both CPUs; no installation |
+| Historical preservation | Original 0.4.0/0.4.1/0.4.2 release bodies/statuses, asset IDs/sizes/digests, and publication dates stayed unchanged |
 | Owner control | Primary 0.4.2 / build 9 and home 0.4.0 / build 7 executable hashes remained unchanged during preparation; no global npm install, quit, or relaunch |
 
-Release CI must pass before tagging the exact main release-PR merge commit. Verify all public bytes and Latest Sparkle checks after publication, then advance the exact signed legacy feeds through a separate PR. Historical tags/assets remain immutable. Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel appearance, external-file Sandbox Quick Look, and a full interactive updater installation remain unverified. Signing is ad hoc, without Developer ID or Apple notarization.
+Both native release CI gates passed before the exact main release-PR merge commit was tagged. All public bytes and Latest Sparkle checks passed before copying the exact signed XML into the legacy bridges for a separate publication PR. Legacy URL probes follow that merge. Historical tags/assets remain immutable. Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel appearance, external-file Sandbox Quick Look, and a full interactive updater installation remain unverified. Signing is ad hoc, without Developer ID or Apple notarization.
 
 ## v0.4.2 — Intel support restored
 
