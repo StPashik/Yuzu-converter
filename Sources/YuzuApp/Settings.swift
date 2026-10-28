@@ -78,10 +78,12 @@ final class Settings: ObservableObject {
     }
     @Published private(set) var profiles: [String: ConversionOptions]
     let loginItem = LoginItemController()
+    let shelfShortcut: ShelfShortcutController
     private var window: NSWindow?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        shelfShortcut = ShelfShortcutController(defaults: defaults)
         wheelsEnabled = defaults.object(forKey: "wheelsEnabled") as? Bool ?? true
         addToShelf = defaults.object(forKey: "addToShelf") as? Bool ?? true
         wheelStyle = defaults.string(forKey: "wheelStyle").flatMap(WheelStyle.init(rawValue:)) ?? .glass

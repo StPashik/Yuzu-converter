@@ -43,11 +43,17 @@ for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
         plist = plistlib.loads((contents / "Info.plist").read_bytes())
         assert plist["CFBundleShortVersionString"] == version and plist["CFBundleVersion"] == build
         assert plist["YuzuSandboxed"] is True
+        assert plist["NSAppleEventsUsageDescription"]
         assert plist["SUFeedURL"] == f"https://github.com/StPashik/Yuzu-converter/releases/latest/download/appcast-{arch}.xml"
         for setting in ["SUEnableAutomaticChecks", "SUAutomaticallyUpdate", "SUAllowsAutomaticUpdates", "SUEnableSystemProfiling"]:
             assert plist[setting] is False, setting
         assert plist["SUVerifyUpdateBeforeExtraction"] is True and plist["SURequireSignedFeed"] is True
         run(["/usr/bin/codesign", "--verify", "--deep", "--strict", app])
+        app_signature = run(["/usr/bin/codesign", "-d", "--entitlements", ":-", app])
+        start, end = app_signature.index("<?xml"), app_signature.index("</plist>") + len("</plist>")
+        app_entitlements = plistlib.loads(app_signature[start:end].encode())
+        assert app_entitlements["com.apple.security.automation.apple-events"] is True
+        assert app_entitlements["com.apple.security.temporary-exception.apple-events"] == ["com.apple.finder"]
         for tool in ["ffmpeg", "ffprobe"]:
             helper = contents / "Helpers" / tool
             run(["/usr/bin/lipo", helper, "-verify_arch", cpu])
@@ -64,8 +70,9 @@ for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
             for license_path in (root / "docs/licenses").glob(pattern):
                 assert (contents / "Resources/Media-Licenses" / license_path.name).read_bytes() == license_path.read_bytes()
         for language in ["en", "ru", "de", "fr", "es"]:
-            assert (contents / f"Resources/{language}.lproj/Localizable.strings").read_bytes() == (
-                root / f"Sources/YuzuApp/Resources/{language}.lproj/Localizable.strings").read_bytes()
+            for table in ["Localizable", "InfoPlist"]:
+                assert (contents / f"Resources/{language}.lproj/{table}.strings").read_bytes() == (
+                    root / f"Sources/YuzuApp/Resources/{language}.lproj/{table}.strings").read_bytes()
         executable = contents / "MacOS/YuzuApp"
         prefix = ["/usr/bin/arch", "-x86_64"] if arch == "x64" else []
         assert run([*prefix, executable, "--version"]).strip() == version

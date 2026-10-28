@@ -73,6 +73,7 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
                                                    name: NSWindow.didMoveNotification, object: anchorWindow)
         }
         reposition()
+        content.table.reloadData()
         window?.makeKeyAndOrderFront(nil)
     }
 
@@ -206,11 +207,9 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
     @objc private func clearShelf() { removeFiles(at: IndexSet(files.indices)) }
 
     func windowWillClose(_ notification: Notification) {
+        // Show Shelf needs this session's references and grants; closing only cancels pending previews.
         requests.values.forEach { QLThumbnailGenerator.shared.cancel($0.request) }
         requests.removeAll()
-        thumbnails.removeAll()
-        files.removeAll()
-        leases.removeAll()
     }
 }
 

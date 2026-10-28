@@ -11,9 +11,18 @@ Open **Settings…** from the Yuzu menu bar. The five tabs follow the organizati
 - **Language:** changes app-owned text immediately. Some system dialogs use the new language after restarting Yuzu.
 - **Drag Modifiers:** choose a nonempty combination of Shift, Control, Option, and Command for each wheel. Choosing the other wheel's combination swaps the two, keeping both reachable. Existing swapped Shift/Control preferences migrate.
 - **Float Behaviour:** create a new shelf, or add to the existing shelf.
+- **Add Finder selection to shelf:** click the shortcut field and press a new combination inside Yuzu. The default is **⌃C**; Escape cancels recording and Delete disables it. Use a letter, number, Space, or F-key with Control, or Command plus another modifier. Unavailable registrations leave the old choice intact. The saved key follows its physical keyboard position; its label reflects the current layout.
 - **Terminal app:** use Terminal or iTerm2. Selecting iTerm2 does not install it; a missing app produces a useful error.
 
 Escape cancels the current selection until the mouse button is released. The wheels still require actual file URLs from AppKit dragging; no Accessibility or Screen Recording permission is required by Yuzu.
+
+The shelf shortcut works only while Finder is active. The chord is released when another app becomes active, preserving Control–C's interrupt behavior in Terminal. First use can request permission to read Finder's selection under **System Settings → Privacy & Security → Automation**. The Sandbox build requests the files' parent folder on first use, then restores remembered access without repeated dialogs. Each batch retains its own grant so clearing another shelf cannot revoke its access. The existing Folders page can revoke that future access. Refusing or cancelling does not add a partially authorized batch. Keyboard recording and these permission messages support all five app languages. System approval dialogs may need an app restart to adopt a newly selected language.
+
+<img src="images/settings-shelf-shortcut-dark.png" width="660" alt="General settings scrolled to Actions, showing the configurable Finder shelf shortcut">
+
+This development render is scrolled to Actions. Actual Finder/Automation/Powerbox approval remains a separate unverified check.
+
+Apple documents the [Finder-targeted Sandbox exception](https://developer.apple.com/library/archive/documentation/Miscellaneous/Reference/EntitlementKeyReference/Chapters/AppSandboxTemporaryExceptionEntitlements.html) and [user-selected file access](https://developer.apple.com/documentation/security/accessing-files-from-the-macos-app-sandbox). Finder's installed scripting dictionary exposes no public selection access group; the app's exception is limited to Finder, and its shipped query only reads selected aliases. No private preference files or synthetic keystrokes are used to configure the shortcut.
 
 ## Formats
 

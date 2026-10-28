@@ -2,6 +2,35 @@
 
 Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.5.1 — Shelf retention and a configurable Finder shortcut
+
+The owner requested retention when closing/reopening shelf windows within the running app, without persistence after exiting Yuzu. The new ActionController regression failed eight assertions against 0.5.0 behavior, demonstrating both collection clearing and removal of hidden controllers. The retention fix first passed all 71 local Swift tests with required bundled media; the previous feature head also passed both native CI jobs. The subsequent shortcut work requires its own final-head CI below.
+
+Five shelf tests now include the actual close button, Escape, Show Shelf, same-window reopening, a retained source lease, appending to a hidden shelf, independent shelves in new-shelf mode, and original-byte preservation. Existing geometry, material, selection-contrast, drag/drop, and 18 shelf layout-snapshot checks remain.
+
+The final local run passed **78 Swift tests**, with required bundled-media fixtures, and **22 Node tests** without skips. The owner selected **Control+C**; it is tested as the default and shown in regenerated previews. The new shortcut checks exercise native exclusive registration and release, conflicting replacements without losing previous registrations/preferences, recording/cancel/disable, invalid or unsafe chords, persisted disable and corrupt preferences, strict Finder file-descriptor parsing including real aliases and Unicode paths, readable source preservation, and all five Automation explanation resources. The descriptor regression caught Foundation coercing arbitrary text into a file URL; parsing now rejects text before coercion. Real alias tests compare canonical paths because macOS resolves `/var` to `/private/var`. Settings previews also scroll to the new control in every language and both appearances.
+
+The scope-ownership regression failed two assertions before the fix: already-readable inputs had no independently owned parent scopes. With Sandbox policy explicitly enabled in the fixture, each batch now starts its own real Foundation bookmark scope and deduplicates parents within the batch. This runs without Finder or Powerbox and does not establish physical Sandbox grant recovery. A separate native registration regression failed two assertions before re-recording an inactive saved chord was checked for conflicts. Both fixes are included in the final 78-test pass. The shipped fixed Finder query also compiled with the system AppleScript compiler without being executed.
+
+[Feature PR #13](https://github.com/StPashik/Yuzu-converter/pull/13) merged into develop after [final-head native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40729337089): each CPU passed 78 Swift tests, 22 Node tests without skips, and the signed Sandbox archive. Local optimized builds also passed for both architectures using Xcode 26 in separate scratch paths. A system AppleScript fixture returned the real `alis` descriptor expected by the parser, using only a probe-owned temporary file and no Finder request.
+
+| Release preparation | Recorded result |
+| --- | --- |
+| Metadata | Package, lockfile, both final executables/plists agree on 0.5.1 / build 11; separate arm64 and x64 archives |
+| Final ZIPs | Deep strict signatures, exact main/helper CPU slices, macOS 13 minimum, SDK 26+, and weak native-glass class imports passed |
+| Permissions/resources | Finder-only Apple-event exception, Automation capability, five permission explanation tables, UI strings, media manifests/licenses, unchanged icons, and notices match the reviewed source |
+| Signed Sandbox | Both final extracted apps passed bundled media/probe/decode/return conversion, image metadata, documents, spreadsheets, archives, and Compress to ZIP with external tools disabled |
+| npm/source | All seven npm files match source and pinned ZIP hashes; launcher mode/shebang verified; all four upstream source hashes, recipe/manifest/guide, and both actual CPU configurations match the 23-file corresponding-source archive |
+| Temporary installation | Both final ZIPs installed only into temporary homes, passed signature/version checks, and were removed |
+| Update signing | Both archive signatures independently verified against the production public key; both build-11 appcasts signed and verified using the existing project Keychain account; live legacy feeds remain unchanged |
+| HTTP fixtures | Real Sparkle available/current/tampered/HTTP-500 requests passed with an ephemeral key and isolated app identity; no update installation |
+| Staging | Nine final files; eight payload SHA-256 values rechecked and recorded in [Release-checksums-0.5.1.txt](Release-checksums-0.5.1.txt) |
+| Signing limitation | Actual code signatures are ad hoc without a Team ID; Developer ID and Apple notarization remain absent |
+
+Release-PR native CI must pass before tagging its exact main merge commit and publishing stable Latest. The legacy bridges advance only after the matching signed assets are public.
+
+Physical Finder selection/Automation approval or denial, external-file Sandbox grants, VoiceOver, macOS 13, macOS 26 Intel appearance, and a complete interactive updater installation remain unverified. No owner app was installed, quit, or relaunched.
+
 ## v0.5.0 — A menu bar shelf
 
 Fresh local checks on October 28, 2026, macOS 26.6.2 on Apple Silicon: 70 Swift tests passed without failures, including four shelf regressions and the existing conversion/settings/wheel suite. All bundled-media fixtures were required. Eighteen layout snapshots cover five languages, both appearances, empty/single/scrolling states, and opaque surfaces, with a color-content check that rejects blank compositor masks.
@@ -25,10 +54,11 @@ A separate temporary app compiled production `Shelf.swift` with Xcode 26 and dis
 | Release CI | Each native CPU passed 70 Swift tests, 22 Node tests without skips, and the signed Sandbox archive |
 | Public release | Stable Latest v0.5.0, draft=false/prerelease=false; exact English notes and all nine uploaded sizes/digests matched staging; all nine unauthenticated public downloads passed size/SHA-256 verification |
 | Latest feeds/Sparkle | Both normal Latest XML URLs matched the signed assets exactly; real production-key checks found build 10 from builds 7 and 9 and reported build 10 current on both CPUs; no installation |
+| Legacy feeds/Sparkle | [PR #11](https://github.com/StPashik/Yuzu-converter/pull/11) passed [feed-only CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40703739174) and merged; both normal main/updates URLs matched the public signed XML; real production-key checks found build 10 from builds 7 and 9 and reported build 10 current on both CPUs without installing |
 | Historical preservation | Original 0.4.0/0.4.1/0.4.2 release bodies/statuses, asset IDs/sizes/digests, and publication dates stayed unchanged |
 | Owner control | Primary 0.4.2 / build 9 and home 0.4.0 / build 7 executable hashes remained unchanged during preparation; no global npm install, quit, or relaunch |
 
-Both native release CI gates passed before the exact main release-PR merge commit was tagged. All public bytes and Latest Sparkle checks passed before copying the exact signed XML into the legacy bridges for a separate publication PR. Legacy URL probes follow that merge. Historical tags/assets remain immutable. Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel appearance, external-file Sandbox Quick Look, and a full interactive updater installation remain unverified. Signing is ad hoc, without Developer ID or Apple notarization.
+Both native release CI gates passed before the exact main release-PR merge commit was tagged. All public bytes and Latest Sparkle checks passed before copying the exact signed XML into the legacy bridges through a separate publication PR. After its merge, real information-only probes passed against both normal legacy URLs. The release branch returns to develop through the same native CI and merge-commit requirement. Historical tags/assets remain immutable. Physical Finder/Powerbox/bookmark recovery, login approval, AirDrop/Terminal, haptics/VoiceOver, macOS 13, macOS 26 Intel appearance, external-file Sandbox Quick Look, and a full interactive updater installation remain unverified. Signing is ad hoc, without Developer ID or Apple notarization.
 
 ## v0.4.2 — Intel support restored
 

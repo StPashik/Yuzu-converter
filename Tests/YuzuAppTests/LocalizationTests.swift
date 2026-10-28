@@ -55,4 +55,13 @@ final class LocalizationTests: XCTestCase {
                                        language: language, arguments: [filename]).contains(filename))
         }
     }
+
+    func testFinderPermissionExplanationIsPresentInEveryLanguage() throws {
+        for language in AppLanguage.allCases {
+            let bundle = try XCTUnwrap(L10n.resourceBundle(for: language))
+            let url = try XCTUnwrap(bundle.url(forResource: "InfoPlist", withExtension: "strings"))
+            let values = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: url), format: nil) as? [String: String])
+            XCTAssertFalse(try XCTUnwrap(values["NSAppleEventsUsageDescription"]).isEmpty)
+        }
+    }
 }

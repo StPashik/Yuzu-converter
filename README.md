@@ -4,7 +4,7 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**v0.5.0 brings a compact glass shelf to your menu bar.** Choose **Show Shelf**, drop files onto the panel, and drag them into another app when needed. Previews, parent-folder labels, and a layout that grows through five rows keep the shelf useful without a large empty window. Native Liquid Glass is used on macOS 26+; earlier systems use a translucent material, and Reduce Transparency uses an opaque surface.
+**v0.5.1 adds a configurable Finder shortcut and keeps shelves when you close them.** Select files in Finder and press **Control+C**, or record your own combination in Settings. **Show Shelf** restores closed collections for the current app session. The compact panel keeps its previews, parent-folder labels, and layout that grows through five rows. Native Liquid Glass is used on macOS 26+; earlier systems use a translucent material, and Reduce Transparency uses an opaque surface.
 
 <img src="docs/images/shelf-glass.png" width="460" alt="Yuzu Shelf with native Liquid Glass over a synthetic test backdrop">
 
@@ -14,13 +14,13 @@ FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MK
 
 Requires **macOS 13 or later**, on Apple Silicon or Intel.
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-arm64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-arm64.zip)
 
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-Converter-0.5.0-x64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-Converter-0.5.1-x64.zip)
 
 Intel users on 0.4.0 can update directly through **Check for Updates…**. Version 0.4.1 was Apple Silicon only.
 
-This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/Yuzu-FFmpeg-Sources-0.5.0.tar.xz) is supplied with the release.
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/Yuzu-FFmpeg-Sources-0.5.1.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -36,7 +36,9 @@ Open **Settings… → General** to choose independent shortcut combinations, Gl
 
 Choose the interface language in Settings: **English** (default), **Russian**, **German**, **French**, or **Spanish**. App-owned UI updates live; some system dialogs use the new language after an app restart. Your Mac's global language is unchanged. Technical converter diagnostics, project documentation, code comments, and releases remain English.
 
-Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. **Show Shelf** reopens an existing shelf or an empty drop area below the menu bar icon. Remove, Clear Shelf, and Close Shelf remove references and preserve original files. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
+Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. **Show Shelf** restores retained shelves or an empty drop area below the menu bar icon. Close Shelf and Escape hide a shelf while keeping its files available for reopening; Remove and Clear Shelf explicitly remove references. Exiting Yuzu ends the session. Original files stay in place. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
+
+Select files in Finder and press **⌃C** to add them to the shelf. Record a different combination directly in **Settings → General → Actions**, or press Delete while recording to disable it. The shortcut is active only in Finder; first use can request Finder and folder access. It preserves your clipboard. See the [quick start](docs/Quick-start.md#keep-files-on-the-shelf).
 
 ## Keep the app up to date
 
@@ -63,7 +65,7 @@ FFmpeg and FFprobe are included for both architectures; no Homebrew setup is req
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.0/stpashik-yuzu-converter-0.5.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.5.1/stpashik-yuzu-converter-0.5.1.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
