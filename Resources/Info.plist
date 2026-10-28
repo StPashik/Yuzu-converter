@@ -15,6 +15,7 @@
     <key>LSUIElement</key><true/>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
+    <key>NSAppleEventsUsageDescription</key><string>Yuzu reads the files you select in Finder when you use the Add to Shelf shortcut.</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
     <key>YuzuSandboxed</key><true/>
     <key>SUFeedURL</key><string>https://github.com/StPashik/Yuzu-converter/releases/latest/download/appcast-arm64.xml</string>

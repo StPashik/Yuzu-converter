@@ -36,7 +36,9 @@ Open **Settings… → General** to choose independent shortcut combinations, Gl
 
 Choose the interface language in Settings: **English** (default), **Russian**, **German**, **French**, or **Spanish**. App-owned UI updates live; some system dialogs use the new language after an app restart. Your Mac's global language is unchanged. Technical converter diagnostics, project documentation, code comments, and releases remain English.
 
-Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. **Show Shelf** reopens an existing shelf or an empty drop area below the menu bar icon. Remove, Clear Shelf, and Close Shelf remove references and preserve original files. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
+Actions include **AirDrop**, **Float**, **Copy Files**, **Move**, **Copy Path**, **Open Terminal**, and **Compress to ZIP**. Float keeps file references for the current session. **Show Shelf** restores retained shelves or an empty drop area below the menu bar icon. Close Shelf and Escape hide a shelf while keeping its files available for reopening; Remove and Clear Shelf explicitly remove references. Exiting Yuzu ends the session. Original files stay in place. Compress to ZIP creates one archive beside the first selected item and preserves the originals.
+
+Select files in Finder and press **⌃C** to add them to the shelf. Record a different combination directly in **Settings → General → Actions**, or press Delete while recording to disable it. The shortcut is active only in Finder; first use can request Finder and folder access. It preserves your clipboard. See the [quick start](docs/Quick-start.md#keep-files-on-the-shelf).
 
 ## Keep the app up to date
 

@@ -38,6 +38,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let engine = ConversionEngine()
     private var statusItem: NSStatusItem?
     private var settingsSubscription: AnyCancellable?
+    private var shortcutActivationObserver: NSObjectProtocol?
+    private var shelfSelection: Task<Void, Never>?
     private var detection: Task<Void, Never>?
     private var detectionID = UUID()
     private var jobs: [PendingJob] = []
@@ -83,18 +85,50 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                     options: self.settings.options(for: .zip)))
         }
         progress.onCancel = { [weak self] in self?.currentJob?.cancel() }
-        updater.canRestart = { [weak self] in self?.currentJob == nil && self?.jobs.isEmpty != false }
+        updater.canRestart = { [weak self] in
+            self?.currentJob == nil && self?.jobs.isEmpty != false && self?.shelfSelection == nil
+        }
         updater.onWillRestart = { [weak self] in
             self?.installingUpdate = true
             self?.monitor.stop()
+            self?.refreshShelfShortcut()
         }
         updater.onUpdateCycleFinished = { [weak self] in
             guard let self, installingUpdate, !terminating else { return }
             installingUpdate = false
             monitor.start()
+            refreshShelfShortcut()
         }
         updater.start()
         monitor.start()
+        settings.shelfShortcut.onInvoke = { [weak self] in self?.addFinderSelectionToShelf() }
+        shortcutActivationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.refreshShelfShortcut() } }
+        refreshShelfShortcut()
+    }
+
+    private func refreshShelfShortcut() {
+        // Release the chord outside Finder so the same keys keep working normally in other apps.
+        settings.shelfShortcut.setEnabled(!terminating && !installingUpdate &&
+            NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder")
+    }
+
+    private func addFinderSelectionToShelf() {
+        guard !terminating, !installingUpdate, shelfSelection == nil,
+              NSWorkspace.shared.frontmostApplication?.bundleIdentifier == "com.apple.finder" else { return }
+        shelfSelection = Task { [weak self] in
+            guard let self else { return }
+            defer { shelfSelection = nil; updater.resumeInstallationIfReady() }
+            do {
+                let urls = try await Task.detached(priority: .userInitiated) { try FinderSelection.read() }.value
+                guard !terminating, !installingUpdate else { return }
+                NSApp.activate(ignoringOtherApps: true)
+                if let files = try access.shelfFiles(urls) { actions.perform(.float, files: files) }
+            } catch {
+                if !terminating && !installingUpdate { ActionController.show(error) }
+            }
+        }
     }
 
     private func updateTooltip() {
@@ -231,6 +265,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         terminating = true
         monitor.stop()
+        refreshShelfShortcut()
         let detecting = detection
         detecting?.cancel()
         jobs.forEach { $0.destinations.forEach { $0.stopAccessingSecurityScopedResource() } }

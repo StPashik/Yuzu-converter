@@ -139,7 +139,7 @@ final class SettingsTests: XCTestCase {
         let catalog = try SettingsView.makeCatalog()
         fputs("Settings previews: format routes ready\n", stderr)
 
-        func render(_ name: String, format: FileFormat = .jpg, appearance: NSAppearance.Name) throws {
+        func render(_ name: String, format: FileFormat = .jpg, appearance: NSAppearance.Name, revealShortcut: Bool = false) throws {
             fputs("Settings preview \(name): starting\n", stderr)
             // Release offscreen SwiftUI trees between snapshots instead of retaining their drawing resources for the whole matrix.
             try autoreleasepool {
@@ -155,6 +155,24 @@ final class SettingsTests: XCTestCase {
                 view.layoutSubtreeIfNeeded()
                 RunLoop.current.run(until: Date().addingTimeInterval(0.04))
                 view.layoutSubtreeIfNeeded()
+                if revealShortcut {
+                    @MainActor func recorder(in view: NSView) -> ShelfShortcutButton? {
+                        if let button = view as? ShelfShortcutButton { return button }
+                        for child in view.subviews {
+                            if let button = recorder(in: child) { return button }
+                        }
+                        return nil
+                    }
+                    let button = try XCTUnwrap(recorder(in: view))
+                    let scroll = try XCTUnwrap(button.enclosingScrollView)
+                    let document = try XCTUnwrap(scroll.documentView)
+                    let bottom = document.isFlipped ? max(0, document.bounds.height - scroll.contentView.bounds.height) : 0
+                    scroll.contentView.scroll(to: NSPoint(x: 0, y: bottom))
+                    scroll.reflectScrolledClipView(scroll.contentView)
+                    RunLoop.current.run(until: Date().addingTimeInterval(0.04))
+                    XCTAssertGreaterThan(button.visibleRect.height, 0)
+                    XCTAssertEqual(button.accessibilityLabel(), L10n.text("Add Finder selection to shelf"))
+                }
                 window.displayIfNeeded()
                 let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
                 view.cacheDisplay(in: view.bounds, to: bitmap)
@@ -171,6 +189,9 @@ final class SettingsTests: XCTestCase {
                 for section in SettingsSection.allCases {
                     settings.section = section
                     try render("\(language.rawValue)-\(section.rawValue.lowercased())-\(theme)", appearance: appearance)
+                    if section == .general {
+                        try render("\(language.rawValue)-general-actions-\(theme)", appearance: appearance, revealShortcut: true)
+                    }
                 }
             }
             settings.language = .english

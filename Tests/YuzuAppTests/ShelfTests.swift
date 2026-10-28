@@ -69,7 +69,76 @@ final class ShelfTests: XCTestCase {
         XCTAssertTrue(shelf.files.isEmpty)
         shelf.add(ScopedFiles([a, b]))
         shelf.close()
-        XCTAssertTrue(shelf.files.isEmpty)
+        XCTAssertEqual(shelf.files, [a, b])
+        XCTAssertEqual(try Data(contentsOf: a), Data("First original".utf8))
+        XCTAssertEqual(try Data(contentsOf: b), Data("Second original".utf8))
+    }
+
+    @MainActor
+    func testClosedShelvesReopenThroughTheMenuAndFloatKeepsItsPreference() throws {
+        _ = NSApplication.shared
+        let domain = "YuzuShelfRetentionTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let settings = Settings(defaults: defaults)
+        let actions = ActionController(access: AccessStore(defaults: defaults), settings: settings)
+        let originalWindows = Set(NSApp.windows.map(ObjectIdentifier.init))
+        func createdShelves() -> [ShelfController] {
+            NSApp.windows.filter { !originalWindows.contains(ObjectIdentifier($0)) }
+                .compactMap { $0.delegate as? ShelfController }
+        }
+        defer {
+            for shelf in createdShelves() {
+                shelf.removeFiles(at: IndexSet(shelf.files.indices))
+                shelf.close()
+            }
+        }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let a = directory.appendingPathComponent("first.txt"), b = directory.appendingPathComponent("second.txt")
+        try Data("First original".utf8).write(to: a)
+        try Data("Second original".utf8).write(to: b)
+
+        settings.addToShelf = true
+        var batch: ScopedFiles? = ScopedFiles([a])
+        weak var retainedBatch = batch
+        actions.perform(.float, files: try XCTUnwrap(batch))
+        batch = nil
+        let first = try XCTUnwrap(createdShelves().first { $0.files == [a] })
+        let originalWindow = try XCTUnwrap(first.window)
+        let close = try XCTUnwrap(descendants(try XCTUnwrap(originalWindow.contentView)).compactMap { $0 as? NSButton }
+            .first { $0.toolTip == L10n.text("Close Shelf") })
+        close.performClick(nil)
+        XCTAssertEqual(first.files, [a])
+        XCTAssertNotNil(retainedBatch, "A hidden shelf must keep its Sandbox grants alive")
+        XCTAssertFalse(originalWindow.isVisible)
+        actions.showShelf()
+        XCTAssertTrue(first.window === originalWindow)
+        XCTAssertTrue(originalWindow.isVisible)
+        if first.files == [a] {
+            XCTAssertEqual(first.tableView(NSTableView(), pasteboardWriterForRow: 0) as? NSURL, a as NSURL)
+        }
+        first.close()
+        actions.perform(.float, files: ScopedFiles([b]))
+        XCTAssertEqual(first.files, [a, b])
+        XCTAssertTrue(originalWindow.isVisible)
+        first.removeFiles(at: IndexSet(first.files.indices))
+        first.close()
+
+        settings.addToShelf = false
+        actions.perform(.float, files: ScopedFiles([a]))
+        let separateA = try XCTUnwrap(createdShelves().first { $0.files == [a] })
+        separateA.close()
+        actions.perform(.float, files: ScopedFiles([b]))
+        let separateB = try XCTUnwrap(createdShelves().first { $0.files == [b] })
+        XCTAssertFalse(separateA === separateB)
+        separateB.window?.cancelOperation(nil)
+        actions.showShelf()
+        XCTAssertEqual(separateA.files, [a])
+        XCTAssertEqual(separateB.files, [b])
+        XCTAssertTrue(try XCTUnwrap(separateA.window).isVisible)
+        XCTAssertTrue(try XCTUnwrap(separateB.window).isVisible)
         XCTAssertEqual(try Data(contentsOf: a), Data("First original".utf8))
         XCTAssertEqual(try Data(contentsOf: b), Data("Second original".utf8))
     }
