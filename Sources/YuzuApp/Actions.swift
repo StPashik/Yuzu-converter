@@ -6,15 +6,20 @@ final class ScopedFiles: @unchecked Sendable {
     let urls: [URL]
     let granted: [URL]
     private let retainedBatches: [ScopedFiles]
+    private let temporaryDirectory: URL?
 
     /// activeGrants transfers already-started folder scopes from Finder authorization to this lease.
-    init(_ urls: [URL], activeGrants: [URL] = [], retaining batches: [ScopedFiles] = []) {
+    init(_ urls: [URL], activeGrants: [URL] = [], retaining batches: [ScopedFiles] = [], temporaryDirectory: URL? = nil) {
         self.urls = urls
+        self.temporaryDirectory = temporaryDirectory
         granted = activeGrants + urls.filter { $0.startAccessingSecurityScopedResource() }
         // A shelf selection can span batches whose parent grants must outlive removal from the shelf.
         retainedBatches = batches
     }
-    deinit { granted.forEach { $0.stopAccessingSecurityScopedResource() } }
+    deinit {
+        granted.forEach { $0.stopAccessingSecurityScopedResource() }
+        if let temporaryDirectory { try? FileManager.default.removeItem(at: temporaryDirectory) }
+    }
 }
 
 @MainActor

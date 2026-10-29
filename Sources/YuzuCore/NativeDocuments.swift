@@ -49,6 +49,23 @@ enum NativeDocuments {
         guard CGImageDestinationFinalize(destination) else { throw ConversionError.failed("Could not write the image.") }
     }
 
+    /// One oriented first frame per dragged image, in pasteboard order; callers publish only after every page succeeds.
+    static func imagesPDF(_ sources: [URL], output: URL) throws {
+        guard let context = CGContext(output as CFURL, mediaBox: nil, nil) else { throw ConversionError.failed("Could not create the PDF.") }
+        defer { context.closePDF() }
+        for url in sources {
+            try Task.checkCancellation()
+            let image: CGImage
+            if let source = CGImageSourceCreateWithURL(url as CFURL, nil) { image = try orientedImage(source, at: 0) }
+            else if let fallback = NSImage(contentsOf: url)?.cgImage(forProposedRect: nil, context: nil, hints: nil) { image = fallback }
+            else { throw ConversionError.invalid("Could not decode \(url.lastPathComponent).") }
+            var bounds = CGRect(x: 0, y: 0, width: image.width, height: image.height)
+            context.beginPDFPage([kCGPDFContextMediaBox as String: NSData(bytes: &bounds, length: MemoryLayout<CGRect>.size)] as CFDictionary)
+            context.draw(image, in: bounds)
+            context.endPDFPage()
+        }
+    }
+
     /// Encodes one decoded image. Raster DPI is metadata; the supplied pixel dimensions are not resampled here.
     static func writeImage(_ image: CGImage, to target: FileFormat, output: URL, dpi: Double = 72,
                            options: ConversionOptions = .init()) throws {

@@ -21,9 +21,13 @@ final class QueueWindowTests: XCTestCase {
         RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         surface.layoutSubtreeIfNeeded()
         controller.window?.displayIfNeeded()
-        let hosting = try XCTUnwrap(surface.subviews.first { String(describing: type(of: $0)).contains("NSHostingView") })
-        XCTAssertGreaterThan(hosting.frame.width, 450)
-        XCTAssertEqual(hosting.frame.height, surface.bounds.height, accuracy: 4)
+        func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+        let hosting = try XCTUnwrap(descendants(surface).first { String(describing: type(of: $0)).contains("NSHostingView") })
+        let inset = try XCTUnwrap(hosting.superview)
+        XCTAssertGreaterThan(hosting.frame.width, 390)
+        XCTAssertEqual(hosting.frame.minX, 20, accuracy: 0.1)
+        XCTAssertEqual(hosting.frame.minY, 20, accuracy: 0.1)
+        XCTAssertEqual(hosting.frame.height, inset.bounds.height - 40, accuracy: 1)
         let bitmap = try XCTUnwrap(surface.bitmapImageRepForCachingDisplay(in: surface.bounds))
         surface.cacheDisplay(in: surface.bounds, to: bitmap)
         let data = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
@@ -50,7 +54,16 @@ final class QueueWindowTests: XCTestCase {
         let controller = QueueWindowController(queue: queue)
         defer { controller.close() }
         controller.setMaterial(reduceTransparency: true)
-        try render(controller, name: "en-empty-light")
+        for (theme, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            controller.window?.appearance = NSAppearance(named: appearance)
+            for language in AppLanguage.allCases {
+                L10n.language = language
+                controller.refreshLanguage()
+                try render(controller, name: "\(language.rawValue)-empty-\(theme)")
+            }
+        }
+        L10n.language = .english
+        controller.refreshLanguage()
         func add(_ names: [String]) {
             let kind: JobKind = names[0] == "Project files" ? .compress : .conversion(names[0].hasSuffix(".pdf") ? .png : .mp4)
             queue.enqueue(JobRequest(files: ScopedFiles(names.map { URL(fileURLWithPath: "/tmp/" + $0) }),

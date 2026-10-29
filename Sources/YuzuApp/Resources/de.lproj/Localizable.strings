@@ -217,3 +217,8 @@
 "Show in Finder" = "Im Finder zeigen";
 "Could not show the file" = "Datei konnte nicht angezeigt werden";
 "The file is no longer available at its original location." = "Die Datei ist am ursprünglichen Speicherort nicht mehr verfügbar.";
+
+"Image" = "Bild";
+"Save Converted Image" = "Konvertiertes Bild sichern";
+"Choose where to save the converted image." = "Wähle den Speicherort für das konvertierte Bild.";
+"Choose a new filename. Existing files are never replaced." = "Wähle einen neuen Dateinamen. Vorhandene Dateien werden nicht ersetzt.";

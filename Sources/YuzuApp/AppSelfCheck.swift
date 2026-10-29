@@ -2,6 +2,7 @@ import Foundation
 import CoreGraphics
 import ImageIO
 import YuzuCore
+import PDFKit
 
 /// Exercises child-process grants inside the signed app using only its own temporary files.
 enum AppSelfCheck {
@@ -41,6 +42,17 @@ enum AppSelfCheck {
               let properties = CGImageSourceCopyPropertiesAtIndex(clean, 0, nil) as? [String: Any],
               properties[kCGImagePropertyGPSDictionary as String] == nil,
               try Data(contentsOf: tagged) == original else { throw CocoaError(.fileReadCorruptFile) }
+        print("Sandbox self-check: image batch and exact-file save")
+        let combined = try engine.combineImages([SourceFile(url: tagged), SourceFile(url: jpeg)], in: root)
+        guard PDFDocument(url: combined)?.pageCount == 2 else { throw CocoaError(.fileReadCorruptFile) }
+        let selected = root.appendingPathComponent("Chosen.png")
+        _ = try engine.saveDroppedImage(jpeg, to: .png, destination: selected)
+        let selectedBytes = try Data(contentsOf: selected)
+        do {
+            _ = try engine.saveDroppedImage(jpeg, to: .png, destination: selected)
+            throw CocoaError(.fileWriteUnknown)
+        } catch let error as POSIXError { guard error.code == .EEXIST else { throw error } }
+        guard try Data(contentsOf: selected) == selectedBytes else { throw CocoaError(.fileReadCorruptFile) }
         print("Sandbox self-check: documents")
         let text = root.appendingPathComponent("sample.txt")
         try "Yuzu sandbox check".write(to: text, atomically: true, encoding: .utf8)
@@ -54,6 +66,8 @@ enum AppSelfCheck {
         try "name,value\nYuzu,42\n".write(to: csv, atomically: true, encoding: .utf8)
         let xlsx = try await engine.convert(SourceFile(url: csv), to: .xlsx, in: root)[0]
         _ = try await engine.convert(SourceFile(url: xlsx), to: .csv, in: root)
+        let tablePDF = try await engine.convert(SourceFile(url: xlsx), to: .pdf, in: root)[0]
+        guard PDFDocument(url: tablePDF)?.string?.contains("42") == true else { throw CocoaError(.fileReadCorruptFile) }
 
         print("Sandbox self-check: archives")
         let process = Process()

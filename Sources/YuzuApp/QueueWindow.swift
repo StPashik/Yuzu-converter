@@ -6,11 +6,12 @@ import SwiftUI
 final class QueueWindowController: NSWindowController {
     private let queue: JobQueue
     private let hosting: NSHostingView<QueueView>
+    private let inset = QueueInsetView()
     private var subscription: AnyCancellable?
     private var hadEntries = false
 
     static func contentSize(entryCount: Int) -> NSSize {
-        NSSize(width: 480, height: entryCount == 0 ? 200 : 104 + CGFloat(min(entryCount, 3)) * 116)
+        NSSize(width: 440, height: entryCount == 0 ? 210 : 116 + CGFloat(min(entryCount, 3)) * 88)
     }
 
     init(queue: JobQueue) {
@@ -29,6 +30,7 @@ final class QueueWindowController: NSWindowController {
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = true
         super.init(window: panel)
+        inset.addSubview(hosting)
         refreshLanguage()
         setMaterial(reduceTransparency: NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(refreshMaterial),
@@ -57,11 +59,20 @@ final class QueueWindowController: NSWindowController {
         setMaterial(reduceTransparency: NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
     }
     func setMaterial(reduceTransparency: Bool) {
-        let surface = AppSurface.make(content: hosting, opaque: reduceTransparency)
+        let surface = AppSurface.make(content: inset, opaque: reduceTransparency)
         surface.frame = NSRect(origin: .zero, size: window?.contentView?.bounds.size ?? Self.contentSize(entryCount: queue.entries.count))
-        hosting.frame = surface.bounds
+        inset.frame = surface.bounds
+        inset.layoutSubtreeIfNeeded()
         window?.contentView = surface
         window?.invalidateShadow()
+    }
+}
+
+/// AppKit owns the outer inset so SwiftUI intrinsic-size negotiation cannot consume it.
+private final class QueueInsetView: NSView {
+    override func layout() {
+        super.layout()
+        subviews.first?.frame = bounds.insetBy(dx: 20, dy: 20)
     }
 }
 
@@ -91,28 +102,29 @@ struct QueueView: View {
                     .buttonStyle(.borderless).accessibilityLabel(text("Close Operations"))
             }
             if queue.entries.isEmpty {
-                Spacer()
-                Image(systemName: "checkmark.circle").font(.system(size: 32, weight: .light)).foregroundStyle(.orange)
-                Text(text("No operations yet")).font(.headline)
-                Text(text("Convert files or choose Move or ZIP to see their progress here."))
-                    .foregroundStyle(.secondary).multilineTextAlignment(.center)
-                Spacer()
+                VStack(spacing: 10) {
+                    Image(systemName: "checkmark.circle").font(.system(size: 28, weight: .light)).foregroundStyle(.orange)
+                    Text(text("No operations yet")).font(.headline)
+                    Text(text("Convert files or choose Move or ZIP to see their progress here."))
+                        .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 10) {
                         ForEach(queue.entries) { entry in row(entry) }
                     }
                 }
+                HStack {
+                    Button(text("Cancel All")) { queue.cancelAll() }.disabled(queue.isIdle)
+                    Spacer()
+                    Button(text("Clear Finished")) { queue.clearFinished() }
+                        .disabled(!queue.entries.contains { $0.state.isFinished })
+                }
+                .controlSize(.small)
             }
-            HStack {
-                Button(text("Cancel All")) { queue.cancelAll() }.disabled(queue.isIdle)
-                Spacer()
-                Button(text("Clear Finished")) { queue.clearFinished() }
-                    .disabled(!queue.entries.contains { $0.state.isFinished })
-            }
-            .controlSize(.small)
         }
-        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.locale, Locale(identifier: language.rawValue))
         .background(Color.clear)
@@ -130,16 +142,6 @@ struct QueueView: View {
                 Spacer()
                 Text(text(entry.state.rawValue)).font(.caption)
                     .foregroundStyle(entry.state == .failed ? Color.red : Color.secondary)
-            }
-            if !entry.state.isFinished {
-                HStack {
-                    // A batch fraction is measurable; an individual export has no invented percentage.
-                    ProgressView(value: Double(entry.completedInputs), total: Double(max(1, entry.filenames.count)))
-                    if entry.state == .running || entry.state == .cancelling {
-                        ProgressView().controlSize(.small).frame(width: 16, height: 16)
-                    }
-                }
-                .accessibilityLabel(text("%ld of %ld files completed", entry.completedInputs, entry.filenames.count))
             }
             if let error = entry.error { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
             HStack {
