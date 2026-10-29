@@ -10,7 +10,7 @@ Unsandboxed developer runs may discover separately installed FFmpeg/FFprobe/Libr
 
 ## Implemented routes and gaps
 
-The current format is hidden. Mixed inputs in one category receive only routes available to every file. Container names do not guarantee every codec/profile or lossless preservation. The media matrix fixture exercises real streams and output decoding; it does not prove every possible file.
+The current format is hidden. Mixed inputs receive only routes available to every file, including compatible categories. Container names do not guarantee every codec/profile or lossless preservation. The media matrix fixture exercises real streams and output decoding; it does not prove every possible file.
 
 | Group and target inputs | Implemented routes | Limits and remaining targets |
 | --- | --- | --- |
@@ -21,7 +21,7 @@ The current format is hidden. Mixed inputs in one category receive only routes a
 | Documents: DOCX, PAGES, MD, RTF, RTFD, textClipping, TXT, HTML | DOCX/MD/RTF/RTFD/TXT → DOCX/PDF/TXT/MD/HTML/EPUB/JPG/PNG | Office layout/objects are not guaranteed. MD output is plain text with `.md`. PAGES/textClipping are unavailable. HTML export exists; no HTML input wheel |
 | EPUB | Text chapters → PDF/DOCX/TXT/MD/HTML; simple reflowable document EPUB output | One text chapter; styles/images/assets/original layout not preserved. EPUB → PAGES unavailable |
 | Slides: PPT, PPTX | Unavailable in packaged app | Target PDF/JPG/PNG; developer runs need LibreOffice. PDF → slides absent |
-| Spreadsheets: XLSX, XLS, ODS, CSV, TSV | XLSX/ODS/CSV/TSV → XLSX/ODS/CSV/TSV/PDF, all sheets | String values; formulas/types/styles/charts/assets not preserved. CSV/TSV gives one file per sheet; PDF is text. XLS needs developer LibreOffice |
+| Spreadsheets: XLSX, XLS, ODS, CSV, TSV | XLSX/ODS/CSV/TSV → XLSX/ODS/CSV/TSV/PDF, all sheets | String values; formulas/types/styles/charts/assets not preserved. CSV/TSV gives one file per sheet; PDF uses a paginated grid with wrapped text and approximate XLSX dimensions. XLS needs developer LibreOffice |
 | Subtitles: SRT, VTT | SRT ↔ VTT; SRT/VTT → TXT | Cue text/timing, without full WebVTT styling/positioning/metadata |
 | Archives: ZIP, TAR, GZIP, RAR | ZIP/TAR/TAR.GZ conversion; RAR input where system libarchive supports it | GZIP means TAR.GZ. Links/unsafe paths/collisions/limit violations rejected. Original metadata/permissions not guaranteed |
 
@@ -33,7 +33,7 @@ The metadata-off image path applies orientation to pixels, retains color, and dr
 
 - PDF → JPG/PNG puts all pages in a separate folder at an actual 300 DPI. Pages exceeding 32,768 pixels per side or 64 megapixels are rejected rather than silently downscaled. Fixtures check page count, pixel dimensions, and DPI.
 - DOCX contains editable text rather than a faithful copy of complex Office layout. PDF → TXT/MD extracts existing text. Raster images are not labeled editable Office output.
-- XLSX/ODS transfer all sheets and values as string cells. Formula calculation, style/asset round-tripping, and native spreadsheet printing are not implemented.
+- XLSX/ODS transfer all sheets and values as string cells. Formula calculation and style/asset round-tripping are not implemented. Table PDF uses a uniform grid and system font; exact source borders, merged cells, date/number formatting, charts, print areas, page setup, and hidden-row/column semantics are not reproduced.
 - Write and validate results in scratch, then publish under available names. Preserve sources and existing results. Failure or cancellation must not publish incomplete conversion output.
 - Content detection uses signatures and package contents. Text formats without unique signatures still need heuristics; Markdown can also use the `.md` extension. Unknown, empty, or unsupported input produces an error.
 
@@ -81,3 +81,9 @@ Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual pari
 Shelf Convert uses the same actual-source target intersection as the wheel, and exposes the same limitations above. Shelf Actions expose the existing seven actions without additional backends. New Shelf with Selection creates an independent reference collection. Conversion, Move, and ZIP use the shared serial queue; earlier published results remain available after failure/cancellation. Move can leave stale references on a shelf because the originals have moved; references are not silently replaced. See [Shelf workflow](Shelf-workflow.md).
 
 PDF raster output explicitly scales points to pixels at 300 DPI before applying page placement: the system drawing transform alone only scales down. Geometry uses the visible CropBox intersected with MediaBox, including nonzero origins and rotations. A four-page fixture checks JPG/PNG dimensions and colored content coverage; the original PDF from the owner's screenshot is unavailable, so that specific file remains unverified.
+
+## Batch and virtual image limits (0.6.2)
+
+Several supported images dropped on PDF create one document in supplied pasteboard order. Each contributes its oriented first frame; image animation is not merged. The system's Finder selection order is not independently sorted or promised. Normal file destinations stay beside originals; virtual image drops use Save As and exclusive exact-path publication. [Virtual image drops](Virtual-image-drops.md) describes accepted representations, bounded downloads, and unresolved physical/browser gates.
+
+Spreadsheet printing preserves values, readable wrapping, sheets, approximate XLSX column widths and row heights. It uses cached formula results and displays an uncomputed formula only when its cached value is absent. More than one million rectangular layout cells or 10,000 pages fails with a useful error. These bounds and unimplemented Excel layout features remain capability limits rather than silent omissions.

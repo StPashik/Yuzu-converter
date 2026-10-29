@@ -35,3 +35,7 @@ The glass backdrop uses the same `AppSurface` factory as shelf and operations. O
 ## Feedback and shelf sources (0.6.1)
 
 Every newly highlighted petal restarts the system Tink sound at the existing volume and requests alignment haptics when enabled. A shared 80 ms throttle no longer discards quick transitions; the drag view already filters motion within one petal. Sound replay is verified with a counting fixture; physical audible/haptic perception remains unverified. The wheel accepts file-URL dragging from Yuzu's shelf as well as other apps, while retaining original shelf batches for probes and submitted operations.
+
+## Responsive and empty wheels (0.6.2)
+
+Routes can be pending without drawing a center circle. Once an empty result is known, the armed panel leaves WindowServer ordering so Finder can receive the original drag; mode switching can show folder Actions. Cached petal paths and a persistent mask avoid per-event geometry/layer churn, and mask changes disable implicit Core Animation transitions. Sound playback runs serially off-main and the haptic performer is acquired before first hover. A deliberately stalled audio fixture checks that the drag callback remains responsive. New physical timing/appearance checks remain deferred.

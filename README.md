@@ -4,7 +4,7 @@
 
 File conversion and useful file actions from your Mac’s menu bar. Hold a key while dragging a file, choose a destination on the wheel, and drop.
 
-**A simpler shelf and quieter Operations window.** Keep references on the shelf, drag them into the conversion/Actions wheel, or reveal originals with the folder button. Operations stays at normal window level, removes successful rows after three seconds, and closes when empty. The shelf and wheel use native Liquid Glass on macOS 26+, a translucent fallback on earlier systems, and an opaque appearance with Reduce Transparency.
+**Responsive wheels and compact operation feedback.** Keep references on the shelf, drag them into the conversion/Actions wheel, or reveal originals with the folder button. Operations stays at normal window level, removes successful rows after one second, and closes when empty. The shelf and wheel use native Liquid Glass on macOS 26+, a translucent fallback on earlier systems, and an opaque appearance with Reduce Transparency.
 
 <img src="docs/images/shelf-workflow.png" width="460" alt="Yuzu Shelf with file previews, Finder folder buttons, and reference removal in the opaque accessibility appearance">
 
@@ -14,13 +14,13 @@ FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MK
 
 Requires **macOS 13 or later**, on Apple Silicon or Intel.
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-arm64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-arm64.zip)
 
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-x64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-x64.zip)
 
 Intel users on 0.4.0 can update directly through **Check for Updates…**. Version 0.4.1 was Apple Silicon only.
 
-This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-FFmpeg-Sources-0.6.1.tar.xz) is supplied with the release.
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-FFmpeg-Sources-0.6.2.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -55,7 +55,7 @@ See the [shelf design](docs/Shelf-design.md) and [wheel design notes](docs/Wheel
 | Images and PDF | System image readers/writers; every PDF page to JPG/PNG at 300 DPI; existing PDF text to TXT/MD |
 | Audio and video | Native WAV/AIFF/M4A and MP4/MOV, plus bundled FFmpeg video, GIF, MP3/FLAC/Opus/WMA routes |
 | Documents and EPUB | Text and rich-text DOCX, PDF/HTML/image export, and simple text-based EPUB reflow |
-| Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; text-based PDF output |
+| Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; paginated table PDF output |
 | Subtitles and archives | SRT/VTT/TXT and ZIP/TAR/TAR.GZ; RAR input where system libarchive supports it |
 
 The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. Yuzu does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
@@ -67,7 +67,7 @@ FFmpeg and FFprobe are included for both architectures; no Homebrew setup is req
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -105,3 +105,5 @@ Rebuilding an app archive requires rerunning `prepare-npm` and `npm pack`. Devel
 The code was written from scratch after [Tangerine research with REA](docs/TangerineResearch.md), including [five observed Settings pages](docs/Tangerine-settings.md). Observed UI and static field names remain separate from unknown proprietary defaults. Compress to ZIP is a separate owner-requested feature. The owner authorized the Yuzu Mac App icons and wheel design reference; no old engines, settings, caches, source modules, or Git history were carried over. See [component notices](THIRD_PARTY_NOTICES.md). Normal releases are stable GitHub Latest releases; signing limitations are documented separately. Contributors and maintainers follow the [PR/release workflow](docs/Releasing.md).
 
 The wheel regression test exercises real WindowServer hit-testing before a drag is confirmed: it fails with the old fully transparent window and passes with the corrected background. Shelf tests cover placement, drag callbacks, source preservation, material/selection changes, and five-language layouts. Fresh release checks are recorded in [validation](docs/Validation.md); [app QA](docs/QA.md) and [installer QA](docs/NpmQA.md) retain historical review results. Physical Finder/Powerbox, AirDrop/Terminal, VoiceOver, shelf drag-out, external-file Sandbox Quick Look, macOS 13, and macOS 26 Intel appearance remain unverified.
+
+Multiple image inputs dropped on PDF become pages of one document. Compatible selections show their shared output formats, and empty conversion wheels stay hidden. Browser/screenshot raster drops can use [Save As](docs/Virtual-image-drops.md); browser-specific and external-file Sandbox behavior remains a separate manual gate. Spreadsheet PDFs use a readable grid, wrapping, sheet/page breaks, and approximate XLSX dimensions rather than tab-separated text; full Excel style/calculation fidelity remains unavailable.

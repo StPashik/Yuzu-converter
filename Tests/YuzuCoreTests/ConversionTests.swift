@@ -28,7 +28,7 @@ final class ConversionTests: XCTestCase {
         XCTAssertTrue(targets.contains(.pdf))
         XCTAssertFalse(targets.contains(.png))
         XCTAssertFalse(targets.contains(.jpg))
-        XCTAssertTrue(ConversionEngine().targets(for: [source, try SourceFile(url: file("text.txt", text: "hello"))]).isEmpty)
+        XCTAssertTrue(ConversionEngine().targets(for: [source, try SourceFile(url: file("text.txt", text: "hello"))]).contains(.pdf))
     }
 
     func testImageConversionDoesNotOverwriteExistingResult() async throws {

@@ -3,10 +3,10 @@ import Combine
 import YuzuCore
 
 enum JobKind: Sendable {
-    case conversion(FileFormat), move, compress
+    case conversion(FileFormat), move, compress, importedImage(ImageDrop, FileFormat)
     func title(in language: AppLanguage) -> String {
         switch self {
-        case .conversion(let format): return L10n.string("Converting to %@", language: language, arguments: [format.label])
+        case .conversion(let format), .importedImage(_, let format): return L10n.string("Converting to %@", language: language, arguments: [format.label])
         case .move: return L10n.string("Moving files", language: language)
         case .compress: return L10n.string("Compressing to ZIP", language: language)
         }
@@ -30,13 +30,24 @@ struct JobRequest: Sendable {
     }
 
     static func run(_ request: JobRequest, progress: @Sendable (QueueProgress) async -> Void) async throws -> [URL] {
-        guard !request.files.urls.isEmpty else { throw ConversionError.invalid("Choose at least one file.") }
+        if request.files.urls.isEmpty {
+            if case .importedImage = request.kind {} else { throw ConversionError.invalid("Choose at least one file.") }
+        }
         switch request.kind {
         case .conversion(let target):
+            let engine = ConversionEngine()
+            if target == .pdf, request.files.urls.count > 1,
+               let sources = try? request.files.urls.map({ try SourceFile(url: $0) }),
+               sources.allSatisfy({ $0.format.category == "Images" }) {
+                guard !request.destinations.isEmpty else { throw ConversionError.invalid("Choose an output folder.") }
+                await progress(QueueProgress(completed: 0, currentFile: request.files.urls[0].lastPathComponent))
+                let result = try engine.combineImages(sources, in: request.destinations[0], options: request.options)
+                await progress(QueueProgress(completed: sources.count, published: [result]))
+                return [result]
+            }
             guard request.destinations.count == request.files.urls.count else {
                 throw ConversionError.invalid("Every source needs its own output folder.")
             }
-            let engine = ConversionEngine()
             var outputs: [URL] = []
             for (index, url) in request.files.urls.enumerated() {
                 try Task.checkCancellation()
@@ -47,6 +58,15 @@ struct JobRequest: Sendable {
                 await progress(QueueProgress(completed: index + 1, published: result))
             }
             return outputs
+        case .importedImage(let image, let target):
+            guard request.destinations.count == 1 else { throw ConversionError.invalid("Choose one destination file.") }
+            let files = try await image.materialize()
+            defer { withExtendedLifetime(files) {} }
+            try Task.checkCancellation()
+            let output = try ConversionEngine().saveDroppedImage(files.urls[0], to: target,
+                destination: request.destinations[0], options: request.options)
+            await progress(QueueProgress(completed: 1, published: [output]))
+            return [output]
         case .move, .compress:
             guard request.destinations.count == 1 else { throw ConversionError.invalid("Choose one destination folder.") }
             await progress(QueueProgress(completed: 0, currentFile: request.files.urls.first?.lastPathComponent))
@@ -114,7 +134,7 @@ final class JobQueue: ObservableObject {
     var isIdle: Bool { currentTask == nil && !entries.contains { $0.state == .waiting } }
     var activeCount: Int { entries.filter { !$0.state.isFinished }.count }
 
-    init(successRetention: Duration = .seconds(3), execute: @escaping Executor = { try await JobRequest.run($0, progress: $1) }) {
+    init(successRetention: Duration = .seconds(1), execute: @escaping Executor = { try await JobRequest.run($0, progress: $1) }) {
         self.successRetention = successRetention
         self.execute = execute
     }
@@ -122,7 +142,10 @@ final class JobQueue: ObservableObject {
     @discardableResult func enqueue(_ request: JobRequest) -> UUID {
         let id = UUID()
         requests[id] = request
-        entries.append(QueueEntry(id: id, kind: request.kind, filenames: request.files.urls.map(\.lastPathComponent)))
+        let names: [String]
+        if case .importedImage(let image, _) = request.kind { names = [image.name] }
+        else { names = request.files.urls.map(\.lastPathComponent) }
+        entries.append(QueueEntry(id: id, kind: request.kind, filenames: names))
         startNext()
         return id
     }

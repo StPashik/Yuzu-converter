@@ -1,0 +1,52 @@
+# Yuzu Converter 0.6.2
+
+Convert a batch into one PDF, save dragged browser images where you choose, and keep Operations small and brief. Release Notes appear in the update offer before installation.
+
+## What changed
+
+- **Empty wheel:** hide the whole conversion wheel when the dragged inputs have no common target, including folders. Folder Actions remain available with Control.
+- **Smoother petal selection:** reuse wheel geometry and the glass mask, remove the appearance fade, and play selection sounds on a serial background queue so cold audio startup does not block the drag callback. Sound/haptic preferences are respected.
+- **Shared batch targets:** mixed supported inputs offer only formats available to every file. Multiple images dropped on PDF become one document, with one oriented page per image in drop order. Other targets retain per-file output.
+- **Virtual image drops:** raster pasteboard images, image file promises, and public image URLs can open the conversion wheel. Choosing a format opens Save Converted Image; the exact chosen filename is used and existing files are never replaced. Source-app representation limits apply.
+- **Readable spreadsheet PDFs:** XLSX/ODS/CSV/TSV export now uses a uniform table grid, wrapped text, worksheet titles, and page breaks. XLSX width/height hints and cached formula values improve readability; missing cached values show the formula text. Wide sheets continue across column bands.
+- **Compact Operations:** real 20-point outer margins keep headers and buttons away from the glass edges. Empty-state text wraps, and the window uses less space.
+- **Honest operation status:** remove progress bars that cannot measure every backend; keep state, completed-file counts, cancellation, and errors.
+- **Brief success feedback:** successful rows disappear after one second and the window closes when empty. Errors and cancellations remain until cleared. The window stays at normal level.
+
+![Operations panel](https://raw.githubusercontent.com/StPashik/Yuzu-converter/v0.6.2/docs/images/operations.png)
+
+## Download
+
+- [Apple Silicon (M-series) ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-arm64.zip)
+- [Intel ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-x64.zip)
+
+Requires **macOS 13 or later**. English is the default; English, Russian, German, French, and Spanish are available for app-owned controls. Release Notes and technical diagnostics are English.
+
+## Quick start
+
+1. Existing users: choose **Check for Updates…** in the Yuzu menu or Settings → About, read these notes, and install when ready. Publishing does not install or restart your app.
+2. First installation: unzip the download for your Mac, move **Yuzu Converter.app** to Applications, and launch it. Yuzu appears in the menu bar.
+3. Drag files from Finder or the shelf and hold **Shift** for conversion or **Control** for Actions. Drop on a petal; Escape cancels. Drop multiple images on PDF to create one document.
+4. Drag a supported virtual image, choose a conversion petal, and select its final location in **Save Converted Image**. Keep the source app open until preparation finishes.
+
+## npm option
+
+The app runs without Node. The [release npm package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz) is an optional CLI installer for Node 20.11+ and compatible npm. With npm 12:
+
+```sh
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz"
+npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
+yuzu-converter
+```
+
+Older npm versions can omit the two allowance options. Distribution is through GitHub Releases, not the npm registry. The installer verifies the archive checksum and installs into `~/Applications`; in-app updates do not update the npm package itself.
+
+## Support and verification
+
+Separate arm64 and x64 archives include FFmpeg/FFprobe under the existing codec policy. Read the [format matrix](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Conversion-matrix.md), [virtual image guide](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Virtual-image-drops.md), [shelf/queue workflow](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Shelf-workflow.md), and [validation record](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Validation.md). Conversion and seven Actions remain in scope; File tools are excluded. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-FFmpeg-Sources-0.6.2.tar.xz), licenses, signed feeds, and SHA256SUMS accompany this release. FFmpeg is LGPL 2.1 or later.
+
+Automated fixtures cover virtual-image provider lifetimes, bounded downloads, no-overwrite saves, batch PDF page order, table rendering, queue layout/expiry, and five locales. Full Excel styles, charts, merged cells, print areas, date/number formatting, and recalculation are not preserved by the native table exporter. Virtual imports accept one raster image, at most 32 MiB / 64 million total pixels / 256 frames; authenticated, blob/data, webpage and SVG URLs are unsupported. Browser representation availability varies.
+
+Physical Finder/browser/screenshot drags, external Powerbox/Sandbox access, audible/haptic timing, native-glass composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Shelf references and queue history are session-only; cancellation preserves already published per-file results.
+
+Both archives are ad hoc signed and have no Developer ID or Apple notarization; Gatekeeper may block first launch. Sparkle authenticates signed feeds and archives with the existing Yuzu Ed25519 key.

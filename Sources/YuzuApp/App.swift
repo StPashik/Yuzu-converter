@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import Sparkle
 import YuzuCore
+import UniformTypeIdentifiers
 
 @main
 enum YuzuMain {
@@ -42,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var shelfSelection: Task<Void, Never>?
     private var detection: Task<Void, Never>?
     private var detectionID = UUID()
+    private var detectedImages: [URL] = []
     private let queue = JobQueue()
     private var queueWindow: QueueWindowController?
     private var preparingRequests = 0
@@ -76,6 +78,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let files = self.actions.scopedFiles(urls)
             // Finish AppKit's drop before opening Powerbox or a system sharing window.
             DispatchQueue.main.async { [weak self] in self?.handleRequest(files, option: option) }
+        }
+        monitor.onImageDrop = { [weak self] image, option in
+            DispatchQueue.main.async { self?.saveImageDrop(image, option: option) }
         }
         actions.onMove = { [weak self] files, folder in
             guard let self else { folder.stopAccessingSecurityScopedResource(); return }
@@ -166,37 +171,65 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         detection?.cancel()
         let identifier = UUID()
         detectionID = identifier
+        detectedImages = []
         view.sourceCaption = urls.count == 1 ? urls[0].lastPathComponent : L10n.text("%ld files", urls.count)
         if view.mode == .actions {
             view.options = FileAction.allCases.map(WheelOption.action)
             view.idleCaption = L10n.text("Actions")
+            view.isReadingSources = false
             return
         }
+        view.isReadingSources = true
         view.options = []
         view.idleCaption = L10n.text("Reading file…")
         let engine = engine
         let files = actions.scopedFiles(urls)
         detection = Task { [weak self, weak view] in
-            let worker = Task.detached(priority: .userInitiated) { () throws -> (targets: [FileFormat], source: FileFormat?) in
+            let worker = Task.detached(priority: .userInitiated) { () throws -> (targets: [FileFormat], source: FileFormat?, images: Bool) in
                 defer { withExtendedLifetime(files) {} }
                 let sources = try files.urls.map { try SourceFile(url: $0) }
                 try Task.checkCancellation()
                 let format = sources.first?.format
-                return (engine.targets(for: sources), sources.allSatisfy { $0.format == format } ? format : nil)
+                return (engine.targets(for: sources), sources.allSatisfy { $0.format == format } ? format : nil, sources.allSatisfy { $0.format.category == "Images" })
             }
             do {
                 let result = try await withTaskCancellationHandler(operation: { try await worker.value },
                                                                     onCancel: { worker.cancel() })
-                guard !Task.isCancelled, self?.detectionID == identifier, let view else { return }
+                guard !Task.isCancelled, self?.detectionID == identifier, let view,
+                      view.confirmed, view.mode == .conversion, view.imageDrop == nil, view.sources == urls else { return }
+                self?.detectedImages = result.images ? urls : []
                 view.options = result.targets.map(WheelOption.conversion)
                 if let format = result.source { view.sourceCaption = format.label }
                 view.idleCaption = L10n.text(result.targets.isEmpty ? "No available formats" : "Convert")
+                view.isReadingSources = false
             } catch {
-                guard !Task.isCancelled, self?.detectionID == identifier else { return }
-                view?.options = []
-                view?.idleCaption = L10n.text("Unsupported format")
+                guard !Task.isCancelled, self?.detectionID == identifier, let view,
+                      view.confirmed, view.mode == .conversion, view.imageDrop == nil, view.sources == urls else { return }
+                view.options = []
+                view.idleCaption = L10n.text("Unsupported format")
+                view.isReadingSources = false
             }
         }
+    }
+
+    private func saveImageDrop(_ image: ImageDrop, option: WheelOption) {
+        guard !terminating, !installingUpdate, case .conversion(let target) = option else { return }
+        preparingRequests += 1
+        defer { preparingRequests -= 1; updater.resumeInstallationIfReady() }
+        NSApp.activate(ignoringOtherApps: true)
+        let panel = NSSavePanel()
+        let validation = ImageSaveDelegate()
+        panel.delegate = validation
+        panel.title = L10n.text("Save Converted Image")
+        panel.message = L10n.text("Choose where to save the converted image.")
+        let stem = (image.name as NSString).deletingPathExtension
+        panel.nameFieldStringValue = String(stem.prefix(120)) + "." + target.fileExtension
+        if let type = UTType(filenameExtension: target.fileExtension) { panel.allowedContentTypes = [type] }
+        guard panel.runModal() == .OK, let destination = panel.url else { image.cancelPreparation(); return }
+        _ = destination.startAccessingSecurityScopedResource()
+        enqueue(JobRequest(files: ScopedFiles([]), kind: .importedImage(image, target), destinations: [destination],
+                           options: settings.options(for: target)))
+        withExtendedLifetime(validation) {}
     }
 
     /// Every entry point snapshots source grants before opening Powerbox or sharing UI.
@@ -216,7 +249,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             var enqueued = false
             defer { if !enqueued { folders.forEach { $0.stopAccessingSecurityScopedResource() } } }
             do {
-                for url in urls {
+                // A combined image PDF needs one output grant beside the first input.
+                let combinesImages = target == .pdf && urls.count > 1 && urls == detectedImages
+                for url in combinesImages ? [urls[0]] : urls {
                     guard let folder = try access.outputFolder(beside: url) else { return }
                     folders.append(folder)
                 }

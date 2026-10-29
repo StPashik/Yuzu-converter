@@ -6,10 +6,10 @@ Yuzu Converter lives in your Mac's menu bar. Drag a file, hold a shortcut key, a
 
 | Your Mac | Download |
 | --- | --- |
-| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-arm64.zip) |
-| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-x64.zip) |
+| Apple Silicon: M1, M2, M3, M4, or newer | [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-arm64.zip) |
+| Intel | [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-x64.zip) |
 
-Requires macOS 13+. Version 0.6.1 supports both architectures; existing Intel 0.4.0 and later clients can use **Check for Updates…** directly.
+Requires macOS 13+. Version 0.6.2 supports both architectures; existing Intel 0.4.0 and later clients can use **Check for Updates…** directly.
 
 Open the ZIP and move **Yuzu Converter.app** into your Applications folder. Open the app; its icon appears in the menu bar. There is no Dock icon or main window.
 
@@ -22,7 +22,7 @@ Node.js 20.11+ and npm are needed for installation and the launcher. The app its
 For npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -30,7 +30,7 @@ yuzu-converter
 For npm 10/11:
 
 ```sh
-npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz
+npm install -g https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz
 yuzu-converter
 ```
 
@@ -102,8 +102,16 @@ Both current architecture-specific releases include FFmpeg and FFprobe. Drag a s
 
 ## Follow operations
 
-Conversion, Move, and Compress to ZIP open **Operations**. You can also reopen it from **Show Operations** in the menu bar. Jobs run in order; each row shows its state, filenames, and completed input count. A spinner means the current export or filesystem operation is still running; it is not a time estimate. **Cancel** affects one request, **Cancel All** includes waiting requests, and **Clear Finished** removes only history rows.
+Conversion, Move, and Compress to ZIP open **Operations**. You can also reopen it from **Show Operations** in the menu bar. Jobs run in order; each row shows its state, filenames, and completed input count. Operations shows state and completed-file counts; no percentage bar or spinner is shown. **Cancel** affects one request, **Cancel All** includes waiting requests, and **Clear Finished** removes only history rows.
 
-Operations uses a compact ordinary window, without an always-on-top mode or Show Results button. Successful rows disappear after three seconds. Errors and cancellations remain until Clear Finished; an empty list after work closes the window. Closing manually leaves work running. Cancellation preserves completed results and does not roll back earlier moves. See the [workflow guide](Shelf-workflow.md).
+Operations uses a compact ordinary window, without an always-on-top mode or Show Results button. Successful rows disappear after one second. Errors and cancellations remain until Clear Finished; an empty list after work closes the window. Closing manually leaves work running. Cancellation preserves completed results and does not roll back earlier moves. See the [workflow guide](Shelf-workflow.md).
 
 Converted files keep their source stem and change extension. Collisions use `_yuzu`, then `_yuzu_2` and later numbers without overwriting earlier files. Update offers show English Release Notes before installation.
+
+## Multiple images, browser images, and tables
+
+Drop several supported images on PDF to create one multi-page document in the supplied order, beside the first input. Other formats export separate results. A conversion wheel with no supported targets stays hidden; Actions still handles folders.
+
+Raster data, an image file promise, or a plain HTTP(S) image URL from a browser/screenshot can offer Save As after a conversion petal is chosen. See [virtual image limits and permissions](Virtual-image-drops.md). Existing local file URLs keep the normal beside-original behavior unless the drag explicitly marks promised screenshot image content.
+
+XLSX/ODS/CSV/TSV to PDF prints a paginated table with grid lines and wrapped values. XLSX column widths and row heights are approximated. Formulas use cached values; a missing cache prints the formula instead of inventing a result. Full Excel formatting/merged cells/charts are not reconstructed; keep the workbook when those matter.
