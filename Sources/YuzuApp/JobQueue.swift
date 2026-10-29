@@ -103,7 +103,9 @@ struct JobRequest: Sendable {
                 try Task.checkCancellation()
                 await progress(QueueProgress(completed: index, currentFile: url.lastPathComponent))
                 let result = try await engine.convert(SourceFile(url: url), to: target,
-                    in: request.destinations[index], options: request.options)
+                    in: request.destinations[index], options: request.options, onWarning: { warnings in
+                        await progress(QueueProgress(completed: index, warnings: warnings.map { url.lastPathComponent + ": " + $0 }))
+                    })
                 outputs += result
                 await progress(QueueProgress(completed: index + 1, published: result, finishedSources: [url]))
             }
@@ -115,7 +117,7 @@ struct JobRequest: Sendable {
             // A file promise is single-use; keep accepted bytes available if encoding later fails.
             await progress(QueueProgress(completed: 0, preparedImage: files))
             try Task.checkCancellation()
-            let output = try ConversionEngine().saveDroppedImage(files.urls[0], to: target,
+            let output = try await ConversionEngine().saveDroppedImage(files.urls[0], to: target,
                 destination: request.destinations[0], options: request.options)
             await progress(QueueProgress(completed: 1, published: [output]))
             return [output]
@@ -162,6 +164,7 @@ struct QueueProgress: Sendable {
     var finishedSources: [URL] = []
     var moves: [FileMove] = []
     var preparedImage: ScopedFiles? = nil
+    var warnings: [String] = []
 }
 
 enum JobState: String {
@@ -182,9 +185,10 @@ struct QueueEntry: Identifiable {
     var error: String?
     var recovery: JobRecovery?
     var canRetry = false
+    var warnings: [String] = []
 
     var diagnostic: String {
-        "Operation: \(kind.title(in: .english))\nInputs: \(filenames.joined(separator: ", "))\nCompleted inputs: \(completedInputs)\n\n\(error ?? "")"
+        "Operation: \(kind.title(in: .english))\nInputs: \(filenames.joined(separator: ", "))\nCompleted inputs: \(completedInputs)\n\n\(error ?? "")\n\(warnings.joined(separator: "\n"))"
     }
 }
 
@@ -263,6 +267,7 @@ final class JobQueue: ObservableObject {
         entries[index].completedInputs = min(entries[index].filenames.count, max(0, progress.completed))
         entries[index].currentFile = progress.currentFile
         entries[index].outputs += progress.published
+        entries[index].warnings += progress.warnings
         finishedPaths[id, default: []].formUnion(progress.finishedSources.map { $0.standardizedFileURL.path })
         if let prepared = progress.preparedImage, case .importedImage = requests[id]?.kind {
             requests[id]?.files = prepared
@@ -326,7 +331,7 @@ final class JobQueue: ObservableObject {
                 Task { [weak self] in
                     try? await Task.sleep(for: delay)
                     // Cleanup owns a row ID, so it cannot clear a later job or dismiss an error.
-                    self?.entries.removeAll { $0.id == id && $0.state == .completed }
+                    self?.entries.removeAll { $0.id == id && $0.state == .completed && $0.warnings.isEmpty }
                 }
             }
             startNext()

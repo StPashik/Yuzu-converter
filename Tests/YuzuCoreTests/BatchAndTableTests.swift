@@ -51,14 +51,15 @@ final class BatchAndTableTests: XCTestCase {
         let destination = directory.appendingPathComponent("Chosen.png")
         let engine = ConversionEngine()
         XCTAssertTrue(ConversionEngine.imageDropTargets.contains(.png))
-        XCTAssertEqual(try engine.saveDroppedImage(input, to: .png, destination: destination), destination)
+        let saved = try await engine.saveDroppedImage(input, to: .png, destination: destination)
+        XCTAssertEqual(saved, destination)
         let original = try Data(contentsOf: destination)
-        XCTAssertThrowsError(try engine.saveDroppedImage(input, to: .png, destination: destination))
+        do { _ = try await engine.saveDroppedImage(input, to: .png, destination: destination); XCTFail("Expected an existing-file error") } catch {}
         XCTAssertEqual(try Data(contentsOf: destination), original)
         let missing = directory.appendingPathComponent("Cancelled.png")
         let task = Task.detached {
             try await Task.sleep(for: .milliseconds(20))
-            return try engine.saveDroppedImage(input, to: .png, destination: missing)
+            return try await engine.saveDroppedImage(input, to: .png, destination: missing)
         }
         task.cancel()
         do { _ = try await task.value; XCTFail("Expected cancellation") } catch is CancellationError {}
@@ -93,7 +94,7 @@ final class BatchAndTableTests: XCTestCase {
         _ = try ArchiveReader(original).entries(extractingTo: unpacked)
         let sheet = unpacked.appendingPathComponent("xl/worksheets/sheet1.xml")
         let xml = #"""
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="20"/><col min="2" max="2" style="1"/><col min="3" max="3" width="0" hidden="1"/></cols><sheetData><row r="1" ht="28"><c r="A1" t="inlineStr"><is><t>Totals</t></is></c><c r="B1"><f>20+22</f><v>42</v></c></row><row r="2" ht="0"><c r="A2"><f>SUM(1,2)</f></c></row></sheetData></worksheet>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="1" width="20"/><col min="2" max="2" style="0"/><col min="3" max="3" width="0" hidden="1"/></cols><sheetData><row r="1" ht="28"><c r="A1" t="inlineStr"><is><t>Totals</t></is></c><c r="B1"><f>20+22</f><v>42</v></c></row><row r="2" ht="0"><c r="A2"><f>SUM(1,2)</f></c></row></sheetData></worksheet>
 """#
         try xml.write(to: sheet, atomically: false, encoding: .utf8)
         let input = directory.appendingPathComponent("Geometry.xlsx")

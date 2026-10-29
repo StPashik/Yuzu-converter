@@ -255,3 +255,5 @@
 "Choose the file or folder in its new location. Only the shelf reference will change." = "Выберите файл или папку в новом расположении. Изменится только ссылка на полке.";
 "Use This Item" = "Выбрать";
 "File not found" = "Файл не найден";
+
+"Some video content could not be retained. See Details." = "Часть содержимого видео не удалось сохранить. Откройте подробности.";
