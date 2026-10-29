@@ -14,13 +14,13 @@ FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MK
 
 Requires **macOS 13 or later**, on Apple Silicon or Intel.
 
-- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-Converter-0.6.0-arm64.zip)
+- [Download for Apple Silicon](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-arm64.zip)
 
-- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-Converter-0.6.0-x64.zip)
+- [Download for Intel](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-x64.zip)
 
 Intel users on 0.4.0 can update directly through **Check for Updates…**. Version 0.4.1 was Apple Silicon only.
 
-This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/Yuzu-FFmpeg-Sources-0.6.0.tar.xz) is supplied with the release.
+This software uses FFmpeg under LGPL 2.1 or later. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-FFmpeg-Sources-0.6.1.tar.xz) is supplied with the release.
 
 Unzip the download, move **Yuzu Converter.app** to Applications, and launch it. The app appears in the menu bar. Builds use an ad hoc signature, without Developer ID or notarization, so Gatekeeper may block the first launch.
 
@@ -67,7 +67,7 @@ FFmpeg and FFprobe are included for both architectures; no Homebrew setup is req
 Node.js 20.11+ and a compatible npm version are required. For npm 12, allow this exact release URL and its installation script for this command:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.0/stpashik-yuzu-converter-0.6.0.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```

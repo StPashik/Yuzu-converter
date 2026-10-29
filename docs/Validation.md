@@ -10,7 +10,24 @@ The new pixel fixture reproduced the reported small-content/white-canvas symptom
 
 Shelf fixtures now check the absence of command menus, the folder button's position/accessibility, actual shelf URL callbacks into conversion and all seven wheel Action targets, a real queued conversion, and retained source batches after removal. Queue fixtures check normal window level, compact sizing, rounded layer clipping, success expiry, empty-window close, and retained failures. The wheel fixture checks four immediate distinct highlights, no replay inside one petal, and the disabled feedback setting.
 
-Current previews show the real opaque fallback in both themes/five languages. Physical Finder/Powerbox drag sessions, Finder reveal, external-file Sandbox access, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Native CI and final release-asset checks are recorded separately when completed. Installed owner app copies are not test targets.
+Current previews show the real opaque fallback in both themes/five languages. Physical Finder/Powerbox drag sessions, Finder reveal, external-file Sandbox access, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. [Feature PR #21](https://github.com/StPashik/Yuzu-converter/pull/21) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40848737346) on arm64 and native Intel: each ran 90 Swift tests and 24 Node tests without skips, restored verified media tools, and verified its signed Sandbox archive. Final release-asset checks follow below. Installed owner app copies are not test targets.
+
+| Final 0.6.1 / build 13 preparation | Recorded result |
+| --- | --- |
+| Archives | Separate final arm64/x64 ZIPs passed strict signatures, exact CPU slices, versions/resources/notices, and signed Sandbox document/spreadsheet/archive/media checks |
+| Compatibility | Both main executables use SDK 26+, minimum OS 13, and weak native-glass imports; local x64 execution uses Rosetta, separate from native Intel CI |
+| npm | 24 tests without skips; seven exact package files, executable CLI, and both actual archives installed/version/CPU/codesign-checked only in temporary homes |
+| Media source/licenses | 24 exact source/configuration files, four pinned upstream archives, both helper records, seven exact upstream media notices; app Sparkle license matches its pinned artifact |
+| Updates | Both archive signatures independently verified against the embedded production key; signed feeds contain the exact reviewed English Markdown; live bridges remain unchanged until assets are public |
+| Frozen assets | Nine files; eight payload hashes in [Release-checksums-0.6.1.txt](Release-checksums-0.6.1.txt) |
+
+[Release PR #22](https://github.com/StPashik/Yuzu-converter/pull/22) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40850867126): each architecture ran 90 Swift tests, 24 Node tests without skips, and the signed Sandbox archive checks. Tag `v0.6.1` points to its exact main merge commit `289e3d9220eb7c203043cdc9d5367395a72e063f`, with a tree identical to the verified release head.
+
+The reviewed draft's English body and nine uploaded sizes/digests matched the frozen files before stable Latest publication. All nine public versioned downloads matched SHA-256. Both Latest feed URLs returned the exact signed Markdown XML. Eight real production-key Sparkle information checks passed across arm64/x64: builds 7, 11, and 12 find build 13 and its Markdown notes; build 13 reports current. No update was downloaded or installed by these probes. Both legacy bridges are copied from those exact public signed feeds, preserving the application-release tag.
+
+[Legacy feed PR #23](https://github.com/StPashik/Yuzu-converter/pull/23) passed [metadata/feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40852795642), including nine Python and six Node release tests. Native jobs were correctly omitted for signed-feed/documentation-only changes. Both normal raw main/updates URLs then returned the exact signed release XML. Eight further production-key Sparkle checks passed with the same versions and Markdown assertions, for **16 information-only production checks** across both CPUs/channels in total. The v0.6.1 application tag remains unchanged.
+
+A final history audit preserved 12 earlier release records, all their asset IDs/digests/sizes, and all 12 earlier tag objects. The release branch carries main's application-release and feed-publication merge history back to develop. The owner installs personally; no owner installation, quit, or relaunch was performed.
 
 ## v0.6.0 — Shelf commands, operations, and shared glass
 
