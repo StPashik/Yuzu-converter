@@ -12,6 +12,17 @@ Image fixtures verify a retained prepared promise is consumed only once, retry/c
 
 [Retry and reference recovery](Retry-and-references.md) records behavior and limits. Physical Finder/browser/Powerbox/Sandbox interoperability, VoiceOver, macOS 13, other-Mac appearance, and cross-volume devices remain deferred/unverified. Signed own-container archive/native CI evidence will be recorded separately. Installed owner app copies are not test targets.
 
+[Feature PR #29](https://github.com/StPashik/Yuzu-converter/pull/29) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40882383387) on arm64 and native Intel. Each ran 120 Swift tests and 24 Node tests without skips, restored verified media tools, and passed its signed own-container Sandbox archive, including the new retry/completed-move self-check.
+
+| Final 0.6.3 / build 15 preparation | Recorded result |
+| --- | --- |
+| Archives | Both final ZIPs passed deep strict codesign, exact main/helper CPU slices, versions/resources/icons/notices, and signed own-container document/media/batch/exclusive-save/retry/move checks |
+| Compatibility | SDK 26+, minimum macOS 13, weak native-glass class imports on both final main executables; local x64 execution used Rosetta, independently of native Intel CI |
+| npm | Local npm ci with scripts disabled and 24 final Node tests passed; seven exact package files; both actual ZIPs installed/version/CPU/codesign-checked only in temporary homes |
+| Source/licenses | 24 corresponding-source/configuration files, four pinned upstream archives, both helper hashes/portable configurations, seven exact upstream media notices, and exact pinned Sparkle license verified |
+| Updates | Both archive signatures independently verified with the embedded production key; exact reviewed English Markdown in both signed feeds; HTTP Sparkle available/current/tampered/500 fixture passed without installation |
+| Frozen assets | Nine files; eight payload SHA-256 values in [Release-checksums-0.6.3.txt](Release-checksums-0.6.3.txt); legacy feeds have not advanced |
+
 ## v0.6.2 — Drag workflow, compact operations, and table PDFs
 
 Local Apple Silicon checks on October 29, 2026: **103 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Final review additionally exercises optional/zero XLSX sizing hints. Tests run in project-specific scratch paths; installed owner app copies are not test targets.
