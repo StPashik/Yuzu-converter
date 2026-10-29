@@ -257,3 +257,6 @@
 "File not found" = "Файл не найден";
 
 "Some video content could not be retained. See Details." = "Часть содержимого видео не удалось сохранить. Откройте подробности.";
+
+"Check for updates automatically" = "Проверять обновления автоматически";
+"Checks at launch and about once a day. Downloading and installing require your confirmation." = "Проверка при запуске и примерно раз в день. Загрузка и установка требуют вашего подтверждения.";
