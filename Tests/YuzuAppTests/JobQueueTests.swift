@@ -98,7 +98,7 @@ final class JobQueueTests: XCTestCase {
         } catch { XCTAssertTrue(FileManager.default.fileExists(atPath: source.path)) }
         let updates = await log.updates
         let published = updates.flatMap(\.published)
-        XCTAssertEqual(published.map(\.lastPathComponent), ["notes 2.md"])
+        XCTAssertEqual(published.map(\.lastPathComponent), ["notes_yuzu.md"])
         XCTAssertEqual(try String(contentsOf: try XCTUnwrap(published.first)), "Readable notes")
         XCTAssertEqual(try String(contentsOf: existing), "Keep existing")
         XCTAssertEqual(updates.map(\.completed), [0, 1, 1])

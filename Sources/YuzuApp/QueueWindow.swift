@@ -1,32 +1,49 @@
 import AppKit
+import Combine
 import SwiftUI
 
 @MainActor
 final class QueueWindowController: NSWindowController {
     private let queue: JobQueue
     private let hosting: NSHostingView<QueueView>
+    private var subscription: AnyCancellable?
+    private var hadEntries = false
+
+    static func contentSize(entryCount: Int) -> NSSize {
+        NSSize(width: 480, height: entryCount == 0 ? 200 : 104 + CGFloat(min(entryCount, 3)) * 116)
+    }
 
     init(queue: JobQueue) {
         self.queue = queue
         hosting = NSHostingView(rootView: QueueView(queue: queue, language: L10n.language, onClose: {}))
         // Let the panel constrain the scrollable history instead of adopting the host’s intrinsic height.
         hosting.sizingOptions = []
-        let panel = QueuePanel(contentRect: NSRect(x: 0, y: 0, width: 620, height: 420),
-            styleMask: [.borderless, .nonactivatingPanel, .resizable], backing: .buffered, defer: false)
+        let panel = QueuePanel(contentRect: NSRect(origin: .zero, size: Self.contentSize(entryCount: queue.entries.count)),
+            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
-        panel.level = .floating
+        panel.level = .normal
+        panel.isFloatingPanel = false
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = true
-        panel.minSize = NSSize(width: 540, height: 300)
         super.init(window: panel)
         refreshLanguage()
         setMaterial(reduceTransparency: NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(refreshMaterial),
             name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
         panel.center()
+        subscription = queue.$entries.receive(on: RunLoop.main).sink { [weak self] entries in
+            guard let self, let window = self.window else { return }
+            let size = Self.contentSize(entryCount: entries.count)
+            var frame = NSRect(x: window.frame.minX, y: window.frame.maxY - size.height,
+                               width: size.width, height: size.height)
+            if let screen = window.screen { frame.origin.y = max(screen.visibleFrame.minY, frame.origin.y) }
+            window.setFrame(frame, display: true)
+            if entries.isEmpty && self.hadEntries { self.close() }
+            self.hadEntries = !entries.isEmpty
+        }
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
     deinit { NSWorkspace.shared.notificationCenter.removeObserver(self) }
@@ -41,7 +58,7 @@ final class QueueWindowController: NSWindowController {
     }
     func setMaterial(reduceTransparency: Bool) {
         let surface = AppSurface.make(content: hosting, opaque: reduceTransparency)
-        surface.frame = NSRect(origin: .zero, size: window?.contentView?.bounds.size ?? NSSize(width: 620, height: 420))
+        surface.frame = NSRect(origin: .zero, size: window?.contentView?.bounds.size ?? Self.contentSize(entryCount: queue.entries.count))
         hosting.frame = surface.bounds
         window?.contentView = surface
         window?.invalidateShadow()
@@ -64,7 +81,7 @@ struct QueueView: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 12) {
             HStack {
                 Image(systemName: "list.bullet.rectangle").foregroundStyle(.orange)
                 Text(text("Operations")).font(.headline)
@@ -95,7 +112,7 @@ struct QueueView: View {
             }
             .controlSize(.small)
         }
-        .padding(20)
+        .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.locale, Locale(identifier: language.rawValue))
         .background(Color.clear)
@@ -129,9 +146,6 @@ struct QueueView: View {
                 Text(text("%ld of %ld files completed", entry.completedInputs, entry.filenames.count))
                     .font(.caption2).foregroundStyle(.secondary)
                 Spacer()
-                if !entry.outputs.isEmpty {
-                    Button(text("Show Results")) { NSWorkspace.shared.activateFileViewerSelecting(entry.outputs) }
-                }
                 if entry.state.canCancel {
                     Button(text("Cancel")) { queue.cancel(entry.id) }
                 }

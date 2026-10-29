@@ -72,9 +72,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         updateTooltip()
         monitor.onSources = { [weak self] urls, view in self?.updateSources(urls, view: view) }
         monitor.onDrop = { [weak self] urls, option in
-            let files = ScopedFiles(urls)
+            guard let self else { return }
+            let files = self.actions.scopedFiles(urls)
             // Finish AppKit's drop before opening Powerbox or a system sharing window.
-            DispatchQueue.main.async { self?.handleRequest(files, option: option) }
+            DispatchQueue.main.async { [weak self] in self?.handleRequest(files, option: option) }
         }
         actions.onMove = { [weak self] files, folder in
             guard let self else { folder.stopAccessingSecurityScopedResource(); return }
@@ -84,9 +85,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { folder.stopAccessingSecurityScopedResource(); return }
             self.enqueue(JobRequest(files: files, kind: .compress, destinations: [folder],
                                     options: self.settings.options(for: .zip)))
-        }
-        actions.onShelfRequest = { [weak self] files, option in
-            self?.handleRequest(files, option: option, fromShelf: true)
         }
         queue.onIdle = { [weak self] in self?.updater.resumeInstallationIfReady() }
         updater.canRestart = { [weak self] in
@@ -153,8 +151,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     @objc private func showShelf() { actions.showShelf() }
     @objc private func showQueue() {
-        if queueWindow == nil { queueWindow = QueueWindowController(queue: queue) }
         NSApp.activate(ignoringOtherApps: true)
+        presentQueue()
+    }
+    private func presentQueue() {
+        if queueWindow == nil { queueWindow = QueueWindowController(queue: queue) }
         queueWindow?.present()
     }
     @objc private func showSettings() { settings.show(updater: updater, access: access) }
@@ -174,9 +175,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         view.options = []
         view.idleCaption = L10n.text("Reading file…")
         let engine = engine
+        let files = actions.scopedFiles(urls)
         detection = Task { [weak self, weak view] in
             let worker = Task.detached(priority: .userInitiated) { () throws -> (targets: [FileFormat], source: FileFormat?) in
-                let sources = try urls.map { try SourceFile(url: $0) }
+                defer { withExtendedLifetime(files) {} }
+                let sources = try files.urls.map { try SourceFile(url: $0) }
                 try Task.checkCancellation()
                 let format = sources.first?.format
                 return (engine.targets(for: sources), sources.allSatisfy { $0.format == format } ? format : nil)
@@ -197,7 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// Every entry point snapshots source grants before opening Powerbox or sharing UI.
-    private func handleRequest(_ files: ScopedFiles, option: WheelOption, fromShelf: Bool = false) {
+    private func handleRequest(_ files: ScopedFiles, option: WheelOption) {
         guard !terminating, !installingUpdate else { return }
         preparingRequests += 1
         // Modal panels can reenter the run loop; an updater restart must wait for preparation too.
@@ -206,8 +209,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urls = files.urls
         switch option {
         case .action(let action):
-            if action == .float && fromShelf { actions.newShelf(with: files) }
-            else { actions.perform(action, files: files) }
+            actions.perform(action, files: files)
         case .conversion(let target):
             NSApp.activate(ignoringOtherApps: true)
             var folders: [URL] = []
@@ -229,7 +231,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func enqueue(_ job: JobRequest) {
         guard !terminating, !installingUpdate else { return }
         queue.enqueue(job)
-        showQueue()
+        presentQueue()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

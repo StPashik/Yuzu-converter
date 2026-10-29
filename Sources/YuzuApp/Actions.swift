@@ -29,7 +29,6 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
     private var shelves: [ShelfController] = []
     var onMove: ((ScopedFiles, URL) -> Void)?
     var onCompress: ((ScopedFiles, URL) -> Void)?
-    var onShelfRequest: ((ScopedFiles, WheelOption) -> Void)?
     var shelfAnchor: (() -> NSView?)?
 
     init(access: AccessStore, settings: Settings) {
@@ -47,15 +46,13 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
 
     private func makeShelf() -> ShelfController {
         let shelf = ShelfController()
-        shelf.onRequest = { [weak self] files, option in self?.onShelfRequest?(files, option) }
         shelves.append(shelf)
         return shelf
     }
 
-    func newShelf(with files: ScopedFiles) {
-        let shelf = makeShelf()
-        shelf.add(files)
-        present(shelf)
+    func scopedFiles(_ urls: [URL]) -> ScopedFiles {
+        // Drag pasteboards carry paths, so retain the original shelf batches and their parent grants too.
+        ScopedFiles(urls, retaining: shelves.flatMap { $0.retainedBatches(for: urls) })
     }
 
     private func present(_ shelf: ShelfController) {

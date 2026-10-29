@@ -22,6 +22,7 @@
     <key>SUPublicEDKey</key><string>IVOZO01ZLkVufQPqzWYXLatnjLzseWHAkiYa/n4xrrw=</string>
     <key>SUEnableInstallerLauncherService</key><true/>
     <key>SUEnableAutomaticChecks</key><false/>
+    <key>SUShowReleaseNotes</key><true/>
     <key>SUAutomaticallyUpdate</key><false/>
     <key>SUAllowsAutomaticUpdates</key><false/>
     <key>SUEnableSystemProfiling</key><false/>

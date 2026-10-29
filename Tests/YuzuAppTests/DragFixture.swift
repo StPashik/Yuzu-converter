@@ -9,7 +9,7 @@ final class DragFixture: NSObject, NSDraggingInfo {
     var draggedImageLocation: NSPoint { draggingLocation }
     nonisolated var draggedImage: NSImage? { nil }
     let draggingPasteboard = NSPasteboard.withUniqueName()
-    var draggingSource: Any? { nil }
+    var draggingSource: Any?
     var draggingSequenceNumber = 1
     var draggingFormation: NSDraggingFormation = .none
     var animatesToDestination = false

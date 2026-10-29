@@ -212,11 +212,8 @@
 "Completed" = "Terminé";
 "Failed" = "Échec";
 "%ld of %ld files completed" = "Fichiers terminés : %ld sur %ld";
-"Show Results" = "Afficher les résultats";
-"New Shelf with Selection" = "Nouvelle étagère avec la sélection";
-"Copy Files" = "Copier les fichiers";
-"Open Terminal" = "Ouvrir le terminal";
 "Compress to ZIP" = "Compresser en ZIP";
-"Commands apply to selected files." = "Les commandes concernent les fichiers sélectionnés.";
-"Select files to use Conversion and Actions." = "Sélectionnez des fichiers pour les convertir ou exécuter des actions.";
-"Files on the floating shelf. Select files to convert or run Actions; drag to share." = "Fichiers sur l’étagère. Sélectionnez-les pour les convertir ou exécuter des actions ; faites-les glisser pour les partager.";
+"Files on the floating shelf. Drag files out or reveal them in Finder." = "Fichiers sur l’étagère. Faites-les glisser ou affichez-les dans le Finder.";
+"Show in Finder" = "Afficher dans le Finder";
+"Could not show the file" = "Impossible d’afficher le fichier";
+"The file is no longer available at its original location." = "Le fichier n’est plus disponible à son emplacement d’origine.";

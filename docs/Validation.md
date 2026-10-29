@@ -1,6 +1,16 @@
 # Release validation record
 
-Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
+Updated October 29, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
+
+## v0.6.1 — Shelf, queue, PDF, and update-note polish
+
+Local Apple Silicon checks on October 29, 2026: **90 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, using the bundled media tools with `YUZU_MEDIA_REQUIRED=1`. Final PDF assertions also check the rotated blue corner and full-page black coverage. The HTTP Sparkle fixture verified available/current/tampered/HTTP-500 behavior and parsed the expected native Markdown notes, without downloading or installing an update.
+
+The new pixel fixture reproduced the reported small-content/white-canvas symptom: `CGPDFPageGetDrawingTransform` centers and only scales down, leaving PDF points unscaled in the 300-DPI bitmap. The fix establishes the explicit points-to-pixels scale before page placement, and uses the visible crop intersected with the media bounds. JPG and PNG fixtures cover four rotations and nonzero crop origins. The owner's source PDF remains unavailable, so that exact file is unverified.
+
+Shelf fixtures now check the absence of command menus, the folder button's position/accessibility, actual shelf URL callbacks into conversion and all seven wheel Action targets, a real queued conversion, and retained source batches after removal. Queue fixtures check normal window level, compact sizing, rounded layer clipping, success expiry, empty-window close, and retained failures. The wheel fixture checks four immediate distinct highlights, no replay inside one petal, and the disabled feedback setting.
+
+Current previews show the real opaque fallback in both themes/five languages. Physical Finder/Powerbox drag sessions, Finder reveal, external-file Sandbox access, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Native CI and final release-asset checks are recorded separately when completed. Installed owner app copies are not test targets.
 
 ## v0.6.0 — Shelf commands, operations, and shared glass
 

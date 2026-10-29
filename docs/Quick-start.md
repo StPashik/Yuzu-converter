@@ -64,7 +64,7 @@ Removing an item from the shelf never deletes the file. Closing the shelf keeps 
 
 ## Keep files on the shelf
 
-Choose **Show Shelf** from the Yuzu menu. Drop files directly onto the panel, or use the Float Action. Each card shows a preview or system icon, its name, and its parent folder. Select rows and use **Convert** or **Actions**, or right-click a row. Commands apply to the selection, and formats reflect the files you selected. **New Shelf with Selection** creates an independent collection. Drag rows into another app when needed. Select multiple rows to drag them together; Delete removes the selection from the shelf.
+Choose **Show Shelf** from the Yuzu menu. Drop files onto the panel or use Float in the wheel. Each row shows a preview, filename, parent folder, a **folder** button to reveal the original in Finder, and **×** to remove its reference. Select rows and drag them out; hold Shift for conversion or Control for Actions in the wheel. The shelf has no conversion/Actions menus. Delete removes selected references; originals remain in place.
 
 You can also select files in Finder and press **⌃C**. Change this in **Settings… → General → Actions → Add Finder selection to shelf**: click the field and press your preferred combination. Escape cancels recording; Delete disables the shortcut. It works only in Finder and follows Float Behaviour. Approve Finder access when macOS asks; the Sandbox build also requests initial access to the files' parent folder and remembers it. Your clipboard is preserved.
 
@@ -104,4 +104,6 @@ Both current architecture-specific releases include FFmpeg and FFprobe. Drag a s
 
 Conversion, Move, and Compress to ZIP open **Operations**. You can also reopen it from **Show Operations** in the menu bar. Jobs run in order; each row shows its state, filenames, and completed input count. A spinner means the current export or filesystem operation is still running; it is not a time estimate. **Cancel** affects one request, **Cancel All** includes waiting requests, and **Clear Finished** removes only history rows.
 
-**Show Results** reveals files already created, including results completed before a later failure. Cancellation discards unfinished staging and keeps completed results. Move may already have moved earlier items in the batch; it does not roll them back. Closing Operations leaves the queue working. History lasts until Yuzu exits. See the [workflow guide](Shelf-workflow.md).
+Operations uses a compact ordinary window, without an always-on-top mode or Show Results button. Successful rows disappear after three seconds. Errors and cancellations remain until Clear Finished; an empty list after work closes the window. Closing manually leaves work running. Cancellation preserves completed results and does not roll back earlier moves. See the [workflow guide](Shelf-workflow.md).
+
+Converted files keep their source stem and change extension. Collisions use `_yuzu`, then `_yuzu_2` and later numbers without overwriting earlier files. Update offers show English Release Notes before installation.

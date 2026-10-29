@@ -79,3 +79,5 @@ Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual pari
 ## Shelf entry points (0.6.0)
 
 Shelf Convert uses the same actual-source target intersection as the wheel, and exposes the same limitations above. Shelf Actions expose the existing seven actions without additional backends. New Shelf with Selection creates an independent reference collection. Conversion, Move, and ZIP use the shared serial queue; earlier published results remain available after failure/cancellation. Move can leave stale references on a shelf because the originals have moved; references are not silently replaced. See [Shelf workflow](Shelf-workflow.md).
+
+PDF raster output explicitly scales points to pixels at 300 DPI before applying page placement: the system drawing transform alone only scales down. Geometry uses the visible CropBox intersected with MediaBox, including nonzero origins and rotations. A four-page fixture checks JPG/PNG dimensions and colored content coverage; the original PDF from the owner's screenshot is unavailable, so that specific file remains unverified.
