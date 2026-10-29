@@ -10,6 +10,28 @@ The arm64 feature signed own-container archive passed. Seventeen real signed-fee
 
 Physical startup-dialog interaction, actual download/installation/relaunch, macOS 13, VoiceOver, and other-Mac checks remain deferred/unverified. Release work never installs/restarts either owner app copy or global npm.
 
+[Feature PR #37](https://github.com/StPashik/Yuzu-converter/pull/37) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40944698338) on the final feature commit. Both arm64 and native Intel ran 133 Swift tests, 24 Node tests, signed own-container Sandbox archives, and all 17 signed HTTP scenarios (four information checks plus thirteen startup/preference/choice cases), without skips or update downloads.
+
+| Final 0.7.1 / build 17 preparation | Recorded result |
+| --- | --- |
+| Archives | Both final ZIPs passed deep strict codesign, exact main/helper CPU slices, versions/resources/icons/notices, and signed own-container media/document/retry/move checks |
+| Compatibility | SDK 26+, minimum macOS 13, weak native-glass class imports on both main executables; local x64 execution uses Rosetta independently of native Intel CI |
+| Update behavior | All 17 real signed-feed HTTP scenarios passed against each final architecture fixture; saved checkbox choices, background silence, dismiss/skip/manual recovery, and no unauthorized archive request verified |
+| npm | Local ci with scripts disabled and 24 final Node tests passed; seven exact package files; both actual ZIPs installed/version/CPU/codesign-checked only in temporary homes, without UI launch |
+| Source/licenses | 24 corresponding-source/configuration files, four pinned upstream archives, both helper hashes/configurations, seven exact upstream media notices, and exact bundled Sparkle artifact licenses verified |
+| Signatures/notes | Both archive signatures independently verified with the embedded production key; exact reviewed English Markdown in both signed feeds; automatic checking enabled while automatic download/installation remains disallowed |
+| Frozen assets | Nine files; eight payload hashes in [Release-checksums-0.7.1.txt](Release-checksums-0.7.1.txt); legacy feeds held until asset publication |
+
+[Release PR #38](https://github.com/StPashik/Yuzu-converter/pull/38) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40947344569): each CPU ran 133 Swift tests, 24 Node tests, signed Sandbox archives, and all 17 real signed HTTP scenarios without skips or unauthorized downloads. Tag `v0.7.1` points to exact main merge `b53447376e8549f866446f1a9d08b7d3189c1de2`, whose tree matches the verified release head.
+
+The draft's exact English notes and all nine uploaded sizes/digests matched the frozen files before stable Latest publication. All nine public unauthenticated versioned downloads matched SHA-256. Both normal Latest feed URLs returned the exact signed Markdown XML. Twelve production-key Sparkle information checks passed across arm64/x64: simulated builds 7, 13, 14, 15, and 16 find build 17 and its notes; build 17 reports current. These probes did not download or install an update.
+
+Both legacy bridges are exact copies of those public signed feeds, prepared only after compatible assets became public. Their publication uses a separate PR without regenerating signatures/URLs or changing the application-release tag. Checking can now be automatic, but installation remains the owner's choice.
+
+[Legacy publication PR #39](https://github.com/StPashik/Yuzu-converter/pull/39) passed its [metadata-only CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40949888322); native jobs were correctly skipped for its exact two-feed/validation scope. Both ordinary `main/updates` URLs return byte-for-byte public signed 0.7.1 feeds. Twelve additional production-key Sparkle information checks passed across both CPUs and simulated builds 7, 13, 14, 15, 16, and 17. Combined with Latest checks, all 24 offer/current-version/Markdown checks passed without downloading or installing an update.
+
+The publication audit confirmed all 16 prior release records/assets and 32 prior annotated/peeled tag refs remain unchanged. The application tag still points to the original main release merge; the legacy merge is separate. Both main merge commits are retained when the release branch returns to develop.
+
 ## v0.7.0 — Document fidelity, local OCR, and video tracks
 
 **131 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed locally without skips. Local feature checks use the separate `.build/feature070-tests` scratch path and private temporary files with bundled media required. The styled XLSX fixture's rendered PDF was visually inspected: merged blue header, white bold title, source borders, date, currency, and percentage values. The new suite also covers row/column style defaults, both Excel date systems, large decimal precision, malformed overlapping merges, oversized merged-row/column-band pagination, five-language OCR, mixed text/scan PDFs, multipage oriented TIFF, blank/cancelled OCR, exact Save As, real multitrack media, subtitle text, languages, chapters, metadata removal, ASS styling warnings, default/forced flag comparisons, and retained queue warnings.
