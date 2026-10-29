@@ -14,6 +14,12 @@ final class ImageDrop {
     static let promiseContentType = NSPasteboard.PasteboardType("com.apple.pasteboard.promised-file-content-type")
     init(content: Content, name: String) { self.content = content; self.name = name }
     nonisolated static let maximumBytes = 32 * 1024 * 1024
+    var canRetryPreparation: Bool {
+        switch content {
+        case .data, .remote: return true
+        case .pasteboard, .promise: return false
+        }
+    }
     static let pasteboardTypes: [NSPasteboard.PasteboardType] = [.png, .tiff, .URL] + NSFilePromiseReceiver.readableDraggedTypes.map { NSPasteboard.PasteboardType(rawValue: $0) }
 
     static func read(_ board: NSPasteboard) -> ImageDrop? {
@@ -195,7 +201,15 @@ private final class ImageDownload: NSObject, URLSessionDataDelegate, @unchecked 
     }
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
                     completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-        guard let response = response as? HTTPURLResponse, response.statusCode == 200,
+        guard let response = response as? HTTPURLResponse else {
+            completionHandler(.cancel); finish(.failure(URLError(.badServerResponse))); return
+        }
+        guard response.statusCode == 200 else {
+            completionHandler(.cancel)
+            finish(.failure(URLError(.badServerResponse, userInfo: [NSLocalizedDescriptionKey: "The image server returned HTTP \(response.statusCode)."])))
+            return
+        }
+        guard
               response.expectedContentLength <= ImageDrop.maximumBytes,
               response.mimeType?.hasPrefix("image/") == true || response.mimeType == "application/octet-stream" else {
             completionHandler(.cancel); finish(.failure(ConversionError.failed("The URL did not return an image, or exceeds 32 MiB."))); return

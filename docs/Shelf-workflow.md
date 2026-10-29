@@ -22,7 +22,7 @@ Conversion, Move, and ZIP requests enter a serial queue and open **Operations**.
 | Cancelling… | The worker is cleaning up after cancellation |
 | Completed | Successful row, automatically removed after one second |
 | Cancelled | Retained until cleared; already published results remain |
-| Failed | Read the error; already published results remain |
+| Failed | Read the recovery suggestion, view Details, or Retry remaining inputs; published results remain |
 | Cancel / Cancel All | Cancel one request, or all running/waiting requests |
 | Clear Finished | Remove finished rows without deleting output files |
 
@@ -30,11 +30,11 @@ The window uses normal application ordering and a compact height for up to three
 
 The count measures completed input files, not elapsed time or encoding percentage. Conversion updates between files. There is no percentage bar or spinner: individual encoders and filesystem operations do not share a reliable intra-file measure. Status and completed-input counts remain visible. Move normalizes folders and children together; a later failure preserves earlier destinations. There is no rollback that deletes completed copies.
 
-An error does not block later requests. Cancellation stops subprocesses cooperatively and discards unfinished private staging. A large filesystem copy may need time before cancellation is observed. Check remaining inputs before submitting another request; automatic retry is not included.
+An error does not block later requests. Cancellation stops subprocesses cooperatively and discards unfinished private staging. A large filesystem copy may need time before cancellation is observed. Retry explicitly queues only remaining inputs after waiting work. It preserves existing outputs and the captured conversion options; the displayed count restarts for that attempt. ZIP and a combined image PDF retry as a whole when nothing was published. If a copy was published but source cleanup failed, inspect both copies; no duplicate copy is queued. Automatic retry is not included. See [Retry and reference recovery](Retry-and-references.md).
 
 ## Window and file lifetime
 
-Close or Escape hides either panel without stopping work. Reopening the shelf keeps references. Removing shelf rows does not revoke grants already retained by a wheel probe, job, or system Action. Moving an original can leave a stale shelf reference; its folder button explains an unavailable path.
+Close or Escape hides either panel without stopping work. Reopening the shelf keeps references. Removing shelf rows does not revoke grants already retained by a wheel probe, job, or system Action. Completed Yuzu moves update references and folder descendants on every shelf, including hidden collections. A copied item whose original could not be removed stays at its source reference. Missing or inaccessible originals show a search button for Locate Original; selecting a new file/folder changes only the reference. External moves are not automatically followed.
 
 Shelves and remaining queue history last for the current app session. Exiting cancels outstanding jobs and waits for cleanup. Saved output profiles and files remain; queue recovery after restart is not included.
 

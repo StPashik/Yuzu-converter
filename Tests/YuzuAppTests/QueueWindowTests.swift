@@ -5,12 +5,41 @@ import YuzuCore
 
 private actor WindowGate {
     private var resume: CheckedContinuation<Void, Never>?
+    private var attempts = 0
+    func nextAttempt() -> Int { attempts += 1; return attempts }
     func wait() async { await withCheckedContinuation { resume = $0 } }
     var isWaiting: Bool { resume != nil }
     func release() { resume?.resume(); resume = nil }
 }
 
 final class QueueWindowTests: XCTestCase {
+    @MainActor
+    func testRetryKeepsTheOnlyErrorWindowOpenWhileTheRequestRunsAgain() async throws {
+        _ = NSApplication.shared
+        let gate = WindowGate()
+        let queue = JobQueue { _, _ in
+            if await gate.nextAttempt() == 1 { throw CocoaError(.fileReadCorruptFile) }
+            await gate.wait()
+            try Task.checkCancellation()
+            return []
+        }
+        let controller = QueueWindowController(queue: queue)
+        defer { controller.close() }
+        let id = queue.enqueue(JobRequest(files: ScopedFiles([URL(fileURLWithPath: "/tmp/Retry.txt")]), kind: .compress, destinations: []))
+        controller.present()
+        await queue.waitForCurrentJob()
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertTrue(try XCTUnwrap(controller.window).isVisible)
+        XCTAssertTrue(queue.entries[0].canRetry)
+        queue.retry(id)
+        while !(await gate.isWaiting) { try await Task.sleep(for: .milliseconds(10)) }
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertTrue(try XCTUnwrap(controller.window).isVisible, "Retry must not emit a transient empty queue that closes its window")
+        queue.cancelAll()
+        await gate.release()
+        await queue.waitForCurrentJob()
+    }
+
     @MainActor
     private func render(_ controller: QueueWindowController, name: String) throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

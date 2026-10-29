@@ -222,3 +222,36 @@
 "Save Converted Image" = "Save Converted Image";
 "Choose where to save the converted image." = "Choose where to save the converted image.";
 "Choose a new filename. Existing files are never replaced." = "Choose a new filename. Existing files are never replaced.";
+
+/* Retry and shelf reference recovery */
+"Retry" = "Retry";
+"Details…" = "Details…";
+"Operation Details" = "Operation Details";
+"Close" = "Close";
+"Copy Details" = "Copy Details";
+"Copy Details includes the full diagnostic." = "Copy Details includes the full diagnostic.";
+"A file or folder is unavailable" = "A file or folder is unavailable";
+"Reconnect the drive or restore the original location. You can also submit the file from its new location." = "Reconnect the drive or restore the original location. You can also submit the file from its new location.";
+"Access is required" = "Access is required";
+"Check file permissions and folder access in Settings. Submit the files again if a new access grant is needed." = "Check file permissions and folder access in Settings. Submit the files again if a new access grant is needed.";
+"Not enough free space" = "Not enough free space";
+"Free space on the destination drive, then retry unfinished files." = "Free space on the destination drive, then retry unfinished files.";
+"The destination already exists" = "The destination already exists";
+"Rename or move the existing result before retrying, or choose a new filename. Existing files are never replaced." = "Rename or move the existing result before retrying, or choose a new filename. Existing files are never replaced.";
+"The source could not be read" = "The source could not be read";
+"Open the file in its original app and repair or replace it, then retry." = "Open the file in its original app and repair or replace it, then retry.";
+"The image could not be downloaded" = "The image could not be downloaded";
+"Check your connection or use another image link. A link that requires browser sign-in may need a fresh image drag." = "Check your connection or use another image link. A link that requires browser sign-in may need a fresh image drag.";
+"This operation is unavailable" = "This operation is unavailable";
+"Choose another format or destination. Details explain the current limitation." = "Choose another format or destination. Details explain the current limitation.";
+"The operation could not finish" = "The operation could not finish";
+"Check the source and destination, then retry unfinished files. Details include the original error." = "Check the source and destination, then retry unfinished files. Details include the original error.";
+"The image needs to be dragged again" = "The image needs to be dragged again";
+"The source app cannot replay this image promise. Drag the image again to make a new request." = "The source app cannot replay this image promise. Drag the image again to make a new request.";
+"Created results have been preserved" = "Created results have been preserved";
+"No inputs remain to retry. Check the source and created copies before removing anything." = "No inputs remain to retry. Check the source and created copies before removing anything.";
+"Locate Original" = "Locate Original";
+"Locate Original…" = "Locate Original…";
+"Choose the file or folder in its new location. Only the shelf reference will change." = "Choose the file or folder in its new location. Only the shelf reference will change.";
+"Use This Item" = "Use This Item";
+"File not found" = "File not found";

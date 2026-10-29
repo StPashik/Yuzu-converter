@@ -2,6 +2,16 @@
 
 Updated October 29, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.6.3 — Retry remaining inputs and repair shelf references
+
+Local Apple Silicon checks on October 29, 2026: **120 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Tests use the separate `.build/patch063-tests` scratch path and private temporary files. New five-language/light-dark Operations and missing-reference shelf renders were inspected; images use the opaque accessibility fallback.
+
+The new only-error-window test first failed: Retry removed the row before appending it, publishing an intermediate empty list that closed Operations. The fix reorders a local list and assigns one complete snapshot. The full 120-test pass includes that regression, FIFO/options retention, actual per-file destination retry without duplicate outputs, failed grant retention/clear, partial permission-failed Move, hidden shelves/children, queued/failed requests following known moves, collision naming, directory URL variants, visible deletion polling/reopen, and localized recovery families.
+
+Image fixtures verify a retained prepared promise is consumed only once, retry/clear cleanup, unavailable promise replay rejection, and an actual transient HTTP 503 followed by successful Retry. Public-copy cleanup failure is simulated at the executor boundary: the published copy is preserved, its input is not retried, and no source deletion is attempted. Core move fixtures separately exercise actual rename/no-op/copy callbacks, normalized directories, collisions and symlink-target exclusions.
+
+[Retry and reference recovery](Retry-and-references.md) records behavior and limits. Physical Finder/browser/Powerbox/Sandbox interoperability, VoiceOver, macOS 13, other-Mac appearance, and cross-volume devices remain deferred/unverified. Signed own-container archive/native CI evidence will be recorded separately. Installed owner app copies are not test targets.
+
 ## v0.6.2 — Drag workflow, compact operations, and table PDFs
 
 Local Apple Silicon checks on October 29, 2026: **103 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Final review additionally exercises optional/zero XLSX sizing hints. Tests run in project-specific scratch paths; installed owner app copies are not test targets.

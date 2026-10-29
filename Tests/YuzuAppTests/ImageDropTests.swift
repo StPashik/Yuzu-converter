@@ -17,11 +17,15 @@ private final class RasterProvider: NSObject, NSPasteboardItemDataProvider {
 
 private final class PromiseFixture: NSFilePromiseReceiver, @unchecked Sendable {
     let bytes: Data
+    private let lock = NSLock()
+    private var count = 0
+    var calls: Int { lock.lock(); defer { lock.unlock() }; return count }
     init(bytes: Data) { self.bytes = bytes; super.init() }
     required init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) { return nil }
     override var fileTypes: [String] { ["public.png"] }
     override func receivePromisedFiles(atDestination destinationDir: URL, options: [AnyHashable: Any] = [:],
         operationQueue: OperationQueue, reader: @escaping (URL, Error?) -> Void) {
+        lock.lock(); count += 1; lock.unlock()
         let data = bytes
         operationQueue.addOperation {
             let url = destinationDir.appendingPathComponent("Promised.png")
@@ -31,7 +35,17 @@ private final class PromiseFixture: NSFilePromiseReceiver, @unchecked Sendable {
     }
 }
 
+private actor PreparedImages {
+    var urls: [URL] = []
+    func record(_ update: QueueProgress) { if let url = update.preparedImage?.urls.first { urls.append(url) } }
+}
+
 final class ImageDropTests: XCTestCase {
+    @MainActor private func eventually(_ condition: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(5)
+        while !condition(), Date() < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertTrue(condition())
+    }
     private func png() throws -> Data {
         let context = try XCTUnwrap(CGContext(data: nil, width: 16, height: 24, bitsPerComponent: 8, bytesPerRow: 0,
             space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
@@ -162,7 +176,12 @@ final class ImageDropTests: XCTestCase {
 import base64, http.server, sys, time
 image = base64.b64decode(sys.argv[1])
 class Handler(http.server.BaseHTTPRequestHandler):
+    retry_requests = 0
     def do_GET(self):
+        if self.path == '/retry.png':
+            Handler.retry_requests += 1
+            if Handler.retry_requests == 1:
+                self.send_response(503); self.end_headers(); return
         if self.path == '/redirect.png':
             self.send_response(302); self.send_header('Location', 'file:///private/example.png'); self.end_headers(); return
         self.send_response(200)
@@ -199,6 +218,89 @@ server.serve_forever()
         cancelled.cancel()
         do { _ = try await cancelled.value; XCTFail("Expected cancelled image download") } catch is CancellationError {}
         catch { XCTAssertEqual((error as NSError).code, NSURLErrorCancelled) }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let destination = folder.appendingPathComponent("Retried.png")
+        let queue = JobQueue()
+        let id = queue.enqueue(JobRequest(files: ScopedFiles([]), kind: .importedImage(try image("retry.png"), .png), destinations: [destination]))
+        try await eventually { queue.isIdle }
+        XCTAssertEqual(queue.entries.first?.state, .failed)
+        XCTAssertEqual(queue.entries.first?.canRetry, true)
+        XCTAssertEqual(queue.entries.first?.recovery, .network)
+        queue.retry(id)
+        try await eventually { queue.isIdle }
+        XCTAssertEqual(queue.entries.first?.state, .completed)
+        XCTAssertEqual(try Data(contentsOf: destination).prefix(8), try png().prefix(8))
+    }
+
+    @MainActor
+    func testPromisedImageRetryUsesPreparedBytesWithoutConsumingThePromiseAgain() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let target = folder.appendingPathComponent("Chosen.png")
+        try Data("Keep existing".utf8).write(to: target)
+        let receiver = PromiseFixture(bytes: try png())
+        let image = ImageDrop(content: .promise(receiver), name: "Screenshot")
+        try image.accept()
+        let prepared = PreparedImages()
+        let queue = JobQueue(successRetention: .seconds(60)) { request, progress in
+            try await JobRequest.run(request) { update in await prepared.record(update); await progress(update) }
+        }
+        let id = queue.enqueue(JobRequest(files: ScopedFiles([]), kind: .importedImage(image, .png), destinations: [target]))
+        try await eventually { queue.isIdle }
+        XCTAssertEqual(queue.entries[0].state, .failed)
+        XCTAssertTrue(queue.entries[0].canRetry)
+        XCTAssertEqual(queue.entries[0].recovery, .exists)
+        let captured = await prepared.urls
+        let input = try XCTUnwrap(captured.first)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: input.path))
+        XCTAssertEqual(try String(contentsOf: target), "Keep existing")
+        try FileManager.default.removeItem(at: target)
+        queue.retry(id)
+        try await eventually { queue.isIdle && !FileManager.default.fileExists(atPath: input.path) }
+        XCTAssertEqual(queue.entries[0].state, .completed)
+        XCTAssertEqual(receiver.calls, 1)
+        let inputs = await prepared.urls
+        XCTAssertEqual(inputs, [input, input])
+        XCTAssertNotNil(CGImageSourceCreateWithURL(target as CFURL, nil))
+    }
+
+    @MainActor
+    func testClearingFailedImageRemovesItsPreparedTemporaryFile() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let target = folder.appendingPathComponent("Existing.png")
+        try Data("Keep existing".utf8).write(to: target)
+        let prepared = PreparedImages()
+        let queue = JobQueue { request, progress in
+            try await JobRequest.run(request) { update in await prepared.record(update); await progress(update) }
+        }
+        queue.enqueue(JobRequest(files: ScopedFiles([]), kind: .importedImage(ImageDrop(content: .data(try png()), name: "Image"), .png), destinations: [target]))
+        try await eventually { queue.isIdle }
+        let captured = await prepared.urls
+        let input = try XCTUnwrap(captured.first)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: input.path))
+        queue.clearFinished()
+        try await eventually { !FileManager.default.fileExists(atPath: input.path) }
+        XCTAssertEqual(try String(contentsOf: target), "Keep existing")
+    }
+
+    @MainActor
+    func testFailedUnmaterializedPromiseRequiresANewDragInsteadOfAFalseRetry() async throws {
+        let receiver = PromiseFixture(bytes: Data())
+        let queue = JobQueue()
+        let target = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
+        let id = queue.enqueue(JobRequest(files: ScopedFiles([]), kind: .importedImage(ImageDrop(content: .promise(receiver), name: "Image"), .png), destinations: [target]))
+        try await eventually { queue.isIdle }
+        XCTAssertEqual(queue.entries[0].state, .failed)
+        XCTAssertFalse(queue.entries[0].canRetry)
+        XCTAssertEqual(queue.entries[0].recovery, .newDrag)
+        queue.retry(id)
+        XCTAssertEqual(receiver.calls, 1)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: target.path))
     }
 
 }

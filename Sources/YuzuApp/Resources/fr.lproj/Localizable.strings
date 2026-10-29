@@ -222,3 +222,36 @@
 "Save Converted Image" = "Enregistrer l’image convertie";
 "Choose where to save the converted image." = "Choisissez où enregistrer l’image convertie.";
 "Choose a new filename. Existing files are never replaced." = "Choisissez un nouveau nom. Les fichiers existants ne sont jamais remplacés.";
+
+/* Retry and shelf reference recovery */
+"Retry" = "Réessayer";
+"Details…" = "Détails…";
+"Operation Details" = "Détails de l’opération";
+"Close" = "Fermer";
+"Copy Details" = "Copier les détails";
+"Copy Details includes the full diagnostic." = "« Copier les détails » copie le diagnostic complet.";
+"A file or folder is unavailable" = "Fichier ou dossier indisponible";
+"Reconnect the drive or restore the original location. You can also submit the file from its new location." = "Reconnectez le disque ou rétablissez l’emplacement d’origine. Vous pouvez aussi soumettre à nouveau le fichier depuis son nouvel emplacement.";
+"Access is required" = "Accès requis";
+"Check file permissions and folder access in Settings. Submit the files again if a new access grant is needed." = "Vérifiez les autorisations des fichiers et l’accès aux dossiers dans les réglages. Soumettez à nouveau les fichiers si une nouvelle autorisation est nécessaire.";
+"Not enough free space" = "Espace libre insuffisant";
+"Free space on the destination drive, then retry unfinished files." = "Libérez de l’espace sur le disque de destination, puis réessayez les fichiers restants.";
+"The destination already exists" = "La destination existe déjà";
+"Rename or move the existing result before retrying, or choose a new filename. Existing files are never replaced." = "Renommez ou déplacez le résultat existant avant de réessayer, ou choisissez un autre nom. Les fichiers existants ne sont jamais remplacés.";
+"The source could not be read" = "Impossible de lire le fichier source";
+"Open the file in its original app and repair or replace it, then retry." = "Ouvrez le fichier dans son application d’origine, réparez-le ou remplacez-le, puis réessayez.";
+"The image could not be downloaded" = "Impossible de télécharger l’image";
+"Check your connection or use another image link. A link that requires browser sign-in may need a fresh image drag." = "Vérifiez la connexion ou utilisez un autre lien d’image. Si une connexion dans le navigateur est requise, faites glisser à nouveau l’image.";
+"This operation is unavailable" = "Cette opération est indisponible";
+"Choose another format or destination. Details explain the current limitation." = "Choisissez un autre format ou une autre destination. Les détails expliquent la limite actuelle.";
+"The operation could not finish" = "L’opération n’a pas pu se terminer";
+"Check the source and destination, then retry unfinished files. Details include the original error." = "Vérifiez la source et la destination, puis réessayez les fichiers restants. Les détails contiennent l’erreur d’origine.";
+"The image needs to be dragged again" = "L’image doit être glissée à nouveau";
+"The source app cannot replay this image promise. Drag the image again to make a new request." = "L’application source ne peut pas fournir à nouveau cette image. Faites-la glisser à nouveau pour créer une nouvelle demande.";
+"Created results have been preserved" = "Les résultats créés ont été conservés";
+"No inputs remain to retry. Check the source and created copies before removing anything." = "Il ne reste aucun fichier à réessayer. Vérifiez les originaux et les copies créées avant de supprimer quoi que ce soit.";
+"Locate Original" = "Localiser l’original";
+"Locate Original…" = "Localiser l’original…";
+"Choose the file or folder in its new location. Only the shelf reference will change." = "Choisissez le fichier ou le dossier à son nouvel emplacement. Seule la référence dans l’étagère changera.";
+"Use This Item" = "Utiliser cet élément";
+"File not found" = "Fichier introuvable";

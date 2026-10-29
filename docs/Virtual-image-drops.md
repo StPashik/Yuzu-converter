@@ -17,3 +17,8 @@ A single virtual raster can save its original format too. Native ImageIO writers
 Apple's [NSFilePromiseReceiver documentation](https://developer.apple.com/documentation/appkit/nsfilepromisereceiver) and the shipped AppKit headers define receiving promises into a caller-selected directory. Chromium's [macOS pasteboard handling](https://raw.githubusercontent.com/chromium/chromium/main/content/browser/web_contents/web_drag_dest_mac.mm) records the dual file/promise representation of unsaved screenshots. These are format/contract references, not evidence of Yuzu interoperability with every browser. No Chromium application code was imported.
 
 `ImageDropTests` uses a private lazy pasteboard, a screenshot-style dual representation, a controlled promise receiver and a loopback HTTP fixture. It checks deferred provider access, cancellation, size/MIME/redirect/stream limits, cleanup and path containment. Physical Finder/Powerbox/browser workflows, VoiceOver, macOS 13 and macOS 26 Intel appearance remain deferred.
+
+
+## Retry lifetime
+
+A validated prepared image survives an encoding failure until Retry, Clear Finished, or session exit. Retry uses those same bytes and the exact chosen output path, without consuming a promise a second time. If preparation failed before usable bytes existed, a single-use promise needs a new drag. A URL can be fetched again without browser cookies, under the same bounds. Existing output names still fail safely; rename/move that result before retrying or start a new Save As request. Removing a failure or completing a retry releases the prepared temporary directory.
