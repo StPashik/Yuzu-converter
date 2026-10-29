@@ -25,6 +25,10 @@ Current previews show the real opaque fallback in both themes/five languages. Ph
 
 The reviewed draft's English body and nine uploaded sizes/digests matched the frozen files before stable Latest publication. All nine public versioned downloads matched SHA-256. Both Latest feed URLs returned the exact signed Markdown XML. Eight real production-key Sparkle information checks passed across arm64/x64: builds 7, 11, and 12 find build 13 and its Markdown notes; build 13 reports current. No update was downloaded or installed by these probes. Both legacy bridges are copied from those exact public signed feeds, preserving the application-release tag.
 
+[Legacy feed PR #23](https://github.com/StPashik/Yuzu-converter/pull/23) passed [metadata/feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40852795642), including nine Python and six Node release tests. Native jobs were correctly omitted for signed-feed/documentation-only changes. Both normal raw main/updates URLs then returned the exact signed release XML. Eight further production-key Sparkle checks passed with the same versions and Markdown assertions, for **16 information-only production checks** across both CPUs/channels in total. The v0.6.1 application tag remains unchanged.
+
+A final history audit preserved 12 earlier release records, all their asset IDs/digests/sizes, and all 12 earlier tag objects. The release branch carries main's application-release and feed-publication merge history back to develop. The owner installs personally; no owner installation, quit, or relaunch was performed.
+
 ## v0.6.0 — Shelf commands, operations, and shared glass
 
 Local checks on October 28, 2026, macOS 26.6.2 / Apple Silicon: **86 Swift tests**, **22 Node tests**, and **9 Python cache tests** passed, with no skips. Swift used the rebuilt bundled media tools with `YUZU_MEDIA_REQUIRED=1`. Both media architectures were rebuilt from the pinned source and final cache recipe. Verified local cache hits took 0.21 seconds (arm64) and 0.26 seconds (x64); these are local verification timings, not an end-to-end CI claim.
