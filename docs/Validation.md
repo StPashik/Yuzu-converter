@@ -31,6 +31,10 @@ The reviewed draft's English notes and nine uploaded asset sizes/digests matched
 
 Both legacy bridges are copied from those exact public signed feeds after their compatible assets are public; no signatures or archive URLs are regenerated. The application-release tag remains unchanged. Installed owner app copies are not release test targets.
 
+[Legacy feed PR #27](https://github.com/StPashik/Yuzu-converter/pull/27) passed [metadata/feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40866394899): nine Python tests, six Node release tests, and both signed-feed checks. Native matrix expansion was correctly skipped for only documentation/feed changes. Both normal raw main/updates URLs then returned the exact public signed XML. Eight further production-key Sparkle checks passed for the same old/current builds and Markdown notes across both CPUs, for **16 information-only production checks** in total. No owner installation or restart was performed.
+
+A history audit preserved all 13 earlier release records, all their asset IDs/digests/sizes, and all 13 earlier tag objects. The release branch includes main's application-release and legacy-publication merge history for the GitFlow merge-back into develop. New physical/other-device gates remain explicitly unverified.
+
 ## v0.6.1 — Shelf, queue, PDF, and update-note polish
 
 Local Apple Silicon checks on October 29, 2026: **90 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, using the bundled media tools with `YUZU_MEDIA_REQUIRED=1`. Final PDF assertions also check the rotated blue corner and full-page black coverage. The HTTP Sparkle fixture verified available/current/tampered/HTTP-500 behavior and parsed the expected native Markdown notes, without downloading or installing an update.
