@@ -1,6 +1,6 @@
 {
   "name": "@stpashik/yuzu-converter",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "description": "Install and launch the native Yuzu Converter menu bar app for macOS.",
   "license": "MIT",
   "repository": {
