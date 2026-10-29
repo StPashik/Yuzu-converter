@@ -139,18 +139,16 @@ enum NativeDocuments {
         return image
     }
 
-    /// Reads text/basic formatting, parses Markdown, or extracts an existing PDF text layer without OCR.
+    /// Reads text/basic formatting, parses Markdown, or extracts PDF text with local OCR for scanned pages.
     /// Rich documents pass through system textutil; this is content conversion, not a full layout-preserving import.
-    static func readText(_ source: SourceFile, scratch: URL) throws -> NSAttributedString {
+    static func readText(_ source: SourceFile, scratch: URL) async throws -> NSAttributedString {
         if source.format == .txt || source.format == .md {
             let text = try TextFile.read(source.url)
             if source.format == .md { return NSAttributedString(try AttributedString(markdown: text)) }
             return NSAttributedString(string: text, attributes: [.font: NSFont.systemFont(ofSize: 12)])
         }
         if source.format == .pdf {
-            // Export the existing text layer; scanned pages require an OCR engine.
-            guard let pdf = PDFDocument(url: source.url), !pdf.isLocked, let text = pdf.string else { throw ConversionError.invalid("The PDF has no accessible text layer.") }
-            return NSAttributedString(string: text)
+            return NSAttributedString(string: try await TextRecognition.pdf(source.url))
         }
         let output = scratch.appendingPathComponent("read.rtf")
         // HTML must not fetch external resources while a local document is being converted.

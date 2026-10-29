@@ -1,6 +1,6 @@
 # Bundled video conversion
 
-Current releases include FFmpeg and FFprobe for both Apple Silicon and Intel. Version 0.4.1 was Apple Silicon only; 0.4.2 restored Intel after native Intel CI and signed Sandbox checks passed. Version 0.6.3 retains the same media engines, codec policy, cache receipts, and portable build configurations. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
+Current releases include FFmpeg and FFprobe for both Apple Silicon and Intel. Version 0.4.1 was Apple Silicon only; 0.4.2 restored Intel after native Intel CI and signed Sandbox checks passed. Version 0.7.0 retains the same media engines, codec policy, cache receipts, and portable build configurations. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
 
 ## What appears in the wheel
 
@@ -8,11 +8,11 @@ Drop a supported MP4, MOV, MKV, WebM, AVI, or WMV file to convert to another of 
 
 AV1 software decoding is not included in this build. A native AVFoundation route, when available for the actual asset, depends on the Mac.
 
-Format names identify containers. The actual codec, damaged data, encryption/DRM, and unusual stream layouts can still prevent conversion. Preserve originals. FFmpeg exports select the first video stream and optional first audio stream; subtitles, attachments, and additional streams are not carried into these outputs. GIF is animated and silent. Its settings control frame rate and maximum width.
+Format names identify containers. The actual codec, damaged data, encryption/DRM, and unusual stream layouts can still prevent conversion. Preserve originals. Video exports explicitly select the first video stream, all audio streams, compatible embedded subtitles, and supported chapters. Omitted/simplified content produces a retained Operations warning. Attachments and additional video are omitted. See [Document and media fidelity](Document-and-media-fidelity.md) for exact subtitle/container mappings and limits. GIF is animated and silent. Its settings control frame rate and maximum width.
 
-Compatible MP4/MOV and PCM/M4A conversions retain the existing native engine. Yuzu can retry MP4/MOV through FFmpeg if VideoToolbox rejects the native export parameters; the same first-video/first-audio stream limits apply. The retry requires safe playback flags and an available encoder, removes only private partial output, and preserves cancellation and original files. Other media routes use the bundled FFmpeg. Native export retains its documented playback-volume and disabled-track policy. When macOS exposes disabled or non-unit-volume source tracks, FFmpeg routes are hidden rather than exposing muted or hidden content; native MP4/MOV routes may remain available. Playback flags in containers macOS cannot read are not independently reconstructed.
+PCM/M4A conversions retain the native engine. Videos with additional tracks/chapters use explicit FFmpeg mapping and output stream/chapter-count validation; simple compatible files retain native export. Compatible AV1 uses the system decoder, with warnings for inventory losses. Native MP4/MOV remains available for independently disabled tracks or modified playback gain that FFmpeg cannot safely reproduce; inventory differences produce warnings. Alternate-language MP4 groups are allowed because explicit default dispositions retain their selected track. Known independent hidden/muted content still blocks unsafe FFmpeg routes. Playback flags in containers macOS cannot read are not independently reconstructed. Metadata-off intentionally removes tags and chapters while preserving compatible audio/subtitle content. MP3 selects first audio; GIF is silent.
 
-FFmpeg encoding uses MPEG-4 Part 2/AAC for fallback MP4/MOV/MKV, MPEG-4 Part 2/MP3 for AVI, VP9/Opus for WebM, WMV2/WMAv2 for WMV, and LAME for MP3. Native MP4/MOV presets remain unchanged. Video outputs use opaque YUV pixels, so source transparency is not preserved. Encodes can be lossy. A filename extension is not a lossless-remux promise. Quality, metadata removal, maximum height, and GIF controls use the existing output-format profiles in [Settings](Settings.md).
+FFmpeg encoding uses MPEG-4 Part 2/AAC for MP4/MOV/MKV, MPEG-4 Part 2/MP3 for AVI, VP9/Opus for WebM, WMV2/WMAv2 for WMV, and LAME for MP3. Native playback fallback uses the system quality presets. Video outputs use opaque YUV pixels, so source transparency is not preserved. Encodes can be lossy. A filename extension is not a lossless-remux promise. Quality, metadata removal, maximum height, and GIF controls use the existing output-format profiles in [Settings](Settings.md).
 
 ## Process and file safety
 
@@ -20,7 +20,7 @@ The app resolves only its own `Contents/Helpers/ffmpeg` and `ffprobe` in a packa
 
 The parent opens source and private output files while retaining their grants. Helpers receive seekable descriptors on stdin/stdout through FFmpeg's `fd:` protocol. They do not reopen user-selected paths. This avoids depending on inheritance of grants obtained after launch. Runtime conversion/probing accepts only the `fd` protocol; the build has no network protocols or physical capture/output devices. The internal filter input is enabled for automated fixture generation.
 
-Outputs are written exclusively into private staging, validated, and published under an available name. Existing files and originals are preserved. Cancellation terminates the child and discards partial staging. Media encodes can exceed five minutes and run until completion or cancellation; interactive stream probes stop after 15 seconds. Physical Finder/Powerbox integration is still a separate, unverified gate.
+Outputs are written exclusively into private staging, validated, and published under an available name. Existing files and originals are preserved. Cancellation terminates the child and discards partial staging. Media encodes can exceed five minutes and run until completion or cancellation; interactive first-audio probes stop after 15 seconds; full track inventories stop after 30 seconds and accept at most 128 streams. Physical Finder/Powerbox integration is still a separate, unverified gate.
 
 ## Versions, licenses, and source
 

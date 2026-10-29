@@ -36,12 +36,12 @@ public struct ConversionEngine: Sendable {
 
     /// Virtual drops can also save their original format; all offered writers are native and checked at runtime.
     public static var imageDropTargets: [FileFormat] {
-        [.png, .jpg, .tiff, .heic, .bmp, .webp, .avif, .pdf].filter { $0 == .pdf || $0.imageType.map { imageWriters.contains($0) } == true }
+        [.png, .jpg, .tiff, .heic, .bmp, .webp, .avif, .pdf, .txt].filter { $0 == .txt || $0 == .pdf || $0.imageType.map { imageWriters.contains($0) } == true }
     }
 
     /// Save Panel grants an exact file, not its parent: stage through Foundation's same-volume replacement directory.
     public func saveDroppedImage(_ source: URL, to target: FileFormat, destination: URL,
-                                 options: ConversionOptions = .init()) throws -> URL {
+                                 options: ConversionOptions = .init()) async throws -> URL {
         guard destination.isFileURL, Self.imageDropTargets.contains(target) else { throw ConversionError.unsupported("Unsupported image destination.") }
         try options.validate(for: target)
         try Task.checkCancellation()
@@ -49,7 +49,8 @@ public struct ConversionEngine: Sendable {
                                                   appropriateFor: destination, create: true)
         defer { try? FileManager.default.removeItem(at: scratch) }
         let staged = scratch.appendingPathComponent("result." + target.fileExtension)
-        try NativeDocuments.image(source, to: target, output: staged, options: options)
+        if target == .txt { try await TextRecognition.image(source).write(to: staged, atomically: false, encoding: .utf8) }
+        else { try NativeDocuments.image(source, to: target, output: staged, options: options) }
         try validate(staged, format: target)
         try Task.checkCancellation()
         // Exact-path publication cannot try sibling suffixes outside the Save Panel grant.
@@ -77,7 +78,8 @@ public struct ConversionEngine: Sendable {
     /// Cancellation is cooperative between chunks/pages/stages and terminates active child-process exports.
     /// Failure or cancellation before publication discards private staging rather than publishing partial results.
     public func convert(_ source: SourceFile, to target: FileFormat, in directory: URL,
-                        options: ConversionOptions = .init()) async throws -> [URL] {
+                        options: ConversionOptions = .init(),
+                        onWarning: @Sendable ([String]) async -> Void = { _ in }) async throws -> [URL] {
         try Task.checkCancellation()
         try options.validate(for: target)
         let current = try SourceFile(url: source.url)
@@ -87,17 +89,35 @@ public struct ConversionEngine: Sendable {
         defer { try? FileManager.default.removeItem(at: scratch) }
         let output = scratch.appendingPathComponent("result." + target.fileExtension)
         var multiple: [URL] = []
+        var warnings: [String] = []
         let stem = source.url.deletingPathExtension().lastPathComponent
 
         if source.format == .pdf, target == .jpg || target == .png {
             multiple = try NativeDocuments.pdfPages(source.url, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true), options: options)
         } else if source.format.category == "Images" {
-            if target == .pdf || (target.imageType.map { Self.imageWriters.contains($0) } ?? false) {
+            if target == .txt { try await TextRecognition.image(source.url).write(to: output, atomically: false, encoding: .utf8) }
+            else if target == .pdf || (target.imageType.map { Self.imageWriters.contains($0) } ?? false) {
                 try NativeDocuments.image(source.url, to: target, output: output, options: options)
             } else { try media(source, to: target, output: output, options: options) }
         } else if source.format.category == "Audio" || source.format.category == "Video" {
-            // Keep existing native export semantics (including PCM precision and playback gain) when supported.
-            if NativeMedia.supports(source, to: target) {
+            var inventory: MediaTracks?
+            if source.format.category == "Video", source.format != .gif, [.mp4, .mov, .mkv, .webm, .avi, .wmv].contains(target), let probe = tools.ffprobe {
+                inventory = try MediaTracks(url: source.url, probe: probe)
+            }
+            let native = NativeMedia.supports(source, to: target)
+            let safePlayback = NativeMedia.supportsFFmpegPlayback(source)
+            // Keep native decoders/quality for simple files, and hardware-dependent AV1 that our FFmpeg cannot decode.
+            var nativeVideo = source.format.category == "Video" && native && (inventory.map {
+                !$0.needsExplicitMapping || $0.streams.first(where: { $0.codec_type == "video" })?.codec_name == "av1" || !safePlayback
+            } ?? true)
+            if let tracks = inventory, !nativeVideo, let probe = tools.ffprobe, tools.ffmpeg != nil, safePlayback {
+                let plan = tracks.plan(target: target, preserveMetadata: options.preserveMetadata)
+                try media(source, to: target, output: output, options: options, trackArguments: plan.arguments)
+                warnings += try tracks.validate(output, probe: probe, plan: plan)
+                warnings += plan.warnings
+            }
+            // Keep native playback semantics for disabled/muted tracks that FFmpeg cannot represent safely.
+            else if native {
                 do { try await NativeMedia.convert(source, to: target, output: output, options: options) }
                 catch {
                     try Task.checkCancellation()
@@ -107,9 +127,22 @@ public struct ConversionEngine: Sendable {
                           NativeMedia.supportsFFmpegPlayback(source) else { throw error }
                     if FileManager.default.fileExists(atPath: output.path) { try FileManager.default.removeItem(at: output) }
                     try media(source, to: target, output: output, options: options)
+                    nativeVideo = false
                 }
             }
             else { try media(source, to: target, output: output, options: options) }
+            if nativeVideo, let original = inventory, let probe = tools.ffprobe {
+                let result = try MediaTracks(url: output, probe: probe)
+                if result.streams.filter({ $0.codec_type == "audio" }).count < original.streams.filter({ $0.codec_type == "audio" }).count {
+                    warnings.append("The system exporter combined audio tracks to preserve the source playback gain and disabled-track settings. Separate tracks remain in the original file.")
+                }
+                if result.streams.filter({ $0.codec_type == "subtitle" }).count < original.streams.filter({ $0.codec_type == "subtitle" }).count {
+                    warnings.append("The system exporter could not retain every subtitle track. They remain in the original file.")
+                }
+                if options.preserveMetadata, result.chapterCount < original.chapterCount {
+                    warnings.append("The system exporter could not retain every chapter. They remain in the original file.")
+                }
+            }
         } else if source.format.category == "Subtitles" {
             let cues = try Subtitles.parse(TextFile.read(source.url), format: source.format)
             try Subtitles.write(cues, format: target).write(to: output, atomically: false, encoding: .utf8)
@@ -149,7 +182,7 @@ public struct ConversionEngine: Sendable {
             if target == .jpg || target == .png { multiple = try NativeDocuments.pdfPages(converted, to: target, directory: scratch.appendingPathComponent("pages", isDirectory: true), options: options) }
             else { try FileManager.default.moveItem(at: converted, to: output) }
         } else {
-            let text = source.format == .epub ? try EPUB.read(source.url, scratch: scratch) : try NativeDocuments.readText(source, scratch: scratch)
+            let text = source.format == .epub ? try EPUB.read(source.url, scratch: scratch) : try await NativeDocuments.readText(source, scratch: scratch)
             if target == .epub { try EPUB.write(text, title: stem, output: output, scratch: scratch, version: options.epubReflowVersion) }
             else if target == .jpg || target == .png {
                 let pdf = scratch.appendingPathComponent("document.pdf")
@@ -167,7 +200,9 @@ public struct ConversionEngine: Sendable {
             return multiple.map { published.appendingPathComponent($0.lastPathComponent) }
         }
         try validate(output, format: target)
-        return [try FileOperations.publish(output, named: stem + "." + target.fileExtension, in: directory)]
+        let published = try FileOperations.publish(output, named: stem + "." + target.fileExtension, in: directory)
+        if !warnings.isEmpty { await onWarning(warnings) }
+        return [published]
     }
 
     // Exit status alone is insufficient: reopen the result to catch empty files or a wrong container.
@@ -203,7 +238,7 @@ public struct ConversionEngine: Sendable {
         guard source != target, candidates(source).contains(target) else { return false }
         switch source.category {
         case "Images":
-            return target == .pdf || target.imageType.map { Self.imageWriters.contains($0) } == true || (target == .webp && encoder("libwebp")) || (target == .avif && encoder("libaom-av1"))
+            return target == .txt || target == .pdf || target.imageType.map { Self.imageWriters.contains($0) } == true || (target == .webp && encoder("libwebp")) || (target == .avif && encoder("libaom-av1"))
         case "Audio", "Video":
             guard tools.ffmpeg != nil else { return false }
             if let audio = Self.audioEncoders[target] { return encoder(audio) }
@@ -223,7 +258,8 @@ public struct ConversionEngine: Sendable {
     // Keep route ordering separate from runtime checks; listing a candidate must not bypass availability gates.
     private func candidates(_ source: FileFormat) -> [FileFormat] {
         switch source {
-        case .jpg, .png, .webp, .heic, .tiff, .svg, .avif, .bmp: return [.jpg, .png, .webp, .heic, .tiff, .avif, .bmp, .pdf]
+        case .jpg, .png, .webp, .heic, .tiff, .avif, .bmp: return [.jpg, .png, .webp, .heic, .tiff, .avif, .bmp, .pdf, .txt]
+        case .svg: return [.jpg, .png, .webp, .heic, .tiff, .avif, .bmp, .pdf]
         case .mp3, .m4a, .wav, .flac, .ogg, .opus, .aiff, .wma: return [.mp3, .m4a, .wav, .flac, .ogg, .opus, .aiff, .wma]
         case .mp4, .mov, .mkv, .webm, .avi, .wmv: return [.mp4, .mov, .mkv, .webm, .avi, .wmv, .gif, .mp3]
         case .gif: return [.mp4, .mov, .mkv, .webm, .avi, .wmv]
@@ -247,7 +283,7 @@ public struct ConversionEngine: Sendable {
         .webm: "webm", .avi: "avi", .wmv: "asf", .gif: "gif", .mp3: "mp3", .m4a: "ipod",
         .wav: "wav", .flac: "flac", .ogg: "ogg", .opus: "opus", .aiff: "aiff", .wma: "asf",
         .webp: "webp", .avif: "avif"]
-    private func media(_ source: SourceFile, to target: FileFormat, output: URL, options: ConversionOptions) throws {
+    private func media(_ source: SourceFile, to target: FileFormat, output: URL, options: ConversionOptions, trackArguments: [String]? = nil) throws {
         guard let ffmpeg = tools.ffmpeg else { throw ConversionError.unsupported("FFmpeg was not found.") }
         guard let muxer = Self.mediaMuxers[target] else { throw ConversionError.unsupported("No media muxer for \(target.label).") }
         // fd: preserves seeking for MOV/MP4 without giving the helper arbitrary path or network access.
@@ -289,7 +325,7 @@ public struct ConversionEngine: Sendable {
             arguments += ["-c:v", target == .wmv ? "wmv2" : "mpeg4", "-q:v", options.quality == .compact ? "8" : options.quality == .balanced ? "3" : "1", "-pix_fmt", "yuv420p", "-vf", scale, "-c:a", target == .wmv ? "wmav2" : target == .avi ? "libmp3lame" : "aac"]
         }
         if source.format.category == "Video", target != .gif, Self.audioEncoders[target] == nil {
-            arguments += ["-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn"]
+            arguments += trackArguments ?? ["-map", "0:v:0", "-map", "0:a:0?", "-sn", "-dn"]
         }
         arguments += ["-f", muxer, "fd:"]
         // Real videos can take longer than a probe's five-minute limit; user cancellation still stops the child.

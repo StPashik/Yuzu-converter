@@ -1,16 +1,19 @@
 import Foundation
 
-/// Cell values plus PDF sizing hints; cached formula results are never recalculated.
+/// Raw cell values plus print-only style/layout hints; cached formula results are never recalculated.
 struct TableSheet {
     let name: String
     let rows: [[String]]
     var columnWidths: [Int: Double] = [:]
     var rowHeights: [Int: Double] = [:]
+    var printStyles: [Int: [Int: TableCellStyle]] = [:]
+    var displayValues: [Int: [Int: String]] = [:]
+    var merges: [TableMerge] = []
     var uncachedFormulas: [Int: [Int: String]] = [:]
 }
 
 /// Reads/writes CSV, TSV, and minimal editable XLSX/ODS packages without an Office runtime.
-/// All sheets are retained; full Excel styles, charts, and formula calculation remain outside this model.
+/// All sheets are retained; print styles do not imply editable style round-tripping or formula calculation.
 enum Spreadsheet {
     private static let tableNamespace = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
     private static let officeNamespace = "urn:oasis:names:tc:opendocument:xmlns:office:1.0"
@@ -66,13 +69,23 @@ enum Spreadsheet {
         let relationships = try XMLTree.read(root.appendingPathComponent("xl/_rels/workbook.xml.rels"))
         let sheets = workbook.descendants("sheet", namespace: spreadsheetNamespace)
         guard !sheets.isEmpty else { throw ConversionError.invalid("The XLSX file has no sheets or uses an unsupported XML namespace.") }
+        let styles = try SpreadsheetStyles(root: root)
+        let date1904 = ["1", "true"].contains(workbook.descendants("workbookPr", namespace: spreadsheetNamespace).first?.attributes["date1904"] ?? "")
         return try sheets.map { sheet in
             guard let relation = relationships.descendants("Relationship", namespace: relationshipsNamespace).first(where: { $0.attributes["Id"] == sheet.attribute("id", namespace: documentRelationshipsNamespace) }),
                   let path = relation.attributes["Target"], !path.contains(".."), !path.contains(":") else { throw ConversionError.invalid("Invalid XLSX sheet path.") }
             let sheetURL = path.hasPrefix("/") ? root.appendingPathComponent(String(path.dropFirst())) : root.appendingPathComponent("xl/" + path)
             let xml = try XMLTree.read(sheetURL)
             var rows: [[String]] = []
+            var printStyles: [Int: [Int: TableCellStyle]] = [:]
+            var displayValues: [Int: [Int: String]] = [:]
             var uncachedFormulas: [Int: [Int: String]] = [:]
+            var columnStyles: [Int: String] = [:]
+            for col in xml.descendants("col", namespace: spreadsheetNamespace) where col.attributes["style"] != nil {
+                guard let first = Int(col.attributes["min"] ?? ""), let last = Int(col.attributes["max"] ?? ""),
+                      first > 0, last >= first, last <= 16_384 else { throw ConversionError.invalid("Invalid XLSX styled columns.") }
+                for index in first...last { columnStyles[index - 1] = col.attributes["style"] }
+            }
             for row in xml.descendants("row", namespace: spreadsheetNamespace) {
                 let number = Int(row.attributes["r"] ?? "\(rows.count + 1)") ?? 0
                 guard number > 0, number <= 100_000 else { throw ConversionError.invalid("Invalid XLSX row number.") }
@@ -87,6 +100,11 @@ enum Spreadsheet {
                     }
                     guard column > 0, column <= 16_384, number * column <= 1_000_000 else { throw ConversionError.invalid("The XLSX spreadsheet is too large.") }
                     while rows[number - 1].count < column { rows[number - 1].append("") }
+                    let styleID = cell.attributes["s"] ?? row.attributes["s"] ?? columnStyles[column - 1]
+                    if let id = Int(styleID ?? "0"), styles.cells.indices.contains(id) {
+                        let style = styles.cells[id]
+                        printStyles[number - 1, default: [:]][column - 1] = style
+                    } else if styleID != nil && styleID != "0" { throw ConversionError.invalid("Invalid XLSX cell style.") }
                     let value = cell.children.first(where: { $0.name == "v" && $0.namespace == spreadsheetNamespace })?.textContent ?? ""
                     if cell.attributes["t"] == "s" {
                         guard let index = Int(value), shared.indices.contains(index) else { throw ConversionError.invalid("Invalid XLSX shared string reference.") }
@@ -97,10 +115,41 @@ enum Spreadsheet {
                         rows[number - 1][column - 1] = value
                         if value.isEmpty, let formula { uncachedFormulas[number - 1, default: [:]][column - 1] = formula }
                     }
+                    if cell.attributes["t"] == nil || cell.attributes["t"] == "n" {
+                        let style = printStyles[number - 1]?[column - 1] ?? TableCellStyle()
+                        displayValues[number - 1, default: [:]][column - 1] = ExcelNumberFormat.display(value, format: style.numberFormat, date1904: date1904)
+                    } else if cell.attributes["t"] == "b" {
+                        displayValues[number - 1, default: [:]][column - 1] = value == "1" ? "TRUE" : "FALSE"
+                    }
                 }
             }
             var table = TableSheet(name: sheet.attributes["name"] ?? "Sheet", rows: rows)
             table.uncachedFormulas = uncachedFormulas
+            table.printStyles = printStyles
+            table.displayValues = displayValues
+            var mergedCells = Set<Int>()
+            func position(_ raw: Substring) throws -> (Int, Int) {
+                let letters = raw.prefix { $0.isASCII && $0.isLetter }
+                var col = 0
+                for byte in letters.uppercased().utf8 {
+                    guard col < 16_384 else { throw ConversionError.invalid("Invalid XLSX merged range.") }
+                    col = col * 26 + Int(byte - 64)
+                }
+                guard let row = Int(raw.dropFirst(letters.count)), row > 0, row <= 100_000, col > 0, col <= 16_384, row * col <= 1_000_000 else {
+                    throw ConversionError.invalid("Invalid XLSX merged range.")
+                }
+                return (row - 1, col - 1)
+            }
+            for node in xml.descendants("mergeCell", namespace: spreadsheetNamespace) {
+                let range = (node.attributes["ref"] ?? "").split(separator: ":")
+                guard range.count == 2 else { throw ConversionError.invalid("Invalid XLSX merged range.") }
+                let (firstRow, firstCol) = try position(range[0]), (lastRow, lastCol) = try position(range[1])
+                guard lastRow >= firstRow, lastCol >= firstCol else { throw ConversionError.invalid("Invalid XLSX merged range.") }
+                for row in firstRow...lastRow { for col in firstCol...lastCol {
+                    guard mergedCells.insert(row * 16_384 + col).inserted else { throw ConversionError.invalid("Overlapping XLSX merged cells.") }
+                } }
+                table.merges.append(TableMerge(rows: firstRow...lastRow, columns: firstCol...lastCol))
+            }
             for col in xml.descendants("col", namespace: spreadsheetNamespace) {
                 // A column may carry only a style/hidden flag; its optional width is a separate hint.
                 guard col.attributes["width"] != nil else { continue }

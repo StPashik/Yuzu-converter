@@ -255,3 +255,5 @@
 "Choose the file or folder in its new location. Only the shelf reference will change." = "Elige el archivo o la carpeta en su nueva ubicación. Solo cambiará la referencia en la bandeja.";
 "Use This Item" = "Usar este elemento";
 "File not found" = "Archivo no encontrado";
+
+"Some video content could not be retained. See Details." = "No se pudo conservar parte del contenido del vídeo. Consulta los detalles.";
