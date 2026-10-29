@@ -85,7 +85,7 @@ The minus button forgets future access without deleting files or interrupting ac
 
 ## About
 
-About shows the app icon/version, documentation, releases, and the shared **Check for Updates…** control. Updates stay manual and wait for queued file operations before restarting. Yuzu adds no trial counter, account, purchase, or restore-purchase interface.
+About shows the app icon/version, documentation, releases, and the shared **Check for Updates…** control. The automatic-checking checkbox defaults on; downloading/installing stays user-confirmed and waits for queued file operations before restarting. Yuzu adds no trial counter, account, purchase, or restore-purchase interface.
 
 ## Developer notes and evidence
 
@@ -94,3 +94,7 @@ About shows the app icon/version, documentation, releases, and the shared **Chec
 [Tangerine-settings.md](Tangerine-settings.md) separates the five observed pages and static field names from unverified proprietary behavior. No Tangerine source, artwork, sounds, binaries, grants, or settings are distributed. Native render tests cover the five tabs, five languages, both appearances, and the relevant format editors; [Validation.md](Validation.md) records actual run results and open physical checks.
 
 OCR uses automatic local recognition without an additional settings panel. Video content-loss warnings remain in Operations with copyable Details. [Document and media fidelity](Document-and-media-fidelity.md) describes print styling, recognition, and per-container track limits.
+
+## Automatic update checks (0.7.1)
+
+In **About**, **Check for updates automatically** enables checking at launch and about once daily. It defaults on, persists across relaunches, and does not permit automatic downloads or installation. When off, **Check for Updates…** still works. Install Update requires consent; Remind Me Later or closing the offer defers it, while Skip This Version hides that version until a manual check or a newer release. See [Updates](Updates.md).

@@ -4,7 +4,7 @@ Normal versions are stable GitHub **Latest** releases. Use prerelease status onl
 
 Version 0.4.1 was Apple Silicon only. Version 0.4.2 restores separate arm64/x64 releases after native Intel CI and signed Sandbox verification passed. Both native architectures are required release gates. Advance each legacy feed only after the compatible new archive is public; published tags/assets remain immutable and Intel clients must never receive an arm64 archive.
 
-The owner updates the installed app personally through **Check for Updates…**. Release work must leave `/Applications`, `~/Applications`, the global npm installation, and the running app alone. Test downloads, installs, and restarts only in isolated fixtures. Do not run a global installer or quit/relaunch the owner's app as a release step.
+The owner installs updates personally from an update offer or **Check for Updates…**; automatic checking does not authorize downloading or installing. Release work must leave `/Applications`, `~/Applications`, the global npm installation, and the running app alone. Test downloads, installs, and restarts only in isolated fixtures. Do not run a global installer or quit/relaunch the owner's app as a release step.
 
 ## PR and release sequence
 
