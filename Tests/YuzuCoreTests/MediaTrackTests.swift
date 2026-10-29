@@ -65,6 +65,18 @@ final class MediaTrackTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: input), original)
     }
 
+    func testSoleAudioDefaultFlagDoesNotLeaveAFalseContentLossWarning() async throws {
+        let (ffmpeg, _) = try tools()
+        let original = try fixture(ffmpeg)
+        let single = directory.appendingPathComponent("Single.mkv")
+        _ = try ProcessRunner.checked(ffmpeg, ["-v", "error", "-i", original.path, "-map", "0:v:0", "-map", "0:a:0", "-map_chapters", "-1", "-c", "copy", single.path])
+        let warnings = TrackWarnings()
+        _ = try await ConversionEngine().convert(SourceFile(url: single), to: .avi, in: directory,
+            onWarning: { await warnings.append($0) })
+        let messages = await warnings.values
+        XCTAssertTrue(messages.isEmpty, messages.joined(separator: "\n"))
+    }
+
     func testASSConversionProducesAnExplicitStylingWarning() async throws {
         let (ffmpeg, probe) = try tools()
         let source = try fixture(ffmpeg)

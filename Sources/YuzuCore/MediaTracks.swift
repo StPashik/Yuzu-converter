@@ -93,8 +93,10 @@ struct MediaTracks {
             let expected = kind == "audio" ? streams.filter { $0.codec_type == kind } : plan.subtitleTracks
             let actual = result.streams.filter { $0.codec_type == kind }
             for (index, pair) in zip(expected, actual).enumerated() {
-                let flags = Set((pair.0.disposition ?? [:]).filter { $0.value == 1 }.map(\.key))
-                let kept = Set((pair.1.disposition ?? [:]).filter { $0.value == 1 }.map(\.key))
+                var flags = Set((pair.0.disposition ?? [:]).filter { $0.value == 1 }.map(\.key))
+                var kept = Set((pair.1.disposition ?? [:]).filter { $0.value == 1 }.map(\.key))
+                // A sole audio track needs no default flag to select it; do not retain a misleading warning.
+                if kind == "audio", expected.count == 1 { flags.remove("default"); kept.remove("default") }
                 if flags != kept {
                     warnings.append("The output container changed playback flags for \(kind) track \(index + 1) (source: \(flags.sorted().joined(separator: ", ")); output: \(kept.sorted().joined(separator: ", "))). Check the default/forced track selection in your player.")
                 }
