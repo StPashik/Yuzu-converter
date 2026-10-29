@@ -47,6 +47,7 @@ for arch, cpu in [("arm64", "arm64"), ("x64", "x86_64")]:
         assert plist["SUFeedURL"] == f"https://github.com/StPashik/Yuzu-converter/releases/latest/download/appcast-{arch}.xml"
         for setting in ["SUEnableAutomaticChecks", "SUAutomaticallyUpdate", "SUAllowsAutomaticUpdates", "SUEnableSystemProfiling"]:
             assert plist[setting] is False, setting
+        assert plist["SUShowReleaseNotes"] is True
         assert plist["SUVerifyUpdateBeforeExtraction"] is True and plist["SURequireSignedFeed"] is True
         run(["/usr/bin/codesign", "--verify", "--deep", "--strict", app])
         app_signature = run(["/usr/bin/codesign", "-d", "--entitlements", ":-", app])

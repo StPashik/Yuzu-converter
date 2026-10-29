@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createHash, createPublicKey, verify } from 'node:crypto';
 import { packageInfo, releaseInfo, repository, validateRelease } from '../npm/validate-release.mjs';
+import { releaseNotesDescription } from './update-notes.mjs';
 
 const run = promisify(execFile);
 const directory = resolve(process.argv[2] ?? 'dist');
@@ -17,6 +18,7 @@ if (publicBytes.length !== 32) throw new Error('A valid Sparkle public key is re
 // Node expects SPKI metadata around the raw Ed25519 key stored in Info.plist.
 const key = createPublicKey({ key: Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), publicBytes]), type: 'spki', format: 'der' });
 validateRelease(releaseInfo);
+const notes = releaseNotesDescription(await readFile(`docs/Release-notes-${packageInfo.version}.md`, 'utf8'), packageInfo.version);
 await mkdir(directory, { recursive: true });
 
 for (const arch of packageInfo.cpu) {
@@ -39,7 +41,7 @@ for (const arch of packageInfo.cpu) {
       <sparkle:version>${build}</sparkle:version>
       <sparkle:shortVersionString>${packageInfo.version}</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description><![CDATA[<p>Yuzu Converter ${packageInfo.version} is ready to install.</p><p><a href="${releaseURL}">Read the release notes on GitHub</a>.</p>]]></description>
+      ${notes}
       <enclosure url="${url}" sparkle:edSignature="${signature}" length="${(await stat(path)).size}" type="application/octet-stream"/>
     </item>
   </channel>

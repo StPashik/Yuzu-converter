@@ -2,6 +2,14 @@ import AppKit
 import XCTest
 @testable import YuzuApp
 
+// Accessed only by the main-actor test and its synchronous highlight callback.
+private final class FeedbackSound: NSSound, @unchecked Sendable {
+    var starts = 0
+    var stops = 0
+    override func play() -> Bool { starts += 1; return true }
+    override func stop() -> Bool { stops += 1; return true }
+}
+
 final class WheelTests: XCTestCase {
     @MainActor
     func testYuzuPetalsShareRoundedHitRegionsAndSelectionKeepsReadableLabels() throws {
@@ -26,6 +34,37 @@ final class WheelTests: XCTestCase {
         let corner = CGPoint(x: center.x + cos(.pi / 3 + 0.035) * 143,
                              y: center.y + sin(.pi / 3 + 0.035) * 143)
         XCTAssertNil(WheelGeometry.selection(at: corner, count: 6, center: center))
+    }
+
+    @MainActor
+    func testRapidPetalChangesRestartSoundAndRespectTheFeedbackSetting() throws {
+        _ = NSApplication.shared
+        let domain = "WheelFeedbackTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let settings = Settings(defaults: defaults)
+        let sound = try XCTUnwrap(FeedbackSound(contentsOf: URL(fileURLWithPath: "/System/Library/Sounds/Tink.aiff"), byReference: false))
+        let monitor = WheelMonitor(settings: settings, feedbackSound: sound)
+        monitor.arm(.actions)
+        defer { monitor.dismiss() }
+        let view = try XCTUnwrap(NSApp.windows.compactMap { $0.contentView as? WheelDragView }.first)
+        let drag = DragFixture()
+        defer { drag.draggingPasteboard.releaseGlobally() }
+        view.onSources = { _, view in view.options = FileAction.allCases.map(WheelOption.action) }
+        XCTAssertEqual(view.draggingEntered(drag), .copy)
+        settings.soundsAndHapticsEnabled = true
+        for index in [0, 1, 2, 0] {
+            let angle = WheelGeometry.angle(index, count: 7)
+            drag.draggingLocation = NSPoint(x: 160 + cos(angle) * 104, y: 160 + sin(angle) * 104)
+            XCTAssertEqual(view.draggingUpdated(drag), .copy)
+            // Staying inside one petal must not repeat feedback.
+            XCTAssertEqual(view.draggingUpdated(drag), .copy)
+        }
+        XCTAssertEqual(sound.starts, 4)
+        XCTAssertEqual(sound.stops, 4)
+        settings.soundsAndHapticsEnabled = false
+        view.onHighlight?()
+        XCTAssertEqual(sound.starts, 4)
     }
 
     @MainActor

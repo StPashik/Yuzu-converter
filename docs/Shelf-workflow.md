@@ -1,44 +1,47 @@
 # Shelf workflow and operations
 
-Version 0.6.0 lets you convert files and run all seven Actions from the shelf.
+The shelf keeps references ready for dragging. Conversion and all seven Actions are available in the wheel.
 
 1. Choose **Show Shelf**, drag files onto it, or add selected Finder files with your configured shortcut (Control+C by default).
-2. Select one or more rows. Newly added rows are selected together. Command-click or Shift-click adjusts the selection.
-3. Use **Convert** or **Actions**, or right-click a row. Convert offers only outputs supported by every selected input; the current input formats are hidden. A mixed or unsupported selection may have no common output.
-4. Conversion saves beside each original after any required folder approval. **Move to Folder…** asks for its destination. **Compress to ZIP** creates one archive beside the first selected item. Existing results get an available name.
+2. Select one or more rows. Command-click or Shift-click adjusts the selection. Drag rows out of the shelf and hold **Shift** for conversion or **Control** for Actions, using your configured modifiers if changed.
+3. Drop onto a wheel sector. Conversion saves beside the original after any required folder approval. Move asks for its destination; ZIP creates one archive beside the first selected input.
+4. Click a row's **folder** button to select the original in Finder. The adjacent **×**, Delete, and Clear Shelf remove references without deleting files.
 
-Actions also include AirDrop, Copy Files, Copy Path, Open Terminal, and New Shelf with Selection. The last creates an independent shelf even when drag/hotkey Float is set to reuse a shelf. These system Actions retain their usual system UI and permission requirements. File tools are not included. See [format support and limitations](Conversion-matrix.md).
+The shelf has no Conversion or Actions menus. Float remains in the wheel and honors the add-to-current/new-shelf preference. Other Actions include AirDrop, Copy, Move, Copy Path, Terminal, and ZIP. They retain their usual permission requirements. File tools are outside the scope. See [format support and limitations](Conversion-matrix.md).
+
+Output files keep the original stem and use the new extension: `video.mov` → `video.mp4`. A collision uses `video_yuzu.mp4`, then `video_yuzu_2.mp4` and subsequent numbers. Existing files are never replaced. Existing long source names are preserved rather than guessed or shortened.
 
 ## Read the queue
 
-Conversion, Move, and ZIP requests enter a serial queue and open **Operations**. Reopen it any time with **Show Operations**. Other Actions use the clipboard, sharing UI, Terminal, or another shelf directly; they are not presented as file-processing jobs.
+Conversion, Move, and ZIP requests enter a serial queue and open **Operations**. Reopen it with **Show Operations**. Other Actions use their system interface directly.
 
 | State/control | Meaning |
 | --- | --- |
 | Waiting | Another request runs first |
 | Running | This request is processing files |
-| Cancelling… | Cancellation was requested; the worker is cleaning up |
-| Completed | All requested work returned successfully |
-| Cancelled | The request was cancelled; previously published results remain |
-| Failed | Read the error; previously published results remain accessible |
+| Cancelling… | The worker is cleaning up after cancellation |
+| Completed | Successful row, automatically removed after three seconds |
+| Cancelled | Retained until cleared; already published results remain |
+| Failed | Read the error; already published results remain |
 | Cancel / Cancel All | Cancel one request, or all running/waiting requests |
-| Show Results | Explicitly reveal the published output files in Finder |
-| Clear Finished | Remove finished history rows; never delete output files |
+| Clear Finished | Remove finished rows without deleting output files |
 
-The count measures completed input files, not elapsed time or encoding percentage. Conversion updates between files. A spinner is used while an individual export, Move batch, or ZIP is running. Move keeps the whole selection together when normalizing folders and their children. If a later move fails, earlier destinations stay published and are shown in the failed row. No automatic rollback deletes completed copies.
+The window uses normal application ordering and a compact height for up to three rows, then scrolls. It has no Show Results button. Successful rows expire even while the window is hidden. When the list becomes empty after work or clearing finished rows, the window closes; errors and cancellations keep their rows until you clear them.
 
-An error does not block later requests. Cancellation stops active subprocesses cooperatively and discards unfinished private staging. A large filesystem copy may need time to return before cancellation is observed. Completed results and moved originals are not rolled back. Check the error and remaining inputs before submitting another request; this version does not automatically retry.
+The count measures completed input files, not elapsed time or encoding percentage. Conversion updates between files. A spinner is shown during an individual export, Move batch, or ZIP. Move normalizes folders and children together; a later failure preserves earlier destinations. There is no rollback that deletes completed copies.
+
+An error does not block later requests. Cancellation stops subprocesses cooperatively and discards unfinished private staging. A large filesystem copy may need time before cancellation is observed. Check remaining inputs before submitting another request; automatic retry is not included.
 
 ## Window and file lifetime
 
-Close or Escape hides either panel. Reopening the shelf keeps references; reopening Operations keeps the queue and history. Removing a shelf row or clearing its contents does not revoke access already retained by a submitted job or system Action. A shelf stores references to originals, so moving an original through Move can leave a stale row in the source shelf; remove it and add the desired result if needed.
+Close or Escape hides either panel without stopping work. Reopening the shelf keeps references. Removing shelf rows does not revoke grants already retained by a wheel probe, job, or system Action. Moving an original can leave a stale shelf reference; its folder button explains an unavailable path.
 
-Shelves and queue history last only for the running app session. Exiting cancels outstanding jobs and waits for cleanup. Files and saved output profiles remain; queue recovery after restart is not included.
+Shelves and remaining queue history last for the current app session. Exiting cancels outstanding jobs and waits for cleanup. Saved output profiles and files remain; queue recovery after restart is not included.
 
-The shelf, operations panel, and wheel share native Liquid Glass on macOS 26+, an earlier-system material fallback, and an opaque Reduce Transparency appearance. Solid remains available for the wheel. All app-owned labels support English, Russian, German, French, and Spanish. Converter errors remain English.
+The shelf, Operations, and wheel share native Liquid Glass on macOS 26+, an earlier-system material fallback, and an opaque Reduce Transparency appearance. Solid remains available for the wheel. All app-owned labels support five languages; technical converter errors and Release Notes remain English.
 
-![Shelf commands, opaque light appearance](images/shelf-workflow.png)
+![Shelf, opaque accessibility appearance](images/shelf-workflow.png)
 
-![Operations, opaque dark appearance](images/operations.png)
+![Operations, opaque accessibility appearance](images/operations.png)
 
-These are automated offscreen fixture renders. Native glass structure and drag hit testing have automated checks; physical Finder/Powerbox, external-file Sandbox, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified.
+These are automated fixture renders. Physical Finder/Powerbox, external-file Sandbox access, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Shelf-to-wheel callback tests do not establish a full physical drag session.

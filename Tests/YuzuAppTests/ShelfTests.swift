@@ -221,7 +221,7 @@ final class ShelfTests: XCTestCase {
                 if !shelf.files.isEmpty {
                     let cell = try XCTUnwrap(table.view(atColumn: 0, row: 0, makeIfNecessary: true) as? NSTableCellView)
                     XCTAssertFalse(try XCTUnwrap(cell.textField).stringValue.isEmpty)
-                    XCTAssertGreaterThan(try XCTUnwrap(cell.textField).frame.width, 150)
+                    XCTAssertGreaterThan(try XCTUnwrap(cell.textField).frame.width, 180)
                 }
             }
             for language in AppLanguage.allCases {

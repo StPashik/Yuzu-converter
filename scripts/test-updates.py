@@ -68,6 +68,9 @@ process.stdout.write(JSON.stringify(pair.privateKey.export({ format: 'jwk' })));
 <title>Yuzu Converter Updates</title><item><title>Update fixture</title>
 <sparkle:version>{build}</sparkle:version><sparkle:shortVersionString>{info['CFBundleShortVersionString']}</sparkle:shortVersionString>
 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+<description sparkle:format="markdown"><![CDATA[## What changed
+- PDF crop and rotation fixture.
+]]></description>
 <enclosure url="https://example.invalid/Yuzu.zip" sparkle:edSignature="{signature}" length="1" type="application/octet-stream"/>
 </item></channel></rss>''')
         signer = root / ".build/verification/artifacts/sparkle/Sparkle/bin/sign_update"
@@ -80,7 +83,7 @@ process.stdout.write(JSON.stringify(pair.privateKey.export({ format: 'jwk' })));
             plist.write_bytes(plistlib.dumps(info))
             subprocess.run(["codesign", "--force", "--sign", "-", str(fixture)], check=True, capture_output=True)
             before = len(requests)
-            subprocess.run([str(probe), str(fixture), expected, str(build)], check=True, timeout=30)
+            subprocess.run([str(probe), str(fixture), expected, str(build), "PDF crop and rotation fixture."], check=True, timeout=30)
             assert path in requests[before:], "The probe did not reach the HTTP fixture"
             print(f"{path}: {expected}, actual HTTP request verified", flush=True)
 finally:

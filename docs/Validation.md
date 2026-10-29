@@ -1,6 +1,25 @@
 # Release validation record
 
-Updated October 28, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
+Updated October 29, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
+
+## v0.6.1 — Shelf, queue, PDF, and update-note polish
+
+Local Apple Silicon checks on October 29, 2026: **90 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, using the bundled media tools with `YUZU_MEDIA_REQUIRED=1`. Final PDF assertions also check the rotated blue corner and full-page black coverage. The HTTP Sparkle fixture verified available/current/tampered/HTTP-500 behavior and parsed the expected native Markdown notes, without downloading or installing an update.
+
+The new pixel fixture reproduced the reported small-content/white-canvas symptom: `CGPDFPageGetDrawingTransform` centers and only scales down, leaving PDF points unscaled in the 300-DPI bitmap. The fix establishes the explicit points-to-pixels scale before page placement, and uses the visible crop intersected with the media bounds. JPG and PNG fixtures cover four rotations and nonzero crop origins. The owner's source PDF remains unavailable, so that exact file is unverified.
+
+Shelf fixtures now check the absence of command menus, the folder button's position/accessibility, actual shelf URL callbacks into conversion and all seven wheel Action targets, a real queued conversion, and retained source batches after removal. Queue fixtures check normal window level, compact sizing, rounded layer clipping, success expiry, empty-window close, and retained failures. The wheel fixture checks four immediate distinct highlights, no replay inside one petal, and the disabled feedback setting.
+
+Current previews show the real opaque fallback in both themes/five languages. Physical Finder/Powerbox drag sessions, Finder reveal, external-file Sandbox access, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. [Feature PR #21](https://github.com/StPashik/Yuzu-converter/pull/21) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40848737346) on arm64 and native Intel: each ran 90 Swift tests and 24 Node tests without skips, restored verified media tools, and verified its signed Sandbox archive. Final release-asset checks follow below. Installed owner app copies are not test targets.
+
+| Final 0.6.1 / build 13 preparation | Recorded result |
+| --- | --- |
+| Archives | Separate final arm64/x64 ZIPs passed strict signatures, exact CPU slices, versions/resources/notices, and signed Sandbox document/spreadsheet/archive/media checks |
+| Compatibility | Both main executables use SDK 26+, minimum OS 13, and weak native-glass imports; local x64 execution uses Rosetta, separate from native Intel CI |
+| npm | 24 tests without skips; seven exact package files, executable CLI, and both actual archives installed/version/CPU/codesign-checked only in temporary homes |
+| Media source/licenses | 24 exact source/configuration files, four pinned upstream archives, both helper records, seven exact upstream media notices; app Sparkle license matches its pinned artifact |
+| Updates | Both archive signatures independently verified against the embedded production key; signed feeds contain the exact reviewed English Markdown; live bridges remain unchanged until assets are public |
+| Frozen assets | Nine files; eight payload hashes in [Release-checksums-0.6.1.txt](Release-checksums-0.6.1.txt) |
 
 ## v0.6.0 — Shelf commands, operations, and shared glass
 
@@ -27,6 +46,10 @@ Cache tests reject recipe/toolchain/architecture changes, missing/corrupt files,
 [Release PR #18](https://github.com/StPashik/Yuzu-converter/pull/18) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40751460121) on both CPUs, again with 86 Swift tests, 22 Node tests without skips, and signed Sandbox archive/media verification. Tag `v0.6.0` points to its exact main merge commit, `c58d5f4058c3413e70d8d7b7c0482b8b53461bf1`, whose tree matches the verified release head.
 
 The draft's nine asset sizes/digests and English body matched the prepared files before stable Latest publication. All nine public unauthenticated versioned downloads then matched final SHA-256 values. Both normal Latest feed URLs returned the exact signed XML. Real production-key Sparkle checks passed for arm64/x64: builds 7, 10, and 11 see build 12; build 12 reports current. These eight checks used temporary identities and performed no installation. Legacy bridge files are copied from those exact public signed bytes through their own publication PR.
+
+[Legacy publication PR #19](https://github.com/StPashik/Yuzu-converter/pull/19) passed [metadata/feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40755823168): nine Python checks and four Node signed-feed tests passed, with native jobs correctly omitted for feed/documentation-only changes. Both normal raw main/updates URLs then returned the exact public XML. Eight further real Sparkle checks passed across the same old/current build numbers and both CPUs, using temporary identities without installation. The application-release tag remains unchanged.
+
+The reviewed main [cold cache workflow](https://github.com/StPashik/Yuzu-converter/actions/runs/40755439163) built and saved both media entries successfully. The next [main workflow](https://github.com/StPashik/Yuzu-converter/actions/runs/40755952247) restored both and logged `Verified media cache hit` for arm64 and x64, with receipt/source/CPU/runtime validation retained. This verifies real GitHub cache reuse; native application test/archive gates remain independent. Corrupt source archives fail closed on their pinned SHA and require removal before retrying, as clarified in [CI.md](CI.md).
 
 Physical Finder/Powerbox, real Clipboard/AirDrop/Terminal, external-file Sandbox Quick Look, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Source rows may become stale after Move. Session-only history/references and cooperative filesystem cancellation are documented limits. Developer ID/notarization are still absent. The owner's installed copies are not release test targets.
 

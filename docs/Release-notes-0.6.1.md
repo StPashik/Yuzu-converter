@@ -1,0 +1,48 @@
+# Yuzu Converter 0.6.1
+
+A simpler shelf, a quieter Operations window, and PDF pages rendered at their proper size. Update offers now include these Release Notes before installation.
+
+## What changed
+
+- **Shelf:** removed Conversion and Actions menus. Drag references into the wheel for conversion or any of the seven Actions; Float remains available there. A folder button beside each remove button selects the original in Finder.
+- **Shelf-to-wheel access:** local copy dragging is explicitly enabled, and wheel probes/jobs retain the original file grants when shelf rows are removed or closed.
+- **Operations:** a compact ordinary window grows through three rows and then scrolls. It no longer floats above other apps or includes Show Results. Successes disappear after three seconds; the window closes when empty. Errors and cancellations remain until cleared.
+- **Rounded surfaces:** glass/material backing layers share the same clipped corners, removing rectangular protrusions around the surface.
+- **Output names:** preserve the original stem and change the extension. Collisions use `_yuzu`, then `_yuzu_2`, `_yuzu_3`, and so on. Existing files are never overwritten.
+- **PDF to JPG/PNG:** apply the actual 300-DPI scale before drawing the visible page, including cropped bounds, nonzero origins, and rotation. This fixes the small-page-on-large-white-canvas regression.
+- **Wheel feedback:** restart the sound for each newly highlighted petal, including rapid transitions. Moving within one petal stays quiet; the existing sound/haptic setting is respected.
+- **Update notes:** the signed feed embeds the reviewed English Markdown notes, displayed by Sparkle directly in its standard update offer.
+
+## Download
+
+- [Apple Silicon (M-series) ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-arm64.zip)
+- [Intel ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-x64.zip)
+
+Requires **macOS 13 or later**. English is the default; English, Russian, German, French, and Spanish remain available for app-owned controls. Release Notes and technical diagnostics are English.
+
+## Quick start
+
+1. Existing users: choose **Check for Updates…** in the Yuzu menu or Settings → About, read the notes, and install when ready. Publication does not install or restart your copy.
+2. First installation: unzip the download for your Mac, move **Yuzu Converter.app** to Applications, and launch it. Yuzu appears in the menu bar.
+3. Drag files from Finder or the shelf and hold **Shift** for conversion or **Control** for Actions. Drop on a petal; Escape cancels.
+4. Use the shelf's folder icon to find an original. Follow conversion, Move, or ZIP in Operations; closing either window keeps its references/work for the current session.
+
+## npm option
+
+The app runs without Node. The [release npm package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz) provides an optional CLI installer for Node 20.11+ and compatible npm. With npm 12:
+
+```sh
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz"
+npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
+yuzu-converter
+```
+
+Older npm versions can omit the two allowance options. Distribution is through GitHub Releases, not the npm registry. The installer verifies the archive checksum and installs into `~/Applications`; in-app updates do not update the npm package itself.
+
+## Support and verification
+
+Separate arm64 and x64 archives include FFmpeg/FFprobe with the existing codec policy. See [format support and limits](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Conversion-matrix.md), [shelf and queue workflow](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Shelf-workflow.md), [updates](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Updates.md), and [validation](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Validation.md). File tools remain outside the scope. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-FFmpeg-Sources-0.6.1.tar.xz), component notices, signed feeds, and SHA256SUMS accompany the release. FFmpeg is licensed under LGPL 2.1 or later.
+
+Automated tests cover PDF pixels/rotation, shelf-to-wheel callbacks and grant lifetime, queue cleanup, feedback replay, five-language layouts, and Sparkle Markdown parsing. Physical Finder/Powerbox and external-file Sandbox workflows, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. The owner's original PDF was not supplied; the regression uses generated fixtures. Shelf references and queue history remain session-only. Cross-volume folder moves are unavailable; cancellation preserves already published results.
+
+Both archives are ad hoc signed and have no Developer ID or Apple notarization; Gatekeeper may block first launch. Sparkle uses the existing Yuzu Ed25519 key to authenticate feeds and updates.

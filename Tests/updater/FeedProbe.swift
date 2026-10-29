@@ -6,6 +6,7 @@ import Sparkle
 final class FeedProbe: NSObject, SPUUpdaterDelegate {
     var expected = ""
     var expectedBuild = ""
+    var expectedNotes: String?
     private var updater: SPUUpdater!
 
     func start(bundle: Bundle) throws {
@@ -16,7 +17,9 @@ final class FeedProbe: NSObject, SPUUpdaterDelegate {
     }
 
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
-        complete("available", valid: item.versionString == expectedBuild)
+        let notesValid = expectedNotes.map { item.itemDescriptionFormat == "markdown" && item.itemDescription?.contains($0) == true } ?? true
+        if expectedNotes != nil { print("Sparkle release notes: \(notesValid ? "verified Markdown" : "missing or incorrect")") }
+        complete("available", valid: item.versionString == expectedBuild && notesValid)
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: Error) { complete("current") }
@@ -31,14 +34,15 @@ final class FeedProbe: NSObject, SPUUpdaterDelegate {
 @main
 enum ProbeMain {
     @MainActor static func main() throws {
-        guard CommandLine.arguments.count == 4, let bundle = Bundle(path: CommandLine.arguments[1]) else {
-            fatalError("Usage: FeedProbe app expected-result build-number")
+        guard (4...5).contains(CommandLine.arguments.count), let bundle = Bundle(path: CommandLine.arguments[1]) else {
+            fatalError("Usage: FeedProbe app expected-result build-number [expected-notes]")
         }
         let app = NSApplication.shared
         app.setActivationPolicy(.accessory)
         let probe = FeedProbe()
         probe.expected = CommandLine.arguments[2]
         probe.expectedBuild = CommandLine.arguments[3]
+        probe.expectedNotes = CommandLine.arguments.count == 5 ? CommandLine.arguments[4] : nil
         try probe.start(bundle: bundle)
         DispatchQueue.main.asyncAfter(deadline: .now() + 20) { fputs("Sparkle probe timed out\n", stderr); exit(2) }
         withExtendedLifetime(probe) { app.run() }

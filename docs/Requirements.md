@@ -1,6 +1,6 @@
 # Yuzu Converter requirements
 
-Updated October 28, 2026. Repository: https://github.com/StPashik/Yuzu-converter.
+Updated October 29, 2026. Repository: https://github.com/StPashik/Yuzu-converter.
 
 ## Goal and scope
 
@@ -20,7 +20,7 @@ Target groups: Images, Audio, Video, PDF, Documents, EPUB, Slides, Spreadsheets,
 
 Determine input type from content. Hide the current format for a single file or homogeneous group. For mixed inputs, show the intersection of routes that actually support every input. Do not offer targets known to be unavailable.
 
-Save results beside the originals under available names. Never overwrite sources or existing results. Do not open Finder automatically. PDF → JPG/PNG must process every page at an actual 300 DPI, put the results in a separate folder, and return every output URL. Do not present raster images or extracted text as reconstructed editable documents.
+Save results beside the originals, retaining the original filename stem and changing its extension. On collision use `_yuzu`, then `_yuzu_2`, `_yuzu_3`, and so on. Never overwrite sources or existing results. Do not open Finder automatically. PDF → JPG/PNG must render the visible CropBox, respecting its origin and page rotation, for every page at an actual 300 DPI, put the results in a separate folder, and return every output URL. Do not present raster images or extracted text as reconstructed editable documents.
 
 Read files, convert content, and perform file operations off the main thread. Support cancellation, useful errors, and cleanup of incomplete results.
 
@@ -50,7 +50,7 @@ The owner clarified that closing/reopening the shelf must preserve its files wit
 
 The owner also requested a shelf keyboard shortcut with recording directly inside Yuzu Settings. Default to Control–C, support replacement and disabling, persist the choice, and report registration conflicts. This shortcut adds selected Finder files through the existing Float preference, without modifying the clipboard or synthesizing Copy. Register it only while Finder is active so Control–C keeps its usual behavior in other apps. Request Finder Automation and initial Powerbox folder access only on use; restore a separately owned parent scope for each Sandbox batch. Do not treat an Apple event's file path as a Sandbox grant.
 
-Provide the same update check in Settings. Checks are user-initiated, and downloading/installing a new version requires confirmation. Authenticate the feed and archives, select the correct architecture, and finish queued file work before restarting. A failed or cancelled installation must restore normal operation. A stale npm launcher must not downgrade an app updated in place. See [Updates.md](Updates.md).
+Provide the same update check in Settings. Checks are user-initiated, and downloading/installing a new version requires confirmation. Show English Release Notes inside the update offer before installation, sourced from the reviewed release document and embedded in the signed feed. Authenticate the feed and archives, select the correct architecture, and finish queued file work before restarting. A failed or cancelled installation must restore normal operation. A stale npm launcher must not downgrade an app updated in place. See [Updates.md](Updates.md).
 
 Shift selects conversion; Control selects Actions by default. Allow independent nonempty combinations of Shift, Control, Option, and Command; choosing a conflicting combination swaps the two. Migrate the original swap preference and allow an open wheel to switch modes. The tooltip must show the keys even when wheels are disabled. Escape cancels selection. An empty drag must not show the wheel.
 
@@ -78,11 +78,13 @@ Use separate scratch paths for automated tests. New manual checks requested from
 
 These requirements combine the owner’s current requests with the requirements previously recorded in the neighboring `Yuzu-converter/docs/Requirements.md`, read only as text reference. No old source or Git history was reused; the icon exceptions were explicitly authorized by the owner.
 
-## Version 0.6.0 — shelf workflow and operation feedback
+## Current shelf workflow and operation feedback (0.6.1)
 
-Select one or more shelf rows and use Convert or Actions, also available from the contextual menu. Compute conversion targets from the real selected sources using the wheel's shared engine, including mixed-input intersection. Never offer stale targets after a selection change. Actions expose all seven existing operations; Float is explicitly labelled New Shelf with Selection here so it cannot silently append the same references to the source shelf. Snapshot and retain every selected batch's grants before a picker, sharing operation, or queued job; clearing or closing the shelf must not revoke in-flight access.
+The shelf stores references and supports file drag-out, per-row Show in Finder immediately left of Remove, reference removal, and Clear Shelf. It has no Conversion or Actions menus, including contextual submenus. Keep conversion and all seven Actions, including Float, in the wheel. Shelf-to-wheel dragging must work inside the same app and retain every original batch's parent grant while probing or processing, even if the rows are removed or the shelf is closed. Finder reveal selects the original file and explains an unavailable path.
 
-Replace the old completion counter with a retained, resizable operations panel in the shelf's visual style. Show waiting, running, cancelling, completed, cancelled, and failed states, filenames, completed input counts, errors, published results, per-job cancellation, Cancel All, and Clear Finished. Run conversion/Move/ZIP requests serially off the main thread. Conversion reports completed files; an individual export and batch filesystem work remain indeterminate. Preserve earlier published outputs after failure/cancellation and continue to the next queued request. Show Results opens Finder only when requested. Closing the panel hides it without cancelling jobs. Queue/history live only for the app session; no retry or restart recovery is required in this version.
+Operations uses a compact non-floating window that grows through three rows, then scrolls. Show waiting, running, cancelling, completed, cancelled, and failed states, filenames, completed input counts, errors, per-job cancellation, Cancel All, and Clear Finished. Remove Show Results. Run conversion/Move/ZIP serially off-main, retain earlier outputs after failure/cancellation, and continue with the next request. Remove successful rows after three seconds; keep failures and cancellations until cleared. Close the window when the list becomes empty after work. Closing manually never cancels work. No restart recovery is required.
+
+Restart the wheel feedback sound on every newly highlighted petal, including fast transitions; do not suppress legitimate transitions with a shared delay. Repeated movement inside one petal produces no extra feedback. Respect the existing combined sound/haptic setting.
 
 Use the same native Liquid Glass on macOS 26+, earlier-system material, and opaque Reduce Transparency fallback for shelf and operations. Apply native glass to the wheel's masked backdrop without altering drag hit testing, sector geometry, orange selection, or accessibility controls. Keep Solid mode available and respond to accessibility display changes live.
 

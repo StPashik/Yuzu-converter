@@ -212,11 +212,8 @@
 "Completed" = "Завершено";
 "Failed" = "Ошибка";
 "%ld of %ld files completed" = "Завершено файлов: %ld из %ld";
-"Show Results" = "Показать результаты";
-"New Shelf with Selection" = "Новая полка с выбранным";
-"Copy Files" = "Копировать файлы";
-"Open Terminal" = "Открыть терминал";
 "Compress to ZIP" = "Сжать в ZIP";
-"Commands apply to selected files." = "Команды применяются к выбранным файлам.";
-"Select files to use Conversion and Actions." = "Выберите файлы для конвертации и действий.";
-"Files on the floating shelf. Select files to convert or run Actions; drag to share." = "Файлы на полке. Выберите файлы для конвертации или действий; перетащите для передачи.";
+"Files on the floating shelf. Drag files out or reveal them in Finder." = "Файлы на полке. Перетаскивайте их или показывайте в Finder.";
+"Show in Finder" = "Показать в Finder";
+"Could not show the file" = "Не удалось показать файл";
+"The file is no longer available at its original location." = "Файл больше недоступен в исходном расположении.";

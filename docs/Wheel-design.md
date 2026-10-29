@@ -31,3 +31,7 @@ These images retain the v0.2.1 AppKit appearance with a private test pasteboard.
 ## Native Liquid Glass (0.6.0)
 
 The glass backdrop uses the same `AppSurface` factory as shelf and operations. On macOS 26+ builds with the macOS 26 SDK, it embeds `NSGlassEffectView`; older systems use `NSVisualEffectView`. A shape mask preserves the existing center and petal geometry, excluding the selected petal so orange remains unfiltered. The backdrop returns no hit-test target. Solid mode and live Reduce Transparency changes keep an opaque drawing. The glass API is availability-guarded and weak-linked; native visual parity on macOS 13 and macOS 26 Intel remains unverified.
+
+## Feedback and shelf sources (0.6.1)
+
+Every newly highlighted petal restarts the system Tink sound at the existing volume and requests alignment haptics when enabled. A shared 80 ms throttle no longer discards quick transitions; the drag view already filters motion within one petal. Sound replay is verified with a counting fixture; physical audible/haptic perception remains unverified. The wheel accepts file-URL dragging from Yuzu's shelf as well as other apps, while retaining original shelf batches for probes and submitted operations.

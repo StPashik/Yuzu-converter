@@ -109,11 +109,15 @@ final class JobQueue: ObservableObject {
     private var currentTask: Task<Void, Never>?
     private var currentID: UUID?
     private let execute: Executor
+    private let successRetention: Duration
     var onIdle: (() -> Void)?
     var isIdle: Bool { currentTask == nil && !entries.contains { $0.state == .waiting } }
     var activeCount: Int { entries.filter { !$0.state.isFinished }.count }
 
-    init(execute: @escaping Executor = JobRequest.run) { self.execute = execute }
+    init(successRetention: Duration = .seconds(3), execute: @escaping Executor = { try await JobRequest.run($0, progress: $1) }) {
+        self.successRetention = successRetention
+        self.execute = execute
+    }
 
     @discardableResult func enqueue(_ request: JobRequest) -> UUID {
         let id = UUID()
@@ -174,6 +178,14 @@ final class JobQueue: ObservableObject {
             requests[id] = nil
             currentID = nil
             currentTask = nil
+            if entries.first(where: { $0.id == id })?.state == .completed {
+                let delay = successRetention
+                Task { [weak self] in
+                    try? await Task.sleep(for: delay)
+                    // Cleanup owns a row ID, so it cannot clear a later job or dismiss an error.
+                    self?.entries.removeAll { $0.id == id && $0.state == .completed }
+                }
+            }
             startNext()
             if isIdle { onIdle?() }
         }
