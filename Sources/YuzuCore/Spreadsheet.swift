@@ -1,10 +1,16 @@
 import Foundation
 
-/// A values-only sheet model: formula results are cached text, not formulas that can be recalculated.
-struct TableSheet { let name: String; let rows: [[String]] }
+/// Cell values plus PDF sizing hints; cached formula results are never recalculated.
+struct TableSheet {
+    let name: String
+    let rows: [[String]]
+    var columnWidths: [Int: Double] = [:]
+    var rowHeights: [Int: Double] = [:]
+    var uncachedFormulas: [Int: [Int: String]] = [:]
+}
 
 /// Reads/writes CSV, TSV, and minimal editable XLSX/ODS packages without an Office runtime.
-/// All sheets are retained, but styles, charts, formulas, and document layout are outside this model.
+/// All sheets are retained; full Excel styles, charts, and formula calculation remain outside this model.
 enum Spreadsheet {
     private static let tableNamespace = "urn:oasis:names:tc:opendocument:xmlns:table:1.0"
     private static let officeNamespace = "urn:oasis:names:tc:opendocument:xmlns:office:1.0"
@@ -66,6 +72,7 @@ enum Spreadsheet {
             let sheetURL = path.hasPrefix("/") ? root.appendingPathComponent(String(path.dropFirst())) : root.appendingPathComponent("xl/" + path)
             let xml = try XMLTree.read(sheetURL)
             var rows: [[String]] = []
+            var uncachedFormulas: [Int: [Int: String]] = [:]
             for row in xml.descendants("row", namespace: spreadsheetNamespace) {
                 let number = Int(row.attributes["r"] ?? "\(rows.count + 1)") ?? 0
                 guard number > 0, number <= 100_000 else { throw ConversionError.invalid("Invalid XLSX row number.") }
@@ -85,10 +92,33 @@ enum Spreadsheet {
                         guard let index = Int(value), shared.indices.contains(index) else { throw ConversionError.invalid("Invalid XLSX shared string reference.") }
                         rows[number - 1][column - 1] = shared[index]
                     } else if cell.attributes["t"] == "inlineStr" { rows[number - 1][column - 1] = cell.descendants("t", namespace: spreadsheetNamespace).map(\.textContent).joined() }
-                    else { rows[number - 1][column - 1] = value }
+                    else {
+                        let formula = cell.children.first { $0.name == "f" && $0.namespace == spreadsheetNamespace }?.textContent
+                        rows[number - 1][column - 1] = value
+                        if value.isEmpty, let formula { uncachedFormulas[number - 1, default: [:]][column - 1] = formula }
+                    }
                 }
             }
-            return TableSheet(name: sheet.attributes["name"] ?? "Sheet", rows: rows)
+            var table = TableSheet(name: sheet.attributes["name"] ?? "Sheet", rows: rows)
+            table.uncachedFormulas = uncachedFormulas
+            for col in xml.descendants("col", namespace: spreadsheetNamespace) {
+                // A column may carry only a style/hidden flag; its optional width is a separate hint.
+                guard col.attributes["width"] != nil else { continue }
+                guard let first = Int(col.attributes["min"] ?? ""), let last = Int(col.attributes["max"] ?? ""),
+                      first > 0, last >= first, last <= 16_384,
+                      let width = Double(col.attributes["width"] ?? ""), width.isFinite, width >= 0, width <= 4096 else {
+                    throw ConversionError.invalid("Invalid XLSX column width.")
+                }
+                for index in first...last { table.columnWidths[index - 1] = width * 7 + 5 }
+            }
+            for row in xml.descendants("row", namespace: spreadsheetNamespace) where row.attributes["ht"] != nil {
+                guard let index = Int(row.attributes["r"] ?? ""), index > 0, index <= 100_000,
+                      let height = Double(row.attributes["ht"] ?? ""), height.isFinite, height >= 0, height <= 4096 else {
+                    throw ConversionError.invalid("Invalid XLSX row height.")
+                }
+                table.rowHeights[index - 1] = height
+            }
+            return table
         }
     }
 

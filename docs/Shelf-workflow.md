@@ -20,7 +20,7 @@ Conversion, Move, and ZIP requests enter a serial queue and open **Operations**.
 | Waiting | Another request runs first |
 | Running | This request is processing files |
 | Cancelling… | The worker is cleaning up after cancellation |
-| Completed | Successful row, automatically removed after three seconds |
+| Completed | Successful row, automatically removed after one second |
 | Cancelled | Retained until cleared; already published results remain |
 | Failed | Read the error; already published results remain |
 | Cancel / Cancel All | Cancel one request, or all running/waiting requests |
@@ -28,7 +28,7 @@ Conversion, Move, and ZIP requests enter a serial queue and open **Operations**.
 
 The window uses normal application ordering and a compact height for up to three rows, then scrolls. It has no Show Results button. Successful rows expire even while the window is hidden. When the list becomes empty after work or clearing finished rows, the window closes; errors and cancellations keep their rows until you clear them.
 
-The count measures completed input files, not elapsed time or encoding percentage. Conversion updates between files. A spinner is shown during an individual export, Move batch, or ZIP. Move normalizes folders and children together; a later failure preserves earlier destinations. There is no rollback that deletes completed copies.
+The count measures completed input files, not elapsed time or encoding percentage. Conversion updates between files. There is no percentage bar or spinner: individual encoders and filesystem operations do not share a reliable intra-file measure. Status and completed-input counts remain visible. Move normalizes folders and children together; a later failure preserves earlier destinations. There is no rollback that deletes completed copies.
 
 An error does not block later requests. Cancellation stops subprocesses cooperatively and discards unfinished private staging. A large filesystem copy may need time before cancellation is observed. Check remaining inputs before submitting another request; automatic retry is not included.
 
@@ -45,3 +45,5 @@ The shelf, Operations, and wheel share native Liquid Glass on macOS 26+, an earl
 ![Operations, opaque accessibility appearance](images/operations.png)
 
 These are automated fixture renders. Physical Finder/Powerbox, external-file Sandbox access, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Shelf-to-wheel callback tests do not establish a full physical drag session.
+
+For multiple images, the PDF petal creates one document beside the first input, in pasteboard order. A browser/screenshot raster drop uses [Save As](Virtual-image-drops.md). Operations has a fixed 20-point inset around the host content in all languages; the empty-state explanation wraps and empty footer controls are omitted.

@@ -1,5 +1,6 @@
 import AppKit
 import ImageIO
+import Darwin
 
 /// Chooses available backends and turns one classified source into a complete, validated output set.
 /// Converters write only into private staging; this type owns cleanup and final publication.
@@ -13,8 +14,50 @@ public struct ConversionEngine: Sendable {
     /// An available route describes a supported export, not a guarantee of lossless format preservation.
     public func targets(for sources: [SourceFile]) -> [FileFormat] {
         // Mixed drops only offer formats supported by every input, avoiding misleading targets.
-        guard let first = sources.first, sources.allSatisfy({ $0.format.category == first.format.category }) else { return [] }
-        return candidates(first.format).filter { target in sources.allSatisfy { supported($0, target) } }
+        guard let first = sources.first else { return [] }
+        return candidates(first.format).filter { target in sources.allSatisfy { $0.format != target && candidates($0.format).contains(target) && supported($0, target) } }
+    }
+
+    /// A PDF drop is one document: validate every image before publishing the complete page set.
+    public func combineImages(_ sources: [SourceFile], in directory: URL,
+                              options: ConversionOptions = .init()) throws -> URL {
+        guard !sources.isEmpty, sources.allSatisfy({ $0.format.category == "Images" && supported($0, .pdf) }) else {
+            throw ConversionError.unsupported("Choose supported images to combine into PDF.")
+        }
+        try options.validate(for: .pdf)
+        let scratch = try FileOperations.scratch(in: directory)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let output = scratch.appendingPathComponent("combined.pdf")
+        try NativeDocuments.imagesPDF(sources.map(\.url), output: output)
+        try Task.checkCancellation()
+        try validate(output, format: .pdf)
+        return try FileOperations.publish(output, named: sources[0].url.deletingPathExtension().lastPathComponent + ".pdf", in: directory)
+    }
+
+    /// Virtual drops can also save their original format; all offered writers are native and checked at runtime.
+    public static var imageDropTargets: [FileFormat] {
+        [.png, .jpg, .tiff, .heic, .bmp, .webp, .avif, .pdf].filter { $0 == .pdf || $0.imageType.map { imageWriters.contains($0) } == true }
+    }
+
+    /// Save Panel grants an exact file, not its parent: stage through Foundation's same-volume replacement directory.
+    public func saveDroppedImage(_ source: URL, to target: FileFormat, destination: URL,
+                                 options: ConversionOptions = .init()) throws -> URL {
+        guard destination.isFileURL, Self.imageDropTargets.contains(target) else { throw ConversionError.unsupported("Unsupported image destination.") }
+        try options.validate(for: target)
+        try Task.checkCancellation()
+        let scratch = try FileManager.default.url(for: .itemReplacementDirectory, in: .userDomainMask,
+                                                  appropriateFor: destination, create: true)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let staged = scratch.appendingPathComponent("result." + target.fileExtension)
+        try NativeDocuments.image(source, to: target, output: staged, options: options)
+        try validate(staged, format: target)
+        try Task.checkCancellation()
+        // Exact-path publication cannot try sibling suffixes outside the Save Panel grant.
+        let result = staged.path.withCString { from in
+            destination.path.withCString { to in renamex_np(from, to, UInt32(RENAME_EXCL)) }
+        }
+        guard result == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        return destination
     }
 
     /// Read-only format catalogue for Settings; actual files are still probed by targets(for:).
@@ -91,8 +134,7 @@ public struct ConversionEngine: Sendable {
                     multiple.append(file)
                 }
             } else if target == .pdf {
-                let text = sheets.map { $0.name + "\n" + DelimitedText.write($0.rows, separator: "\t") }.joined(separator: "\n\n")
-                try NativeDocuments.writePDF(NSAttributedString(string: text, attributes: [.font: NSFont.monospacedSystemFont(ofSize: 10, weight: .regular)]), output: output)
+                try Spreadsheet.writePDF(sheets, output: output)
             } else { try Spreadsheet.write(sheets, to: target, output: output, scratch: scratch) }
         } else if [.ppt, .pptx, .pages, .xls].contains(source.format) {
             guard let office = tools.office else { throw ConversionError.unsupported("LibreOffice is required for this format.") }

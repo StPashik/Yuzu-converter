@@ -217,3 +217,8 @@
 "Show in Finder" = "Show in Finder";
 "Could not show the file" = "Could not show the file";
 "The file is no longer available at its original location." = "The file is no longer available at its original location.";
+
+"Image" = "Image";
+"Save Converted Image" = "Save Converted Image";
+"Choose where to save the converted image." = "Choose where to save the converted image.";
+"Choose a new filename. Existing files are never replaced." = "Choose a new filename. Existing files are never replaced.";

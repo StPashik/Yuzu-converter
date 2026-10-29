@@ -2,6 +2,18 @@
 
 Updated October 29, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.6.2 — Drag workflow, compact operations, and table PDFs
+
+Local Apple Silicon checks on October 29, 2026: **103 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Final review additionally exercises optional/zero XLSX sizing hints. Tests run in project-specific scratch paths; installed owner app copies are not test targets.
+
+The wheel fixtures cover hidden empty conversions with an Actions mode switch, cached visible/hit geometry, and asynchronous cold/rapid sound playback. PDF batch tests verify page order/colors, one publication, cancellation/failure cleanup, source preservation, and collision naming. Spreadsheet tests exercise grid pixels, widths, wrapping, cached/uncached formulas, every sheet, multi-page output, empty sheets, and bounded sparse layouts. Table PDF export remains a readable uniform grid, not full Excel layout or calculation fidelity.
+
+Virtual-image fixtures cover lazy pasteboard reads, a screenshot-style file/promise combination, a controlled file-promise receiver, temporary-file lifetime, containment/symlink rejection, and bounded loopback HTTP success/failure/cancellation. The exact-path save refuses replacement. A mocked provider/own-container test does not establish real browser or external Powerbox interoperability; see [Virtual image drops](Virtual-image-drops.md).
+
+Operations renders were visually reviewed after adding a real 20-point AppKit inset. Automated previews cover five languages in both appearances; assertions verify the hosting frame and compact window dimensions. Success rows expire after one second and an emptied window closes; errors/cancellations remain. No determinate bar is shown for operations without universal measurable progress.
+
+The owner reported that PDF rasterization and wheel sound in 0.6.1 work. This is owner feedback about that version, separate from the new background playback path. Physical Finder/browser/screenshot drags, audible/haptic timing, external-file Sandbox/Save-panel grants, native-glass composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain deferred/unverified. Signed own-container archive checks and required native CI results are recorded separately when completed.
+
 ## v0.6.1 — Shelf, queue, PDF, and update-note polish
 
 Local Apple Silicon checks on October 29, 2026: **90 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, using the bundled media tools with `YUZU_MEDIA_REQUIRED=1`. Final PDF assertions also check the rotated blue corner and full-page black coverage. The HTTP Sparkle fixture verified available/current/tampered/HTTP-500 behavior and parsed the expected native Markdown notes, without downloading or installing an update.

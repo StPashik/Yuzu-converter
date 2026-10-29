@@ -2,12 +2,21 @@ import AppKit
 import XCTest
 @testable import YuzuApp
 
-// Accessed only by the main-actor test and its synchronous highlight callback.
+// NSSound's inherited Sendable contract uses a locked counter box for the asynchronous fixture.
+private final class FeedbackCounts: @unchecked Sendable {
+    let lock = NSLock()
+    var starts = 0, stops = 0
+}
 private final class FeedbackSound: NSSound, @unchecked Sendable {
-    var starts = 0
-    var stops = 0
-    override func play() -> Bool { starts += 1; return true }
-    override func stop() -> Bool { stops += 1; return true }
+    private let counts = FeedbackCounts()
+    var starts: Int { counts.lock.lock(); defer { counts.lock.unlock() }; return counts.starts }
+    var stops: Int { counts.lock.lock(); defer { counts.lock.unlock() }; return counts.stops }
+    override func play() -> Bool {
+        counts.lock.lock(); counts.starts += 1; counts.lock.unlock()
+        Thread.sleep(forTimeInterval: 0.1)
+        return true
+    }
+    override func stop() -> Bool { counts.lock.lock(); counts.stops += 1; counts.lock.unlock(); return true }
 }
 
 final class WheelTests: XCTestCase {
@@ -37,7 +46,7 @@ final class WheelTests: XCTestCase {
     }
 
     @MainActor
-    func testRapidPetalChangesRestartSoundAndRespectTheFeedbackSetting() throws {
+    func testRapidPetalChangesRestartSoundAndRespectTheFeedbackSetting() async throws {
         _ = NSApplication.shared
         let domain = "WheelFeedbackTests." + UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
@@ -53,6 +62,7 @@ final class WheelTests: XCTestCase {
         view.onSources = { _, view in view.options = FileAction.allCases.map(WheelOption.action) }
         XCTAssertEqual(view.draggingEntered(drag), .copy)
         settings.soundsAndHapticsEnabled = true
+        let started = ContinuousClock.now
         for index in [0, 1, 2, 0] {
             let angle = WheelGeometry.angle(index, count: 7)
             drag.draggingLocation = NSPoint(x: 160 + cos(angle) * 104, y: 160 + sin(angle) * 104)
@@ -60,11 +70,40 @@ final class WheelTests: XCTestCase {
             // Staying inside one petal must not repeat feedback.
             XCTAssertEqual(view.draggingUpdated(drag), .copy)
         }
+        XCTAssertLessThan(started.duration(to: .now), .milliseconds(250))
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while sound.starts < 4 && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertEqual(sound.starts, 4)
         XCTAssertEqual(sound.stops, 4)
         settings.soundsAndHapticsEnabled = false
         view.onHighlight?()
         XCTAssertEqual(sound.starts, 4)
+    }
+
+    @MainActor
+    func testEmptyWheelHidesItsPanelAndActionsCanRestoreTheSameDrag() throws {
+        _ = NSApplication.shared
+        let monitor = WheelMonitor(settings: Settings(), feedbackSound: nil)
+        monitor.onSources = { _, view in
+            view.options = view.mode == .actions ? FileAction.allCases.map(WheelOption.action) : []
+            view.isReadingSources = false
+        }
+        monitor.arm(.conversion)
+        defer { monitor.dismiss() }
+        let panel = try XCTUnwrap(NSApp.windows.first { $0.contentView is WheelDragView })
+        let view = try XCTUnwrap(panel.contentView as? WheelDragView)
+        panel.setContentSize(NSSize(width: 320, height: 320))
+        let drag = DragFixture(urls: [FileManager.default.temporaryDirectory])
+        defer { drag.draggingPasteboard.releaseGlobally() }
+        XCTAssertEqual(view.draggingEntered(drag), .copy)
+        XCTAssertFalse(view.isWheelVisible)
+        XCTAssertFalse(panel.isVisible, "An empty conversion must let the original destination receive the drag")
+        XCTAssertTrue(view.subviews.compactMap { $0 as? NSTextField }.allSatisfy(\.isHidden))
+        view.mode = .actions
+        view.refreshSources()
+        XCTAssertTrue(view.isWheelVisible)
+        XCTAssertTrue(panel.isVisible)
+        XCTAssertEqual(view.options.count, 7)
     }
 
     @MainActor
