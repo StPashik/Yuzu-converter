@@ -10,6 +10,18 @@ The arm64 feature signed own-container archive passed. Seventeen real signed-fee
 
 Physical startup-dialog interaction, actual download/installation/relaunch, macOS 13, VoiceOver, and other-Mac checks remain deferred/unverified. Release work never installs/restarts either owner app copy or global npm.
 
+[Feature PR #37](https://github.com/StPashik/Yuzu-converter/pull/37) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40944698338) on the final feature commit. Both arm64 and native Intel ran 133 Swift tests, 24 Node tests, signed own-container Sandbox archives, and all 17 signed HTTP scenarios (four information checks plus thirteen startup/preference/choice cases), without skips or update downloads.
+
+| Final 0.7.1 / build 17 preparation | Recorded result |
+| --- | --- |
+| Archives | Both final ZIPs passed deep strict codesign, exact main/helper CPU slices, versions/resources/icons/notices, and signed own-container media/document/retry/move checks |
+| Compatibility | SDK 26+, minimum macOS 13, weak native-glass class imports on both main executables; local x64 execution uses Rosetta independently of native Intel CI |
+| Update behavior | All 17 real signed-feed HTTP scenarios passed against each final architecture fixture; saved checkbox choices, background silence, dismiss/skip/manual recovery, and no unauthorized archive request verified |
+| npm | Local ci with scripts disabled and 24 final Node tests passed; seven exact package files; both actual ZIPs installed/version/CPU/codesign-checked only in temporary homes, without UI launch |
+| Source/licenses | 24 corresponding-source/configuration files, four pinned upstream archives, both helper hashes/configurations, seven exact upstream media notices, and exact bundled Sparkle artifact licenses verified |
+| Signatures/notes | Both archive signatures independently verified with the embedded production key; exact reviewed English Markdown in both signed feeds; automatic checking enabled while automatic download/installation remains disallowed |
+| Frozen assets | Nine files; eight payload hashes in [Release-checksums-0.7.1.txt](Release-checksums-0.7.1.txt); legacy feeds held until asset publication |
+
 ## v0.7.0 — Document fidelity, local OCR, and video tracks
 
 **131 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed locally without skips. Local feature checks use the separate `.build/feature070-tests` scratch path and private temporary files with bundled media required. The styled XLSX fixture's rendered PDF was visually inspected: merged blue header, white bold title, source borders, date, currency, and percentage values. The new suite also covers row/column style defaults, both Excel date systems, large decimal precision, malformed overlapping merges, oversized merged-row/column-band pagination, five-language OCR, mixed text/scan PDFs, multipage oriented TIFF, blank/cancelled OCR, exact Save As, real multitrack media, subtitle text, languages, chapters, metadata removal, ASS styling warnings, default/forced flag comparisons, and retained queue warnings.
