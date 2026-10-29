@@ -63,7 +63,7 @@ The metadata policy covers supported descriptive tags, not every binary property
 | GIF automatic settings | 15 frames/s, maximum width 960 pixels |
 | EPUB default | Version 2 |
 
-An explicit audio bitrate overrides its quality preset. Ordinary video uses the FFmpeg quality mappings above so separate tracks can be retained. Native playback fallback uses Medium for Balanced and Highest for High. A height/width cap never deliberately enlarges a smaller source. System presets can also affect resolution and codec characteristics.
+An explicit audio bitrate overrides its quality preset. Simple compatible MP4/MOV retains native quality presets; video requiring explicit track mapping uses the FFmpeg quality mappings above. Compatible AV1 retains native decoding. Native playback fallback uses Medium for Balanced and Highest for High. A height/width cap never deliberately enlarges a smaller source. System presets can also affect resolution and codec characteristics.
 
 Match-source PCM accepts supported 16/24/32-bit integer and 32-bit float sources. Lossy sources use a documented 16-bit fallback. Unsupported source depths, including 64-bit float, produce an error rather than silently lose precision. Native resizing with multiple video tracks is refused; FFmpeg keeps the first video and warns about extra video tracks. Native video export preserves disabled tracks and applies actual audio gain, including mute, through an explicit mix. Unsupported source playback gains outside 0…1 are refused without clamping.
 

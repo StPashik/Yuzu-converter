@@ -15,6 +15,11 @@ struct MediaTracks {
     private struct Chapter: Decodable {}
     let streams: [Stream]
     let chapterCount: Int
+    var needsExplicitMapping: Bool {
+        streams.filter { $0.codec_type == "audio" }.count > 1 || chapterCount > 0
+            || streams.contains { $0.codec_type == "subtitle" || $0.codec_type == "attachment" }
+            || streams.filter { $0.codec_type == "video" }.count > 1
+    }
 
     init(url: URL, probe: URL) throws {
         let json = try ProcessRunner.checked(probe, ["-v", "error", "-protocol_whitelist", "fd",

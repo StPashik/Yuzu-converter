@@ -20,6 +20,7 @@ final class MediaTrackTests: XCTestCase {
         let input = try fixture(ffmpeg)
         let original = try Data(contentsOf: input)
         let source = try SourceFile(url: input)
+        XCTAssertTrue(try MediaTracks(url: input, probe: probe).needsExplicitMapping)
         for target: FileFormat in [.mp4, .mov, .webm, .avi, .wmv] {
             let warnings = TrackWarnings()
             let output = try await ConversionEngine().convert(source, to: target, in: directory,
@@ -66,10 +67,11 @@ final class MediaTrackTests: XCTestCase {
     }
 
     func testSoleAudioDefaultFlagDoesNotLeaveAFalseContentLossWarning() async throws {
-        let (ffmpeg, _) = try tools()
+        let (ffmpeg, probe) = try tools()
         let original = try fixture(ffmpeg)
         let single = directory.appendingPathComponent("Single.mkv")
         _ = try ProcessRunner.checked(ffmpeg, ["-v", "error", "-i", original.path, "-map", "0:v:0", "-map", "0:a:0", "-map_chapters", "-1", "-c", "copy", single.path])
+        XCTAssertFalse(try MediaTracks(url: single, probe: probe).needsExplicitMapping)
         let warnings = TrackWarnings()
         _ = try await ConversionEngine().convert(SourceFile(url: single), to: .avi, in: directory,
             onWarning: { await warnings.append($0) })

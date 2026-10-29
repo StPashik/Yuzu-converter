@@ -100,16 +100,24 @@ public struct ConversionEngine: Sendable {
                 try NativeDocuments.image(source.url, to: target, output: output, options: options)
             } else { try media(source, to: target, output: output, options: options) }
         } else if source.format.category == "Audio" || source.format.category == "Video" {
-            if source.format.category == "Video", source.format != .gif, [.mp4, .mov, .mkv, .webm, .avi, .wmv].contains(target),
-               let probe = tools.ffprobe, tools.ffmpeg != nil, NativeMedia.supportsFFmpegPlayback(source) {
-                let tracks = try MediaTracks(url: source.url, probe: probe)
+            var inventory: MediaTracks?
+            if source.format.category == "Video", source.format != .gif, [.mp4, .mov, .mkv, .webm, .avi, .wmv].contains(target), let probe = tools.ffprobe {
+                inventory = try MediaTracks(url: source.url, probe: probe)
+            }
+            let native = NativeMedia.supports(source, to: target)
+            let safePlayback = NativeMedia.supportsFFmpegPlayback(source)
+            // Keep native decoders/quality for simple files, and hardware-dependent AV1 that our FFmpeg cannot decode.
+            var nativeVideo = source.format.category == "Video" && native && (inventory.map {
+                !$0.needsExplicitMapping || $0.streams.first(where: { $0.codec_type == "video" })?.codec_name == "av1" || !safePlayback
+            } ?? true)
+            if let tracks = inventory, !nativeVideo, let probe = tools.ffprobe, tools.ffmpeg != nil, safePlayback {
                 let plan = tracks.plan(target: target, preserveMetadata: options.preserveMetadata)
                 try media(source, to: target, output: output, options: options, trackArguments: plan.arguments)
                 warnings += try tracks.validate(output, probe: probe, plan: plan)
                 warnings += plan.warnings
             }
             // Keep native playback semantics for disabled/muted tracks that FFmpeg cannot represent safely.
-            else if NativeMedia.supports(source, to: target) {
+            else if native {
                 do { try await NativeMedia.convert(source, to: target, output: output, options: options) }
                 catch {
                     try Task.checkCancellation()
@@ -119,12 +127,11 @@ public struct ConversionEngine: Sendable {
                           NativeMedia.supportsFFmpegPlayback(source) else { throw error }
                     if FileManager.default.fileExists(atPath: output.path) { try FileManager.default.removeItem(at: output) }
                     try media(source, to: target, output: output, options: options)
+                    nativeVideo = false
                 }
             }
             else { try media(source, to: target, output: output, options: options) }
-            if source.format.category == "Video", source.format != .gif, [.mp4, .mov].contains(target),
-               !NativeMedia.supportsFFmpegPlayback(source), let probe = tools.ffprobe {
-                let original = try MediaTracks(url: source.url, probe: probe)
+            if nativeVideo, let original = inventory, let probe = tools.ffprobe {
                 let result = try MediaTracks(url: output, probe: probe)
                 if result.streams.filter({ $0.codec_type == "audio" }).count < original.streams.filter({ $0.codec_type == "audio" }).count {
                     warnings.append("The system exporter combined audio tracks to preserve the source playback gain and disabled-track settings. Separate tracks remain in the original file.")

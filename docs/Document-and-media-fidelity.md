@@ -16,7 +16,7 @@ PDF pages with a nonempty text layer use it directly. Pages without text are ren
 
 ## Video tracks and warnings
 
-For ordinary MP4/MOV/MKV/WebM/AVI/WMV input/output, bundled FFprobe inventories the actual streams. FFmpeg maps the first video and every audio stream explicitly. Audio tracks remain separate; supported language tags and default/forced dispositions are requested explicitly. Output disposition changes produce a warning (the bundled MOV muxer does not retain the forced-subtitle flag). MP4 alternate-language groups keep their selected/default track. An independent disabled track or modified QuickTime playback gain still prevents an unsafe FFmpeg route; compatible system export preserves playback semantics and warns if it combines audio or omits subtitles/chapters.
+For MP4/MOV/MKV/WebM/AVI/WMV container conversions, bundled FFprobe inventories the actual streams. FFmpeg maps the first video and every audio stream explicitly. Audio tracks remain separate; supported language tags and default/forced dispositions are requested explicitly. Output disposition changes produce a warning (the bundled MOV muxer does not retain the forced-subtitle flag). MP4 alternate-language groups keep their selected/default track. An independent disabled track or modified QuickTime playback gain still prevents an unsafe FFmpeg route; compatible system export preserves playback semantics and warns if it combines audio or omits subtitles/chapters.
 
 | Destination | Embedded subtitles | Chapters with Preserve Metadata on |
 | --- | --- | --- |
