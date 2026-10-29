@@ -86,7 +86,7 @@ process.stdout.write(JSON.stringify(pair.privateKey.export({ format: 'jwk' })));
 ]]></description>
 <enclosure url="http://127.0.0.1:{server.server_port}/must-not-download.zip" sparkle:edSignature="{signature}" length="1" type="application/octet-stream"/>
 </item></channel></rss>''')
-        signer = root / ".build/verification/artifacts/sparkle/Sparkle/bin/sign_update"
+        signer = root / f".build/release-{arch}/artifacts/sparkle/Sparkle/bin/sign_update"
         subprocess.run([str(signer), "--ed-key-file", str(private_key), str(xml)], check=True, capture_output=True)
         feed = xml.read_bytes()
         for path, version, expected in [("/feed.xml", build - 1, "available"), ("/feed.xml", build, "current"),
