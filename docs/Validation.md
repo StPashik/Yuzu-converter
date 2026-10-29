@@ -29,6 +29,10 @@ The draft's English notes and nine uploaded sizes/digests matched the frozen fil
 
 Both legacy bridges are copied from those exact public signed feeds after their compatible assets are public, without regenerating signatures or URLs. The original application-release tag remains unchanged. The owner installs personally; installed app copies are not release test targets.
 
+[Legacy feed PR #31](https://github.com/StPashik/Yuzu-converter/pull/31) passed [metadata/feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40888163558): nine Python tests, six Node release tests, and both signed-feed checks. Native matrix expansion was correctly skipped for only documentation/feed changes. Both normal raw main/updates URLs returned the exact signed public XML. Eight further production-key Sparkle checks passed for the same old/current builds and Markdown notes across both CPUs, for **16 information-only production checks** in total. No owner installation or restart was performed.
+
+The history audit preserved all 14 earlier release records, their asset IDs/digests/sizes, and all 14 earlier tag objects. The release branch carries main's application-release and legacy-publication merge history into the GitFlow merge-back. New physical/other-device checks remain explicitly unverified.
+
 ## v0.6.2 — Drag workflow, compact operations, and table PDFs
 
 Local Apple Silicon checks on October 29, 2026: **103 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Final review additionally exercises optional/zero XLSX sizing hints. Tests run in project-specific scratch paths; installed owner app copies are not test targets.
