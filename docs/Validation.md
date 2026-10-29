@@ -17,7 +17,13 @@ The feature arm64 signed own-container Sandbox archive passed local OCR and mult
 | npm | Local npm ci with scripts disabled and 24 final Node tests passed; seven exact package files; both actual ZIPs installed/version/CPU/codesign-checked only in temporary homes, without UI launch |
 | Source/licenses | 24 corresponding-source/configuration files, four pinned upstream archives, both helper hashes/portable configurations, seven exact upstream media notices, and exact bundled Sparkle artifact licenses verified |
 | Updates | Both archive signatures independently verified with the embedded production key; exact reviewed English Markdown in both signed feeds; real HTTP Sparkle available/current/tampered/500 fixture passed without installation |
-| Frozen assets | Nine files; eight payload SHA-256 values in [Release-checksums-0.7.0.txt](Release-checksums-0.7.0.txt); legacy feeds have not advanced |
+| Frozen assets | Nine files; eight payload SHA-256 values in [Release-checksums-0.7.0.txt](Release-checksums-0.7.0.txt); legacy feeds held until asset publication |
+
+[Release PR #34](https://github.com/StPashik/Yuzu-converter/pull/34) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40914736167): each CPU ran 131 Swift tests and 24 Node tests without skips, plus its signed Sandbox OCR/multitrack archive. Tag `v0.7.0` points to the exact main merge `45582cf218a5026035fe7d8c84ae49f0b2a7400c`, whose tree matches the verified release head.
+
+The draft's exact English notes and all nine uploaded sizes/digests matched the frozen files before stable Latest publication. All nine public unauthenticated versioned downloads matched SHA-256. Both ordinary Latest feed URLs returned the exact signed Markdown XML. Ten production-key Sparkle information checks passed across arm64/x64: simulated builds 7, 13, 14, and 15 find build 16 and its notes; build 16 reports current. No update was downloaded or installed by these probes.
+
+Both legacy bridges are exact copies of those public signed feeds, prepared only after their compatible assets became public, without regenerating signatures or URLs. Their publication uses a separate PR; the application-release tag stays unchanged. The owner installs personally through Check for Updates.
 
 ## v0.6.3 — Retry remaining inputs and repair shelf references
 
