@@ -21,7 +21,7 @@
     <key>SUFeedURL</key><string>https://github.com/StPashik/Yuzu-converter/releases/latest/download/appcast-arm64.xml</string>
     <key>SUPublicEDKey</key><string>IVOZO01ZLkVufQPqzWYXLatnjLzseWHAkiYa/n4xrrw=</string>
     <key>SUEnableInstallerLauncherService</key><true/>
-    <key>SUEnableAutomaticChecks</key><false/>
+    <key>SUEnableAutomaticChecks</key><true/>
     <key>SUShowReleaseNotes</key><true/>
     <key>SUAutomaticallyUpdate</key><false/>
     <key>SUAllowsAutomaticUpdates</key><false/>

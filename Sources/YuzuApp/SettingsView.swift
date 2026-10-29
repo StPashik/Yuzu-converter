@@ -242,11 +242,16 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
                 Text(L10n.text("Convert files and run Actions from your menu bar."))
                     .multilineTextAlignment(.center).foregroundStyle(.secondary)
+                Toggle(L10n.text("Check for updates automatically"), isOn: Binding(
+                    get: { updater.automaticallyChecksForUpdates }, set: updater.setAutomaticallyChecksForUpdates))
+                    .toggleStyle(.checkbox)
                 Button(L10n.text("Check for Updates…")) { updater.checkForUpdates() }
                     .disabled(!updater.canCheckForUpdates).controlSize(.large)
                 Text(L10n.text(updater.installationWaiting
                     ? "The update will install when file operations finish."
-                    : "Updates are checked only when you ask. Installation requires your confirmation."))
+                    : updater.automaticallyChecksForUpdates
+                        ? "Checks at launch and about once a day. Downloading and installing require your confirmation."
+                        : "Updates are checked only when you ask. Installation requires your confirmation."))
                     .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     .frame(maxWidth: 440)
                 HStack(spacing: 22) {

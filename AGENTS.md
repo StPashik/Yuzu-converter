@@ -10,7 +10,7 @@ Follow GitFlow through GitHub pull requests: feature/* from develop into develop
 
 Publish normal releases as stable GitHub Latest releases. Use prerelease status only when the owner explicitly requests a beta/RC. Ad-hoc signing and missing notarization are documented artifact limitations, not reasons to silently choose prerelease status.
 
-The owner installs updates personally through Check for Updates. Release work must not install or upgrade either installed app copy, run global npm installation, quit, relaunch, or restart the owner's app unless explicitly requested. Test installs only in isolated temporary homes. Keep signing keys in this project's Keychain account; do not copy Beamly's keys, application code, or installation behavior.
+The app checks at launch and periodically by default; Settings → About can disable automatic checking. Installation always requires the owner’s confirmation in the update offer or Check for Updates. Release work must not install or upgrade either installed app copy, run global npm installation, quit, relaunch, or restart the owner's app unless explicitly requested. Test installs only in isolated temporary homes. Keep signing keys in this project's Keychain account; do not copy Beamly's keys, application code, or installation behavior.
 
 Make releases useful to people: clear English copy, direct downloads, a short quick start, accurate format support, and accessible documentation. Explain why consequential code choices exist in concise comments; do not narrate obvious code.
 

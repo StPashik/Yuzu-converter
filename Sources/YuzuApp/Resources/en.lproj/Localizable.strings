@@ -257,3 +257,6 @@
 "File not found" = "File not found";
 
 "Some video content could not be retained. See Details." = "Some video content could not be retained. See Details.";
+
+"Check for updates automatically" = "Check for updates automatically";
+"Checks at launch and about once a day. Downloading and installing require your confirmation." = "Checks at launch and about once a day. Downloading and installing require your confirmation.";

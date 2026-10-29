@@ -3,6 +3,25 @@ import Sparkle
 @testable import YuzuApp
 
 final class UpdaterTests: XCTestCase {
+    func testPackagedChecksDefaultOnButDownloadsAndInstallationRequireConsent() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let data = try Data(contentsOf: root.appendingPathComponent("Resources/Info.plist"))
+        let info = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+        XCTAssertEqual(info["SUEnableAutomaticChecks"] as? Bool, true)
+        XCTAssertEqual(info["SUShowReleaseNotes"] as? Bool, true)
+        XCTAssertEqual(info["SUAutomaticallyUpdate"] as? Bool, false)
+        XCTAssertEqual(info["SUAllowsAutomaticUpdates"] as? Bool, false)
+    }
+
+    @MainActor
+    func testUnpackagedDevelopmentDoesNotStartNetworkChecks() {
+        let updater = AppUpdater()
+        updater.start(); updater.start()
+        XCTAssertFalse(updater.controller.updater.sessionInProgress)
+        XCTAssertFalse(updater.controller.updater.canCheckForUpdates)
+        XCTAssertEqual(updater.automaticallyChecksForUpdates, updater.controller.updater.automaticallyChecksForUpdates)
+    }
+
     @MainActor
     func testInstallationWaitsForTheFileQueueAndResumesOnlyOnce() {
         let updater = AppUpdater()

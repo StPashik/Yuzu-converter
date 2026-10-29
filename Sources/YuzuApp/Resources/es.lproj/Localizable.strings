@@ -257,3 +257,6 @@
 "File not found" = "Archivo no encontrado";
 
 "Some video content could not be retained. See Details." = "No se pudo conservar parte del contenido del vídeo. Consulta los detalles.";
+
+"Check for updates automatically" = "Buscar actualizaciones automáticamente";
+"Checks at launch and about once a day. Downloading and installing require your confirmation." = "Se comprueba al iniciar y aproximadamente una vez al día. La descarga y la instalación requieren tu confirmación.";

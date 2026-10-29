@@ -2,6 +2,14 @@
 
 Updated October 29, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.7.1 — Startup checks and the automatic-checking checkbox
+
+Local feature verification on October 29, 2026: **133 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips in the separate `.build/startup071-tests` scratch path. Both new updater tests cover packaged default/consent flags and the development-bundle startup guard. Five-language/light-dark Settings renders include the new About checkbox; English light and Russian dark renders were inspected. These are development previews, not physical Sandbox/other-Mac checks.
+
+The arm64 feature signed own-container archive passed. Seventeen real signed-feed HTTP scenarios also passed in isolated fixture processes: four information-only checks and thirteen background/manual/preference/choice cases. They cover current/offline/tampered silence, repeated dismiss, disable persistence, manual checking while disabled, re-enable persistence, skipped-version suppression and manual recovery. The noninteractive driver rejects unexpected popups/downloads and only replies Dismiss/Skip; the HTTP server confirms no archive URL is requested. Temporary bundle identities and ephemeral test keys isolate the owner's app and release Keychain. Native arm64/Intel CI and final release evidence follow separately.
+
+Physical startup-dialog interaction, actual download/installation/relaunch, macOS 13, VoiceOver, and other-Mac checks remain deferred/unverified. Release work never installs/restarts either owner app copy or global npm.
+
 ## v0.7.0 — Document fidelity, local OCR, and video tracks
 
 **131 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed locally without skips. Local feature checks use the separate `.build/feature070-tests` scratch path and private temporary files with bundled media required. The styled XLSX fixture's rendered PDF was visually inspected: merged blue header, white bold title, source borders, date, currency, and percentage values. The new suite also covers row/column style defaults, both Excel date systems, large decimal precision, malformed overlapping merges, oversized merged-row/column-band pagination, five-language OCR, mixed text/scan PDFs, multipage oriented TIFF, blank/cancelled OCR, exact Save As, real multitrack media, subtitle text, languages, chapters, metadata removal, ASS styling warnings, default/forced flag comparisons, and retained queue warnings.
