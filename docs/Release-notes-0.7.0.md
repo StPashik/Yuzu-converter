@@ -1,0 +1,39 @@
+# Yuzu Converter 0.7.0
+
+Read scans locally, keep spreadsheet styling, and retain more of your video's content.
+
+## What changed
+
+- **Clearer XLSX PDFs.** Common dates, currency, percentages, fonts, colors, solid fills, borders, and merged cells now reach the PDF. Wide and tall tables continue across pages; all sheets remain included.
+- **Read scans locally.** Choose TXT for a raster image or PDF. Apple Vision recognizes scan-only PDF pages and image frames on your Mac, with supported models for English, Russian, German, French, and Spanish. Existing PDF text stays in order. Browser images and unsaved screenshots also offer TXT through Save As.
+- **Keep video tracks.** Video exports retain separate audio tracks, compatible embedded subtitles, and supported chapters. Track counts and playback flags are checked after encoding. MP4 alternate-language tracks remain selectable.
+- **Visible content-loss warnings.** Unsupported subtitles, simplified styling, missing chapters, or changed track flags appear in Operations with copyable Details. These warnings remain until Clear Finished; ordinary successes still disappear after one second.
+
+## Quick start
+
+1. Drag a file and hold **Shift**, or your saved conversion shortcut.
+2. Choose **TXT** for OCR, **PDF** for a workbook, or a compatible video format.
+3. Results appear beside the original. Virtual images ask where to save. If Operations shows a warning, open **Details…** before discarding the original.
+
+For an existing installation, choose **Check for Updates…** from the menu bar or Settings → About. These notes appear before you choose to install. Release publication does not replace or restart your installed copy.
+
+## Downloads
+
+Requires macOS 13 or later. Choose your Mac's architecture:
+
+- [Apple Silicon app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.7.0/Yuzu-Converter-0.7.0-arm64.zip)
+- [Intel app](https://github.com/StPashik/Yuzu-converter/releases/download/v0.7.0/Yuzu-Converter-0.7.0-x64.zip)
+- [npm installer](https://github.com/StPashik/Yuzu-converter/releases/download/v0.7.0/stpashik-yuzu-converter-0.7.0.tgz) · [Checksums](https://github.com/StPashik/Yuzu-converter/releases/download/v0.7.0/SHA256SUMS)
+- [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.7.0/Yuzu-FFmpeg-Sources-0.7.0.tar.xz) · [Component notices](https://github.com/StPashik/Yuzu-converter/releases/download/v0.7.0/THIRD_PARTY_NOTICES.md)
+
+For a first installation, unzip and move the app to Applications. [Quick start](https://github.com/StPashik/Yuzu-converter/blob/v0.7.0/docs/Quick-start.md) covers permissions, npm installation, and the wheel.
+
+## Scope and known limits
+
+OCR accuracy depends on scan quality, layout, language, and macOS models. Images use a bounded working resolution; a partly populated PDF text layer is not supplemented with image OCR. OCR exports plain text, not editable Office reconstruction.
+
+Spreadsheet printing is not Excel's layout/calculation engine: cached values are used, complex number/conditional formats and charts remain limited, and editable workbook exports remain values-only. [Document and media fidelity](https://github.com/StPashik/Yuzu-converter/blob/v0.7.0/docs/Document-and-media-fidelity.md) lists the exact supported subset.
+
+MP4/MOV use text subtitles; MKV retains supported text/bitmap subtitle codecs; WebM uses WebVTT. AVI/WMV cannot retain embedded subtitles or chapters. Some containers change language/playback flags; MOV can lose the forced-subtitle flag. Warnings explain these differences. Preserve Metadata off intentionally removes tags and chapters. MP3 exports first audio; GIF is silent. Existing codec limits remain, including no bundled AV1 software decoder.
+
+Separate arm64/x64 archives include FFmpeg/FFprobe 9.0.2, libvpx, Opus, and LAME. The app and helpers have ad hoc signatures, without Developer ID or notarization; Gatekeeper may block first launch. Physical Finder/browser/Powerbox interoperability, VoiceOver, macOS 13, bitmap subtitle content, and other-Mac appearance remain unverified. [Validation record](https://github.com/StPashik/Yuzu-converter/blob/v0.7.0/docs/Validation.md) distinguishes automated checks from these deferred gates.
