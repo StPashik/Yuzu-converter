@@ -92,17 +92,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                     options: self.settings.options(for: .zip)))
         }
         queue.onIdle = { [weak self] in self?.updater.resumeInstallationIfReady() }
+        queue.onFilesMoved = { [weak self] moves, access in self?.actions.filesMoved(moves, access: access) }
         updater.canRestart = { [weak self] in
             self?.queue.isIdle != false && self?.preparingRequests == 0 && self?.shelfSelection == nil
         }
         updater.onWillRestart = { [weak self] in
             self?.installingUpdate = true
+            self?.queue.allowsRetry = false
             self?.monitor.stop()
             self?.refreshShelfShortcut()
         }
         updater.onUpdateCycleFinished = { [weak self] in
             guard let self, installingUpdate, !terminating else { return }
             installingUpdate = false
+            queue.allowsRetry = true
             monitor.start()
             refreshShelfShortcut()
         }
@@ -271,6 +274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         terminating = true
+        queue.allowsRetry = false
         monitor.stop()
         refreshShelfShortcut()
         let detecting = detection

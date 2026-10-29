@@ -115,3 +115,8 @@ Drop several supported images on PDF to create one multi-page document in the su
 Raster data, an image file promise, or a plain HTTP(S) image URL from a browser/screenshot can offer Save As after a conversion petal is chosen. See [virtual image limits and permissions](Virtual-image-drops.md). Existing local file URLs keep the normal beside-original behavior unless the drag explicitly marks promised screenshot image content.
 
 XLSX/ODS/CSV/TSV to PDF prints a paginated table with grid lines and wrapped values. XLSX column widths and row heights are approximated. Formulas use cached values; a missing cache prints the formula instead of inventing a result. Full Excel formatting/merged cells/charts are not reconstructed; keep the workbook when those matter.
+
+
+## Recover a failed operation
+
+Open Operations and read the recovery suggestion. Fix the reported issue, then choose **Retry** to append remaining inputs to the queue; files already published are preserved. **Details…** shows the original diagnostic and **Copy Details** copies it in full. Clearing a failure releases its retained inputs. For a missing shelf item, choose the search icon and locate the original; this updates only the reference. See [Retry and reference recovery](Retry-and-references.md).

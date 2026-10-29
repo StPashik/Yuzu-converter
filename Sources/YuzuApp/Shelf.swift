@@ -1,5 +1,17 @@
 import AppKit
 import QuickLookThumbnailing
+import YuzuCore
+
+enum ShelfFileState: Sendable {
+    case available, missing, accessRequired
+
+    static func read(_ url: URL) -> ShelfFileState {
+        do {
+            guard try url.checkResourceIsReachable() else { return .missing }
+            return FileManager.default.isReadableFile(atPath: url.path) ? .available : .accessRequired
+        } catch { return JobRecovery(error) == .missing ? .missing : .accessRequired }
+    }
+}
 
 @MainActor
 final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableViewDelegate, NSWindowDelegate {
@@ -12,6 +24,10 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
     private weak var anchor: NSView?
     private var offset: CGFloat = 0
     private var reloadingTable = false
+    private(set) var fileStates: [URL: ShelfFileState] = [:]
+    private var availabilityTask: Task<Void, Never>?
+    private var availabilityID = UUID()
+    private var availabilityTimer: Timer?
 
     init() {
         let panel = ShelfPanel(contentRect: NSRect(origin: .zero, size: Self.contentSize(fileCount: 0)),
@@ -46,6 +62,8 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
     deinit {
+        availabilityTask?.cancel()
+        availabilityTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
         NSWorkspace.shared.notificationCenter.removeObserver(self)
     }
@@ -75,6 +93,13 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
         reloadTable()
         rebuildMenu()
         window?.makeKeyAndOrderFront(nil)
+        refreshAvailability()
+        availabilityTimer?.invalidate()
+        availabilityTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                if self?.availabilityTask == nil, self?.window?.isVisible == true { self?.refreshAvailability() }
+            }
+        }
     }
 
     @objc private func reposition() {
@@ -102,11 +127,13 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
         content.refreshLanguage(fileCount: files.count)
         reloadTable()
         rebuildMenu()
+        refreshAvailability()
     }
 
     func add(_ incoming: ScopedFiles) {
         var added = IndexSet()
-        for url in incoming.urls where url.isFileURL && !files.contains(url) {
+        var paths = Set(files.map { $0.standardizedFileURL.path })
+        for url in incoming.urls where url.isFileURL && paths.insert(url.standardizedFileURL.path).inserted {
             added.insert(files.count)
             files.append(url)
             leases[url] = incoming
@@ -114,6 +141,7 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
         reload()
         if !added.isEmpty { content.table.selectRowIndexes(added, byExtendingSelection: false) }
         rebuildMenu()
+        refreshAvailability()
     }
 
     func removeFiles(at rows: IndexSet) {
@@ -123,10 +151,81 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
             if let pending = requests.removeValue(forKey: url) { QLThumbnailGenerator.shared.cancel(pending.request) }
             thumbnails[url] = nil
             leases[url] = nil
+            fileStates[url] = nil
         }
         reload()
         content.table.selectRowIndexes(IndexSet(files.indices.filter { selection.contains(files[$0]) }), byExtendingSelection: false)
         rebuildMenu()
+        refreshAvailability()
+    }
+
+    func refreshAvailability() {
+        availabilityTask?.cancel()
+        let id = UUID()
+        availabilityID = id
+        guard !files.isEmpty else { availabilityTask = nil; fileStates = [:]; return }
+        let batch = ScopedFiles(files, retaining: Array(leases.values))
+        availabilityTask = Task { [weak self] in
+            let worker = Task.detached(priority: .utility) { () throws -> [URL: ShelfFileState] in
+                defer { withExtendedLifetime(batch) {} }
+                var states: [URL: ShelfFileState] = [:]
+                for url in batch.urls {
+                    try Task.checkCancellation()
+                    states[url] = ShelfFileState.read(url)
+                }
+                return states
+            }
+            let states = try? await withTaskCancellationHandler(operation: { try await worker.value },
+                                                               onCancel: { worker.cancel() })
+            guard let self, self.availabilityID == id, self.files == batch.urls else { return }
+            self.availabilityTask = nil
+            guard !Task.isCancelled, let states, states != self.fileStates else { return }
+            for (url, state) in states where state != .available {
+                if let pending = self.requests.removeValue(forKey: url) { QLThumbnailGenerator.shared.cancel(pending.request) }
+                self.thumbnails[url] = nil
+            }
+            self.fileStates = states
+            self.reloadTable()
+        }
+    }
+
+    func apply(_ moves: [FileMove], access: ScopedFiles) {
+        let replacements = files.reduce(into: [URL: URL]()) { result, url in
+            if let changed = moves.lazy.compactMap({ $0.relocating(url) }).first, changed != url { result[url] = changed }
+        }
+        replaceReferences(replacements, access: access)
+    }
+
+    func replaceReference(_ original: URL, with replacement: ScopedFiles) {
+        guard files.contains(original), replacement.urls.count == 1, let url = replacement.urls.first, url.isFileURL else { return }
+        replaceReferences([original: url], access: replacement)
+    }
+
+    private func replaceReferences(_ replacements: [URL: URL], access: ScopedFiles) {
+        guard !replacements.isEmpty else { return }
+        let selection = Set(selectedFiles().map { (replacements[$0] ?? $0).standardizedFileURL.path })
+        var next: [URL] = [], nextLeases: [URL: ScopedFiles] = [:]
+        var paths: [String: URL] = [:]
+        for original in files {
+            let proposed = replacements[original] ?? original
+            let path = proposed.standardizedFileURL.path
+            let url = paths[path] ?? proposed
+            if paths[path] == nil { paths[path] = url; next.append(url) }
+            if replacements[original] != nil {
+                if let pending = requests.removeValue(forKey: original) { QLThumbnailGenerator.shared.cancel(pending.request) }
+                thumbnails[original] = nil
+                fileStates[url] = nil
+                nextLeases[url] = access
+            } else if nextLeases[url] == nil { nextLeases[url] = leases[original] }
+        }
+        files = next
+        leases = nextLeases
+        thumbnails = thumbnails.filter { files.contains($0.key) }
+        fileStates = fileStates.filter { files.contains($0.key) }
+        reload()
+        content.table.selectRowIndexes(IndexSet(files.indices.filter { selection.contains(files[$0].standardizedFileURL.path) }), byExtendingSelection: false)
+        rebuildMenu()
+        refreshAvailability()
     }
 
     private func selectedFiles() -> [URL] {
@@ -134,7 +233,9 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
     }
 
     func retainedBatches(for urls: [URL]) -> [ScopedFiles] {
-        urls.compactMap { leases[$0] }
+        // Pasteboard directory URLs may add a trailing slash without changing the referenced file.
+        let byPath = Dictionary(leases.map { ($0.key.standardizedFileURL.path, $0.value) }, uniquingKeysWith: { first, _ in first })
+        return urls.compactMap { byPath[$0.standardizedFileURL.path] }
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {
@@ -172,7 +273,7 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
         let cell = tableView.makeView(withIdentifier: identifier, owner: nil) as? ShelfCell ?? ShelfCell()
         cell.identifier = identifier
         let url = files[row]
-        cell.configure(url: url, image: thumbnails[url] ?? NSWorkspace.shared.icon(forFile: url.path))
+        cell.configure(url: url, image: thumbnails[url] ?? NSWorkspace.shared.icon(forFile: url.path), state: fileStates[url])
         cell.revealButton.tag = row
         cell.revealButton.target = self
         cell.revealButton.action = #selector(revealFile(_:))
@@ -184,7 +285,7 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
     }
 
     private func loadThumbnail(for url: URL) {
-        guard thumbnails[url] == nil, requests[url] == nil, let lease = leases[url] else { return }
+        guard fileStates[url] == .available, thumbnails[url] == nil, requests[url] == nil, let lease = leases[url] else { return }
         let request = QLThumbnailGenerator.Request(fileAt: url, size: NSSize(width: 40, height: 40),
             scale: window?.backingScaleFactor ?? 2, representationTypes: [.thumbnail, .icon])
         let id = UUID()
@@ -203,11 +304,13 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? { ShelfRow() }
     func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> NSPasteboardWriting? {
-        files[row] as NSURL
+        guard files.indices.contains(row), fileStates[files[row]] == nil || fileStates[files[row]] == .available else { return nil }
+        return files[row] as NSURL
     }
     @objc private func revealFile(_ sender: NSButton) {
         guard files.indices.contains(sender.tag) else { return }
         let url = files[sender.tag]
+        if let state = fileStates[url], state != .available { locateOriginal(url); return }
         let batch = ScopedFiles([url], retaining: retainedBatches(for: [url]))
         Task {
             do {
@@ -217,18 +320,36 @@ final class ShelfController: NSWindowController, NSTableViewDataSource, NSTableV
                 }.value
                 NSWorkspace.shared.activateFileViewerSelecting([url])
             } catch {
-                let alert = NSAlert()
-                alert.messageText = L10n.text("Could not show the file")
-                alert.informativeText = L10n.text("The file is no longer available at its original location.") + "\n" + url.path
-                alert.runModal()
+                guard files.contains(url) else { return }
+                fileStates[url] = JobRecovery(error) == .missing ? .missing : .accessRequired
+                reloadTable()
+                locateOriginal(url)
             }
         }
+    }
+    private func locateOriginal(_ original: URL) {
+        NSApp.activate(ignoringOtherApps: true)
+        let panel = NSOpenPanel()
+        panel.title = L10n.text("Locate Original")
+        panel.message = L10n.text("Choose the file or folder in its new location. Only the shelf reference will change.")
+        panel.prompt = L10n.text("Use This Item")
+        panel.directoryURL = original.deletingLastPathComponent()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        replaceReference(original, with: ScopedFiles([url]))
     }
     @objc private func removeFile(_ sender: NSButton) { removeFiles(at: IndexSet(integer: sender.tag)) }
     @objc private func removeSelected() { removeFiles(at: content.table.selectedRowIndexes) }
     @objc private func clearShelf() { removeFiles(at: IndexSet(files.indices)) }
 
     func windowWillClose(_ notification: Notification) {
+        availabilityTimer?.invalidate()
+        availabilityTimer = nil
+        availabilityTask?.cancel()
+        availabilityTask = nil
+        availabilityID = UUID()
         // Show Shelf needs this session's references and grants; closing only cancels pending previews.
         requests.values.forEach { QLThumbnailGenerator.shared.cancel($0.request) }
         requests.removeAll()
@@ -420,13 +541,20 @@ private final class ShelfCell: NSTableCellView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) is unavailable") }
 
-    func configure(url: URL, image: NSImage) {
+    func configure(url: URL, image: NSImage, state: ShelfFileState?) {
         name.stringValue = url.lastPathComponent
         name.setAccessibilityLabel(url.path)
         folder.stringValue = url.deletingLastPathComponent().lastPathComponent
+        let unavailable = state != nil && state != .available
+        if unavailable {
+            folder.stringValue = L10n.text(state == .missing ? "File not found" : "Access is required")
+        }
+        folder.textColor = unavailable ? .systemOrange : .secondaryLabelColor
         preview.image = image
         toolTip = url.path
-        revealButton.toolTip = L10n.text("Show in Finder") + ": " + url.lastPathComponent
+        revealButton.image = NSImage(systemSymbolName: unavailable ? "magnifyingglass" : "folder", accessibilityDescription: nil)
+        revealButton.toolTip = L10n.text(unavailable ? "Locate Original…" : "Show in Finder") + ": " + url.lastPathComponent
+        revealButton.contentTintColor = unavailable ? .systemOrange : .secondaryLabelColor
         revealButton.setAccessibilityLabel(revealButton.toolTip)
         removeButton.toolTip = L10n.text("Remove from Shelf") + ": " + url.lastPathComponent
         removeButton.setAccessibilityLabel(removeButton.toolTip)

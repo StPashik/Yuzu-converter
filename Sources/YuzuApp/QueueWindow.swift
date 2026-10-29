@@ -10,8 +10,8 @@ final class QueueWindowController: NSWindowController {
     private var subscription: AnyCancellable?
     private var hadEntries = false
 
-    static func contentSize(entryCount: Int) -> NSSize {
-        NSSize(width: 440, height: entryCount == 0 ? 210 : 116 + CGFloat(min(entryCount, 3)) * 88)
+    static func contentSize(entryCount: Int, hasFailures: Bool = false) -> NSSize {
+        NSSize(width: 440, height: entryCount == 0 ? 210 : 116 + CGFloat(min(entryCount, 3)) * 88 + (hasFailures ? 64 : 0))
     }
 
     init(queue: JobQueue) {
@@ -19,7 +19,8 @@ final class QueueWindowController: NSWindowController {
         hosting = NSHostingView(rootView: QueueView(queue: queue, language: L10n.language, onClose: {}))
         // Let the panel constrain the scrollable history instead of adopting the host’s intrinsic height.
         hosting.sizingOptions = []
-        let panel = QueuePanel(contentRect: NSRect(origin: .zero, size: Self.contentSize(entryCount: queue.entries.count)),
+        let panel = QueuePanel(contentRect: NSRect(origin: .zero, size: Self.contentSize(entryCount: queue.entries.count,
+            hasFailures: queue.entries.contains { $0.state == .failed })),
             styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         panel.isOpaque = false
@@ -38,7 +39,7 @@ final class QueueWindowController: NSWindowController {
         panel.center()
         subscription = queue.$entries.receive(on: RunLoop.main).sink { [weak self] entries in
             guard let self, let window = self.window else { return }
-            let size = Self.contentSize(entryCount: entries.count)
+            let size = Self.contentSize(entryCount: entries.count, hasFailures: entries.contains { $0.state == .failed })
             var frame = NSRect(x: window.frame.minX, y: window.frame.maxY - size.height,
                                width: size.width, height: size.height)
             if let screen = window.screen { frame.origin.y = max(screen.visibleFrame.minY, frame.origin.y) }
@@ -143,11 +144,21 @@ struct QueueView: View {
                 Text(text(entry.state.rawValue)).font(.caption)
                     .foregroundStyle(entry.state == .failed ? Color.red : Color.secondary)
             }
-            if let error = entry.error { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
+            if let recovery = entry.recovery {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(text(recovery.text.title)).font(.caption.bold()).foregroundStyle(.red)
+                    Text(text(recovery.text.suggestion)).font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             HStack {
                 Text(text("%ld of %ld files completed", entry.completedInputs, entry.filenames.count))
                     .font(.caption2).foregroundStyle(.secondary)
                 Spacer()
+                if entry.error != nil { Button(text("Details…")) { showDetails(entry) } }
+                if entry.canRetry {
+                    Button(text("Retry")) { queue.retry(entry.id) }.disabled(!queue.allowsRetry)
+                }
                 if entry.state.canCancel {
                     Button(text("Cancel")) { queue.cancel(entry.id) }
                 }
@@ -157,5 +168,19 @@ struct QueueView: View {
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color.primary.opacity(0.045)))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.06)))
+    }
+
+    private func showDetails(_ entry: QueueEntry) {
+        let alert = NSAlert()
+        alert.messageText = text("Operation Details")
+        let diagnostic = entry.diagnostic
+        alert.informativeText = String(diagnostic.prefix(2000))
+        if diagnostic.count > 2000 { alert.informativeText += "\n\n" + text("Copy Details includes the full diagnostic.") }
+        alert.addButton(withTitle: text("Close"))
+        alert.addButton(withTitle: text("Copy Details"))
+        if alert.runModal() == .alertSecondButtonReturn {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(diagnostic, forType: .string)
+        }
     }
 }

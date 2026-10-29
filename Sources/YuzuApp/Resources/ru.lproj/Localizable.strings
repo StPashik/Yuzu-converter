@@ -222,3 +222,36 @@
 "Save Converted Image" = "Сохранить изображение";
 "Choose where to save the converted image." = "Выберите, куда сохранить преобразованное изображение.";
 "Choose a new filename. Existing files are never replaced." = "Выберите новое имя. Существующие файлы не перезаписываются.";
+
+/* Retry and shelf reference recovery */
+"Retry" = "Повторить";
+"Details…" = "Подробнее…";
+"Operation Details" = "Подробности операции";
+"Close" = "Закрыть";
+"Copy Details" = "Копировать сведения";
+"Copy Details includes the full diagnostic." = "Кнопка «Копировать сведения» копирует диагностику целиком.";
+"A file or folder is unavailable" = "Файл или папка недоступны";
+"Reconnect the drive or restore the original location. You can also submit the file from its new location." = "Подключите диск или восстановите исходное расположение. Можно также заново перетащить файл из нового места.";
+"Access is required" = "Нужен доступ";
+"Check file permissions and folder access in Settings. Submit the files again if a new access grant is needed." = "Проверьте права файлов и доступ к папкам в настройках. Если доступ нужно предоставить заново, повторно перетащите файлы.";
+"Not enough free space" = "Недостаточно свободного места";
+"Free space on the destination drive, then retry unfinished files." = "Освободите место на целевом диске и повторите обработку незавершённых файлов.";
+"The destination already exists" = "Файл назначения уже существует";
+"Rename or move the existing result before retrying, or choose a new filename. Existing files are never replaced." = "Перед повтором переименуйте или переместите существующий результат либо выберите другое имя. Существующие файлы не заменяются.";
+"The source could not be read" = "Не удалось прочитать исходный файл";
+"Open the file in its original app and repair or replace it, then retry." = "Откройте файл в исходном приложении, исправьте или замените его и повторите операцию.";
+"The image could not be downloaded" = "Не удалось загрузить изображение";
+"Check your connection or use another image link. A link that requires browser sign-in may need a fresh image drag." = "Проверьте подключение или используйте другую ссылку. Если требуется вход в браузере, попробуйте заново перетащить само изображение.";
+"This operation is unavailable" = "Эта операция недоступна";
+"Choose another format or destination. Details explain the current limitation." = "Выберите другой формат или папку назначения. Ограничение описано в подробностях.";
+"The operation could not finish" = "Не удалось завершить операцию";
+"Check the source and destination, then retry unfinished files. Details include the original error." = "Проверьте исходные файлы и папку назначения, затем повторите обработку незавершённых файлов. Исходная ошибка доступна в подробностях.";
+"The image needs to be dragged again" = "Изображение нужно перетащить заново";
+"The source app cannot replay this image promise. Drag the image again to make a new request." = "Исходное приложение не может повторно передать это изображение. Перетащите его заново, чтобы создать новый запрос.";
+"Created results have been preserved" = "Созданные результаты сохранены";
+"No inputs remain to retry. Check the source and created copies before removing anything." = "Незавершённых файлов для повтора не осталось. Проверьте оригиналы и созданные копии, прежде чем что-либо удалять.";
+"Locate Original" = "Найти оригинал";
+"Locate Original…" = "Найти оригинал…";
+"Choose the file or folder in its new location. Only the shelf reference will change." = "Выберите файл или папку в новом расположении. Изменится только ссылка на полке.";
+"Use This Item" = "Выбрать";
+"File not found" = "Файл не найден";

@@ -222,3 +222,36 @@
 "Save Converted Image" = "Guardar imagen convertida";
 "Choose where to save the converted image." = "Elige dónde guardar la imagen convertida.";
 "Choose a new filename. Existing files are never replaced." = "Elige un nombre nuevo. Los archivos existentes nunca se reemplazan.";
+
+/* Retry and shelf reference recovery */
+"Retry" = "Reintentar";
+"Details…" = "Detalles…";
+"Operation Details" = "Detalles de la operación";
+"Close" = "Cerrar";
+"Copy Details" = "Copiar detalles";
+"Copy Details includes the full diagnostic." = "« Copiar detalles » incluye el diagnóstico completo.";
+"A file or folder is unavailable" = "Archivo o carpeta no disponible";
+"Reconnect the drive or restore the original location. You can also submit the file from its new location." = "Reconecta la unidad o restaura la ubicación original. También puedes volver a arrastrar el archivo desde su nueva ubicación.";
+"Access is required" = "Se requiere acceso";
+"Check file permissions and folder access in Settings. Submit the files again if a new access grant is needed." = "Comprueba los permisos de los archivos y el acceso a las carpetas en Ajustes. Vuelve a arrastrar los archivos si necesitas conceder acceso de nuevo.";
+"Not enough free space" = "No hay suficiente espacio libre";
+"Free space on the destination drive, then retry unfinished files." = "Libera espacio en la unidad de destino y reintenta los archivos pendientes.";
+"The destination already exists" = "El destino ya existe";
+"Rename or move the existing result before retrying, or choose a new filename. Existing files are never replaced." = "Renombra o mueve el resultado existente antes de reintentar, o elige otro nombre. Los archivos existentes nunca se reemplazan.";
+"The source could not be read" = "No se pudo leer el archivo de origen";
+"Open the file in its original app and repair or replace it, then retry." = "Abre el archivo en su aplicación original, repáralo o reemplázalo y reintenta.";
+"The image could not be downloaded" = "No se pudo descargar la imagen";
+"Check your connection or use another image link. A link that requires browser sign-in may need a fresh image drag." = "Comprueba tu conexión o usa otro enlace de imagen. Si requiere iniciar sesión en el navegador, vuelve a arrastrar la imagen.";
+"This operation is unavailable" = "Esta operación no está disponible";
+"Choose another format or destination. Details explain the current limitation." = "Elige otro formato o destino. Los detalles explican la limitación actual.";
+"The operation could not finish" = "No se pudo completar la operación";
+"Check the source and destination, then retry unfinished files. Details include the original error." = "Comprueba el origen y el destino y reintenta los archivos pendientes. Los detalles incluyen el error original.";
+"The image needs to be dragged again" = "Debes volver a arrastrar la imagen";
+"The source app cannot replay this image promise. Drag the image again to make a new request." = "La aplicación de origen no puede volver a proporcionar esta imagen. Arrástrala de nuevo para crear otra solicitud.";
+"Created results have been preserved" = "Se han conservado los resultados creados";
+"No inputs remain to retry. Check the source and created copies before removing anything." = "No quedan archivos pendientes para reintentar. Revisa los originales y las copias creadas antes de eliminar nada.";
+"Locate Original" = "Localizar original";
+"Locate Original…" = "Localizar original…";
+"Choose the file or folder in its new location. Only the shelf reference will change." = "Elige el archivo o la carpeta en su nueva ubicación. Solo cambiará la referencia en la bandeja.";
+"Use This Item" = "Usar este elemento";
+"File not found" = "Archivo no encontrado";

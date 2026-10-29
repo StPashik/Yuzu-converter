@@ -229,6 +229,15 @@ final class ShelfTests: XCTestCase {
                 shelf.refreshLanguage()
                 try render("\(language.rawValue)-files-\(theme)")
             }
+            let missing = directory.appendingPathComponent("Unavailable original.txt")
+            shelf.add(ScopedFiles([missing]))
+            for language in AppLanguage.allCases {
+                L10n.language = language
+                shelf.refreshLanguage()
+                try render("\(language.rawValue)-missing-\(theme)")
+                XCTAssertEqual(shelf.fileStates[missing], .missing)
+                XCTAssertNil(shelf.tableView(NSTableView(), pasteboardWriterForRow: 2))
+            }
             L10n.language = .english
             shelf.refreshLanguage()
             shelf.setMaterial(reduceTransparency: true)
