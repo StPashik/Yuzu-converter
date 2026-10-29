@@ -68,6 +68,20 @@ enum MediaSelfCheck {
             }
             print("Bundled media: MOV → \(target.label), probe, decode, and return conversion passed")
         }
+        print("Bundled media: multiple audio tracks, subtitles, and chapters")
+        let subtitles = directory.appendingPathComponent("Tracks.srt"), metadata = directory.appendingPathComponent("Chapters.txt")
+        try "1\n00:00:00,000 --> 00:00:00,900\nYuzu subtitle\n".write(to: subtitles, atomically: false, encoding: .utf8)
+        try ";FFMETADATA1\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=0\nEND=1000\ntitle=Yuzu chapter\n".write(to: metadata, atomically: false, encoding: .utf8)
+        let tracks = directory.appendingPathComponent("Tracks.mkv")
+        _ = try run("ffmpeg", ["-v", "error", "-i", input.path, "-i", input.path, "-i", subtitles.path, "-i", metadata.path,
+            "-map", "0:v:0", "-map", "0:a:0", "-map", "1:a:0", "-map", "2:s:0", "-map_chapters", "3", "-c", "copy", tracks.path])
+        let preserved = try await engine.convert(SourceFile(url: tracks), to: .mp4, in: directory)[0]
+        let inventory = try run("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type:chapter_tags=title", "-of", "json", preserved.path])
+        guard let object = try JSONSerialization.jsonObject(with: Data(inventory.utf8)) as? [String: Any],
+              let streams = object["streams"] as? [[String: Any]],
+              streams.filter({ $0["codec_type"] as? String == "audio" }).count == 2,
+              streams.filter({ $0["codec_type"] as? String == "subtitle" }).count == 1,
+              inventory.contains("Yuzu chapter") else { throw CocoaError(.fileReadCorruptFile) }
         guard try Data(contentsOf: input) == original else { throw CocoaError(.fileReadCorruptFile) }
     }
 }

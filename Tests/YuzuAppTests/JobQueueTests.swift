@@ -20,6 +20,22 @@ private actor ProgressLog {
 
 final class JobQueueTests: XCTestCase {
     @MainActor
+    func testContentWarningsRemainVisibleUntilCleared() async throws {
+        let queue = JobQueue(successRetention: .milliseconds(10)) { _, progress in
+            await progress(QueueProgress(completed: 1, warnings: ["One subtitle was omitted."]))
+            return []
+        }
+        queue.enqueue(JobRequest(files: ScopedFiles([URL(fileURLWithPath: "/tmp/video.mkv")]), kind: .conversion(.avi), destinations: []))
+        await queue.waitForCurrentJob()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(queue.entries.count, 1)
+        XCTAssertEqual(queue.entries.first?.state, .completed)
+        XCTAssertTrue(queue.entries.first?.diagnostic.contains("One subtitle was omitted.") == true)
+        queue.clearFinished()
+        XCTAssertTrue(queue.entries.isEmpty)
+    }
+
+    @MainActor
     private func eventually(_ condition: () -> Bool) async throws {
         let deadline = Date().addingTimeInterval(5)
         while !condition() && Date() < deadline { try await Task.sleep(nanoseconds: 10_000_000) }

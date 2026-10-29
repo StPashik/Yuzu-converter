@@ -219,7 +219,8 @@ final class ConversionTests: XCTestCase {
         XCTAssertEqual(try SourceFile(url: output).format, .docx)
         let scratch = try FileOperations.scratch(in: directory)
         defer { try? FileManager.default.removeItem(at: scratch) }
-        XCTAssertTrue(try NativeDocuments.readText(SourceFile(url: output), scratch: scratch).string.contains("English café text 🌍"))
+        let restoredText = try await NativeDocuments.readText(SourceFile(url: output), scratch: scratch)
+        XCTAssertTrue(restoredText.string.contains("English café text 🌍"))
     }
 
     func testCancellationLeavesNoPublishedResult() async throws {

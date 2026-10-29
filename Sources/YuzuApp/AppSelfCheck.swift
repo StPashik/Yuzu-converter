@@ -1,4 +1,6 @@
 import Foundation
+import AppKit
+import CoreText
 import CoreGraphics
 import ImageIO
 import YuzuCore
@@ -17,6 +19,19 @@ enum AppSelfCheck {
         let engine = ConversionEngine()
         print("Sandbox self-check: bundled media")
         try await MediaSelfCheck.run(in: root)
+        print("Sandbox self-check: local OCR")
+        guard let scanContext = CGContext(data: nil, width: 1200, height: 300, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+            let scanWriter = CGImageDestinationCreateWithURL(root.appendingPathComponent("Scan.png") as CFURL, "public.png" as CFString, 1, nil) else { throw CocoaError(.fileWriteUnknown) }
+        scanContext.setFillColor(CGColor.white); scanContext.fill(CGRect(x: 0, y: 0, width: 1200, height: 300))
+        scanContext.textPosition = CGPoint(x: 40, y: 140)
+        CTLineDraw(CTLineCreateWithAttributedString(NSAttributedString(string: "Yuzu local OCR 12345",
+            attributes: [.font: NSFont.systemFont(ofSize: 48), .foregroundColor: NSColor.black])), scanContext)
+        guard let scanImage = scanContext.makeImage() else { throw CocoaError(.fileWriteUnknown) }
+        CGImageDestinationAddImage(scanWriter, scanImage, nil)
+        guard CGImageDestinationFinalize(scanWriter) else { throw CocoaError(.fileWriteUnknown) }
+        let recognized = try await engine.convert(SourceFile(url: root.appendingPathComponent("Scan.png")), to: .txt, in: root)[0]
+        guard try String(contentsOf: recognized).contains("12345") else { throw CocoaError(.fileReadCorruptFile) }
         print("Sandbox self-check: image metadata")
         // Exercise a real output profile inside the signed Sandbox, including descriptive metadata removal.
         let tagged = root.appendingPathComponent("tagged.tiff")
@@ -46,10 +61,10 @@ enum AppSelfCheck {
         let combined = try engine.combineImages([SourceFile(url: tagged), SourceFile(url: jpeg)], in: root)
         guard PDFDocument(url: combined)?.pageCount == 2 else { throw CocoaError(.fileReadCorruptFile) }
         let selected = root.appendingPathComponent("Chosen.png")
-        _ = try engine.saveDroppedImage(jpeg, to: .png, destination: selected)
+        _ = try await engine.saveDroppedImage(jpeg, to: .png, destination: selected)
         let selectedBytes = try Data(contentsOf: selected)
         do {
-            _ = try engine.saveDroppedImage(jpeg, to: .png, destination: selected)
+            _ = try await engine.saveDroppedImage(jpeg, to: .png, destination: selected)
             throw CocoaError(.fileWriteUnknown)
         } catch let error as POSIXError { guard error.code == .EEXIST else { throw error } }
         guard try Data(contentsOf: selected) == selectedBytes else { throw CocoaError(.fileReadCorruptFile) }

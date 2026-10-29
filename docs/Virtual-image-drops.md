@@ -22,3 +22,7 @@ Apple's [NSFilePromiseReceiver documentation](https://developer.apple.com/docume
 ## Retry lifetime
 
 A validated prepared image survives an encoding failure until Retry, Clear Finished, or session exit. Retry uses those same bytes and the exact chosen output path, without consuming a promise a second time. If preparation failed before usable bytes existed, a single-use promise needs a new drag. A URL can be fetched again without browser cookies, under the same bounds. Existing output names still fail safely; rename/move that result before retrying or start a new Save As request. Removing a failure or completing a retry releases the prepared temporary directory.
+
+## Local text recognition (0.7.0)
+
+Virtual raster images also offer TXT. The same accepted image representation, bounded download/promise materialization, exact Save As grant, exclusive publication, and cached-source retry rules apply. Recognition uses local Vision; it does not add a remote OCR request. An unreadable/blank image produces no empty TXT. See [Document and media fidelity](Document-and-media-fidelity.md).

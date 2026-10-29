@@ -63,9 +63,9 @@ The metadata policy covers supported descriptive tags, not every binary property
 | GIF automatic settings | 15 frames/s, maximum width 960 pixels |
 | EPUB default | Version 2 |
 
-An explicit audio bitrate overrides its quality preset. Native video Balanced now uses Medium rather than the earlier fixed Highest preset; select High for the highest system preset. A height/width cap never deliberately enlarges a smaller source. System presets can also affect resolution and codec characteristics.
+An explicit audio bitrate overrides its quality preset. Ordinary video uses the FFmpeg quality mappings above so separate tracks can be retained. Native playback fallback uses Medium for Balanced and Highest for High. A height/width cap never deliberately enlarges a smaller source. System presets can also affect resolution and codec characteristics.
 
-Match-source PCM accepts supported 16/24/32-bit integer and 32-bit float sources. Lossy sources use a documented 16-bit fallback. Unsupported source depths, including 64-bit float, produce an error rather than silently lose precision. Resizing video with multiple video tracks is refused. Native video export preserves disabled tracks and applies actual audio gain, including mute, through an explicit mix. Unsupported source playback gains outside 0…1 are refused without clamping.
+Match-source PCM accepts supported 16/24/32-bit integer and 32-bit float sources. Lossy sources use a documented 16-bit fallback. Unsupported source depths, including 64-bit float, produce an error rather than silently lose precision. Native resizing with multiple video tracks is refused; FFmpeg keeps the first video and warns about extra video tracks. Native video export preserves disabled tracks and applies actual audio gain, including mute, through an explicit mix. Unsupported source playback gains outside 0…1 are refused without clamping.
 
 ## Compatibility
 
@@ -92,3 +92,5 @@ About shows the app icon/version, documentation, releases, and the shared **Chec
 [Settings.swift](../Sources/YuzuApp/Settings.swift) owns preferences and migration; [SettingsView.swift](../Sources/YuzuApp/SettingsView.swift) owns the five-tab UI. [ConversionOptions.swift](../Sources/YuzuCore/ConversionOptions.swift) validates profiles at the encoder boundary. The job queue captures those values. [AccessStore.swift](../Sources/YuzuApp/AccessStore.swift) and [SystemPreferences.swift](../Sources/YuzuApp/SystemPreferences.swift) retain their respective folder and system-registration responsibilities.
 
 [Tangerine-settings.md](Tangerine-settings.md) separates the five observed pages and static field names from unverified proprietary behavior. No Tangerine source, artwork, sounds, binaries, grants, or settings are distributed. Native render tests cover the five tabs, five languages, both appearances, and the relevant format editors; [Validation.md](Validation.md) records actual run results and open physical checks.
+
+OCR uses automatic local recognition without an additional settings panel. Video content-loss warnings remain in Operations with copyable Details. [Document and media fidelity](Document-and-media-fidelity.md) describes print styling, recognition, and per-container track limits.

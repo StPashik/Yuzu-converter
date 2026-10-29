@@ -15,8 +15,17 @@ enum NativeMedia {
     static func supportsFFmpegPlayback(_ source: SourceFile) -> Bool {
         guard source.format.category == "Video", source.format != .gif else { return true }
         // FFmpeg does not preserve QuickTime's disabled-track/volume flags. Never reveal muted or hidden content.
-        let tracks = AVURLAsset(url: source.url).tracks.filter { $0.mediaType == .video || $0.mediaType == .audio }
-        return tracks.allSatisfy { $0.isEnabled && ($0.mediaType != .audio || $0.preferredVolume == 1) }
+        let asset = AVURLAsset(url: source.url)
+        let tracks = asset.tracks.filter { $0.mediaType == .video || $0.mediaType == .audio }
+        let alternateAudio = Set(asset.trackGroups.flatMap { group -> [CMPersistentTrackID] in
+            let members = tracks.filter { group.trackIDs.contains(NSNumber(value: $0.trackID)) }
+            guard members.count > 1, members.allSatisfy({ $0.mediaType == .audio && $0.preferredVolume == 1 }),
+                  members.contains(where: \.isEnabled) else { return [] }
+            return members.map(\.trackID)
+        })
+        // MP4 alternate-language groups enable only the selected audio track. Explicit FFmpeg dispositions
+        // retain that selection; an independently disabled track or modified playback gain is still refused.
+        return tracks.allSatisfy { ($0.isEnabled || alternateAudio.contains($0.trackID)) && ($0.mediaType != .audio || $0.preferredVolume == 1) }
     }
 
     /// Probes the actual input and compatible export types. Synchronous asset inspection belongs off the main thread.

@@ -8,7 +8,7 @@ File conversion and useful file actions from your Mac’s menu bar. Hold a key w
 
 <img src="docs/images/shelf-workflow.png" width="460" alt="Yuzu Shelf with file previews, Finder folder buttons, and reference removal in the opaque accessibility appearance">
 
-FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. The five-tab Settings screen and per-format profiles remain available on Apple Silicon and Intel. File tools remain outside the scope.
+FFmpeg and FFprobe provide video conversion out of the box. Convert MP4, MOV, MKV, WebM, AVI, and WMV, create animated GIFs, and extract MP3 audio without installing Homebrew. Multiple audio tracks, compatible embedded subtitles, and chapters are retained; any content loss is shown in Operations. The five-tab Settings screen and per-format profiles remain available on Apple Silicon and Intel. File tools remain outside the scope.
 
 ## Download
 
@@ -44,7 +44,7 @@ Select files in Finder and press **⌃C** to add them to the shelf. Record a dif
 
 Choose **Check for Updates…** from the menu bar or **Settings → About**. When an update is available, Sparkle shows the new version and English Release Notes before you choose to download and install. Checks are manual; installation waits for active file jobs to finish and then restarts Yuzu after your confirmation. Release publication leaves your installed copy alone. See the [update guide](docs/Updates.md) for first installation, signing, and release maintenance.
 
-The wheel contains conversion and all seven Actions; the shelf focuses on collecting and dragging references. Operations retains failures and cancellations until cleared. Retry processes only remaining inputs and keeps created results; Details provides the original diagnostic. Completed Yuzu moves update shelf references, while a search button repairs missing originals. The [shelf workflow](docs/Shelf-workflow.md) explains output and cancellation; the [CI guide](docs/CI.md) describes verified FFmpeg reuse.
+The wheel contains conversion and all seven Actions; the shelf focuses on collecting and dragging references. Operations retains failures, cancellations, and content-loss warnings until cleared. Retry processes only remaining inputs and keeps created results; Details provides the original diagnostic. Completed Yuzu moves update shelf references, while a search button repairs missing originals. The [shelf workflow](docs/Shelf-workflow.md) explains output and cancellation; the [CI guide](docs/CI.md) describes verified FFmpeg reuse.
 
 See the [shelf design](docs/Shelf-design.md) and [wheel design notes](docs/Wheel-design.md) for appearance, ownership, and native AppKit previews.
 
@@ -52,13 +52,13 @@ See the [shelf design](docs/Shelf-design.md) and [wheel design notes](docs/Wheel
 
 | Area | Implemented support |
 | --- | --- |
-| Images and PDF | System image readers/writers; every PDF page to JPG/PNG at 300 DPI; existing PDF text to TXT/MD |
+| Images and PDF | System image readers/writers; every PDF page to JPG/PNG at 300 DPI; PDF text/scans and raster images to local OCR TXT (PDF also to plain-text MD) |
 | Audio and video | Native WAV/AIFF/M4A and MP4/MOV, plus bundled FFmpeg video, GIF, MP3/FLAC/Opus/WMA routes |
 | Documents and EPUB | Text and rich-text DOCX, PDF/HTML/image export, and simple text-based EPUB reflow |
-| Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; paginated table PDF output |
+| Spreadsheets | CSV/TSV/XLSX/ODS, all sheets, values as strings; styled, merged, paginated XLSX table PDF output |
 | Subtitles and archives | SRT/VTT/TXT and ZIP/TAR/TAR.GZ; RAR input where system libarchive supports it |
 
-The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. Yuzu does not support PAGES, PPT/PPTX, legacy XLS, textClipping, OCR, editable Office reconstruction from PDF. Complex layouts, spreadsheet formulas/styles, and EPUB assets are not preserved. Image writers and media decoders depend on macOS.
+The [conversion matrix](docs/Conversion-matrix.md) describes the actual routes and remaining targets. Yuzu does not support PAGES, PPT/PPTX, legacy XLS, textClipping, or editable Office reconstruction from PDF. Spreadsheet formula calculation, style round-tripping, complex Office layouts, and EPUB assets remain limited. [Document and media fidelity](docs/Document-and-media-fidelity.md) explains supported print styles, OCR accuracy, track mappings, and persistent warnings. Image writers and media decoders depend on macOS.
 
 FFmpeg and FFprobe are included for both architectures; no Homebrew setup is required. See [video formats, source, and licenses](docs/Bundled-media.md). LibreOffice remains optional in unsandboxed developer runs. Cross-volume folder moves are refused; file moves use an original size/mtime check, without content hashing. Oversized PDF pages are rejected rather than rendered below 300 DPI.
 
