@@ -25,6 +25,10 @@ The draft's exact English notes and all nine uploaded sizes/digests matched the 
 
 Both legacy bridges are exact copies of those public signed feeds, prepared only after their compatible assets became public, without regenerating signatures or URLs. Their publication uses a separate PR; the application-release tag stays unchanged. The owner installs personally through Check for Updates.
 
+[Legacy publication PR #35](https://github.com/StPashik/Yuzu-converter/pull/35) passed its [metadata-only CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40917430983); native jobs were correctly skipped for its exact two-feed/validation scope. Both ordinary `main/updates` URLs return byte-for-byte public signed 0.7.0 feeds. Ten additional production-key Sparkle information checks passed on these legacy URLs across both CPUs and simulated builds 7, 13, 14, 15, and 16. Combined with Latest checks, all 20 offers/current-version/Markdown checks passed without downloading or installing an update.
+
+A publication audit confirmed all 15 prior release records and their asset metadata, plus 30 prior annotated/peeled tag refs, remain unchanged. The release tag still points to the original main application merge; the later legacy bridge merge is separate. The release branch now includes both main merge commits before returning to develop.
+
 ## v0.6.3 — Retry remaining inputs and repair shelf references
 
 Local Apple Silicon checks on October 29, 2026: **120 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Tests use the separate `.build/patch063-tests` scratch path and private temporary files. New five-language/light-dark Operations and missing-reference shelf renders were inspected; images use the opaque accessibility fallback.
