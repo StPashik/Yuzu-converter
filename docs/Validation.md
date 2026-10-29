@@ -10,7 +10,16 @@ The new pixel fixture reproduced the reported small-content/white-canvas symptom
 
 Shelf fixtures now check the absence of command menus, the folder button's position/accessibility, actual shelf URL callbacks into conversion and all seven wheel Action targets, a real queued conversion, and retained source batches after removal. Queue fixtures check normal window level, compact sizing, rounded layer clipping, success expiry, empty-window close, and retained failures. The wheel fixture checks four immediate distinct highlights, no replay inside one petal, and the disabled feedback setting.
 
-Current previews show the real opaque fallback in both themes/five languages. Physical Finder/Powerbox drag sessions, Finder reveal, external-file Sandbox access, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Native CI and final release-asset checks are recorded separately when completed. Installed owner app copies are not test targets.
+Current previews show the real opaque fallback in both themes/five languages. Physical Finder/Powerbox drag sessions, Finder reveal, external-file Sandbox access, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. [Feature PR #21](https://github.com/StPashik/Yuzu-converter/pull/21) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40848737346) on arm64 and native Intel: each ran 90 Swift tests and 24 Node tests without skips, restored verified media tools, and verified its signed Sandbox archive. Final release-asset checks follow below. Installed owner app copies are not test targets.
+
+| Final 0.6.1 / build 13 preparation | Recorded result |
+| --- | --- |
+| Archives | Separate final arm64/x64 ZIPs passed strict signatures, exact CPU slices, versions/resources/notices, and signed Sandbox document/spreadsheet/archive/media checks |
+| Compatibility | Both main executables use SDK 26+, minimum OS 13, and weak native-glass imports; local x64 execution uses Rosetta, separate from native Intel CI |
+| npm | 24 tests without skips; seven exact package files, executable CLI, and both actual archives installed/version/CPU/codesign-checked only in temporary homes |
+| Media source/licenses | 24 exact source/configuration files, four pinned upstream archives, both helper records, seven exact upstream media notices; app Sparkle license matches its pinned artifact |
+| Updates | Both archive signatures independently verified against the embedded production key; signed feeds contain the exact reviewed English Markdown; live bridges remain unchanged until assets are public |
+| Frozen assets | Nine files; eight payload hashes in [Release-checksums-0.6.1.txt](Release-checksums-0.6.1.txt) |
 
 ## v0.6.0 — Shelf commands, operations, and shared glass
 
