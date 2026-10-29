@@ -3,48 +3,50 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.6.1</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.6.2</link>
     <description>Signed arm64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.6.1</title>
-      <sparkle:version>13</sparkle:version>
-      <sparkle:shortVersionString>0.6.1</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.6.2</title>
+      <sparkle:version>14</sparkle:version>
+      <sparkle:shortVersionString>0.6.2</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description sparkle:format="markdown"><![CDATA[# Yuzu Converter 0.6.1
+      <description sparkle:format="markdown"><![CDATA[# Yuzu Converter 0.6.2
 
-A simpler shelf, a quieter Operations window, and PDF pages rendered at their proper size. Update offers now include these Release Notes before installation.
+Convert a batch into one PDF, save dragged browser images where you choose, and keep Operations small and brief. Release Notes appear in the update offer before installation.
 
 ## What changed
 
-- **Shelf:** removed Conversion and Actions menus. Drag references into the wheel for conversion or any of the seven Actions; Float remains available there. A folder button beside each remove button selects the original in Finder.
-- **Shelf-to-wheel access:** local copy dragging is explicitly enabled, and wheel probes/jobs retain the original file grants when shelf rows are removed or closed.
-- **Operations:** a compact ordinary window grows through three rows and then scrolls. It no longer floats above other apps or includes Show Results. Successes disappear after three seconds; the window closes when empty. Errors and cancellations remain until cleared.
-- **Rounded surfaces:** glass/material backing layers share the same clipped corners, removing rectangular protrusions around the surface.
-- **Output names:** preserve the original stem and change the extension. Collisions use `_yuzu`, then `_yuzu_2`, `_yuzu_3`, and so on. Existing files are never overwritten.
-- **PDF to JPG/PNG:** apply the actual 300-DPI scale before drawing the visible page, including cropped bounds, nonzero origins, and rotation. This fixes the small-page-on-large-white-canvas regression.
-- **Wheel feedback:** restart the sound for each newly highlighted petal, including rapid transitions. Moving within one petal stays quiet; the existing sound/haptic setting is respected.
-- **Update notes:** the signed feed embeds the reviewed English Markdown notes, displayed by Sparkle directly in its standard update offer.
+- **Empty wheel:** hide the whole conversion wheel when the dragged inputs have no common target, including folders. Folder Actions remain available with Control.
+- **Smoother petal selection:** reuse wheel geometry and the glass mask, remove the appearance fade, and play selection sounds on a serial background queue so cold audio startup does not block the drag callback. Sound/haptic preferences are respected.
+- **Shared batch targets:** mixed supported inputs offer only formats available to every file. Multiple images dropped on PDF become one document, with one oriented page per image in drop order. Other targets retain per-file output.
+- **Virtual image drops:** raster pasteboard images, image file promises, and public image URLs can open the conversion wheel. Choosing a format opens Save Converted Image; the exact chosen filename is used and existing files are never replaced. Source-app representation limits apply.
+- **Readable spreadsheet PDFs:** XLSX/ODS/CSV/TSV export now uses a uniform table grid, wrapped text, worksheet titles, and page breaks. XLSX width/height hints and cached formula values improve readability; missing cached values show the formula text. Wide sheets continue across column bands.
+- **Compact Operations:** real 20-point outer margins keep headers and buttons away from the glass edges. Empty-state text wraps, and the window uses less space.
+- **Honest operation status:** remove progress bars that cannot measure every backend; keep state, completed-file counts, cancellation, and errors.
+- **Brief success feedback:** successful rows disappear after one second and the window closes when empty. Errors and cancellations remain until cleared. The window stays at normal level.
+
+![Operations panel](https://raw.githubusercontent.com/StPashik/Yuzu-converter/v0.6.2/docs/images/operations.png)
 
 ## Download
 
-- [Apple Silicon (M-series) ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-arm64.zip)
-- [Intel ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-x64.zip)
+- [Apple Silicon (M-series) ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-arm64.zip)
+- [Intel ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-x64.zip)
 
-Requires **macOS 13 or later**. English is the default; English, Russian, German, French, and Spanish remain available for app-owned controls. Release Notes and technical diagnostics are English.
+Requires **macOS 13 or later**. English is the default; English, Russian, German, French, and Spanish are available for app-owned controls. Release Notes and technical diagnostics are English.
 
 ## Quick start
 
-1. Existing users: choose **Check for Updates…** in the Yuzu menu or Settings → About, read the notes, and install when ready. Publication does not install or restart your copy.
+1. Existing users: choose **Check for Updates…** in the Yuzu menu or Settings → About, read these notes, and install when ready. Publishing does not install or restart your app.
 2. First installation: unzip the download for your Mac, move **Yuzu Converter.app** to Applications, and launch it. Yuzu appears in the menu bar.
-3. Drag files from Finder or the shelf and hold **Shift** for conversion or **Control** for Actions. Drop on a petal; Escape cancels.
-4. Use the shelf's folder icon to find an original. Follow conversion, Move, or ZIP in Operations; closing either window keeps its references/work for the current session.
+3. Drag files from Finder or the shelf and hold **Shift** for conversion or **Control** for Actions. Drop on a petal; Escape cancels. Drop multiple images on PDF to create one document.
+4. Drag a supported virtual image, choose a conversion petal, and select its final location in **Save Converted Image**. Keep the source app open until preparation finishes.
 
 ## npm option
 
-The app runs without Node. The [release npm package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz) provides an optional CLI installer for Node 20.11+ and compatible npm. With npm 12:
+The app runs without Node. The [release npm package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz) is an optional CLI installer for Node 20.11+ and compatible npm. With npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/stpashik-yuzu-converter-0.6.1.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -53,16 +55,18 @@ Older npm versions can omit the two allowance options. Distribution is through G
 
 ## Support and verification
 
-Separate arm64 and x64 archives include FFmpeg/FFprobe with the existing codec policy. See [format support and limits](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Conversion-matrix.md), [shelf and queue workflow](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Shelf-workflow.md), [updates](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Updates.md), and [validation](https://github.com/StPashik/Yuzu-converter/blob/v0.6.1/docs/Validation.md). File tools remain outside the scope. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-FFmpeg-Sources-0.6.1.tar.xz), component notices, signed feeds, and SHA256SUMS accompany the release. FFmpeg is licensed under LGPL 2.1 or later.
+Separate arm64 and x64 archives include FFmpeg/FFprobe under the existing codec policy. Read the [format matrix](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Conversion-matrix.md), [virtual image guide](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Virtual-image-drops.md), [shelf/queue workflow](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Shelf-workflow.md), and [validation record](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Validation.md). Conversion and seven Actions remain in scope; File tools are excluded. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-FFmpeg-Sources-0.6.2.tar.xz), licenses, signed feeds, and SHA256SUMS accompany this release. FFmpeg is LGPL 2.1 or later.
 
-Automated tests cover PDF pixels/rotation, shelf-to-wheel callbacks and grant lifetime, queue cleanup, feedback replay, five-language layouts, and Sparkle Markdown parsing. Physical Finder/Powerbox and external-file Sandbox workflows, audible/haptic perception, native-glass corner composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. The owner's original PDF was not supplied; the regression uses generated fixtures. Shelf references and queue history remain session-only. Cross-volume folder moves are unavailable; cancellation preserves already published results.
+Automated fixtures cover virtual-image provider lifetimes, bounded downloads, no-overwrite saves, batch PDF page order, table rendering, queue layout/expiry, and five locales. Full Excel styles, charts, merged cells, print areas, date/number formatting, and recalculation are not preserved by the native table exporter. Virtual imports accept one raster image, at most 32 MiB / 64 million total pixels / 256 frames; authenticated, blob/data, webpage and SVG URLs are unsupported. Browser representation availability varies.
 
-Both archives are ad hoc signed and have no Developer ID or Apple notarization; Gatekeeper may block first launch. Sparkle uses the existing Yuzu Ed25519 key to authenticate feeds and updates.
+Physical Finder/browser/screenshot drags, external Powerbox/Sandbox access, audible/haptic timing, native-glass composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Shelf references and queue history are session-only; cancellation preserves already published per-file results.
+
+Both archives are ad hoc signed and have no Developer ID or Apple notarization; Gatekeeper may block first launch. Sparkle authenticates signed feeds and archives with the existing Yuzu Ed25519 key.
 ]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.1/Yuzu-Converter-0.6.1-arm64.zip" sparkle:edSignature="FLidtEUu4d5Oj/tw6ZukuLhX9TglvpVvI4Fuo1AdA9/hf9eloWnsPOr5/SnUB+i3xuZw4U7ohasPZ3MYT27RBw==" length="24169115" type="application/octet-stream"></enclosure>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-arm64.zip" sparkle:edSignature="/PJCtMKhzQOmesNJ4r74+deM01RBn5BLBbzKkORNGPeKd1egwgmL7Zh8NCSFCgqUfRuu9TaMtr29Bs2rcfN2Cg==" length="24238029" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: FhnBcBkK0uhFR6yX87S0mmvRUiGs2yAFPg1EiW5+VIf+1EgXicHHtfDbPbAuJzqiWbdQUBVA5zIaplpU5sFUAw==
-length: 6381
+edSignature: X6hCSL4fNAiMDIgIyAYUiJBAaOMR8geliZjcKiW3tpy3125rshlywxT81w0gxFdK70NXq1bKhg/RLk9f7QfyDA==
+length: 7050
 -->
