@@ -67,7 +67,7 @@ public enum FileOperations {
 
     /// Builds one ZIP from staged copies, validates its entries, then returns its atomically published URL.
     /// Originals remain untouched. The destination must be outside selected folders; links, special files,
-    /// and conflicting root names are rejected. Existing ZIP names receive a free numeric suffix.
+    /// and conflicting root names are rejected. Existing names receive a short _yuzu suffix without replacing earlier results.
     /// Call off the main thread. Cancellation cleans private staging and stops the compression process.
     public static func compress(_ sources: [URL], in directory: URL,
                                 compression: ArchiveCompression = .balanced) throws -> URL {
@@ -146,7 +146,8 @@ public enum FileOperations {
         let stem = (safeName as NSString).deletingPathExtension
         for index in 1...10_000 {
             try Task.checkCancellation()
-            let candidate = index == 1 ? safeName : stem + " \(index)" + (ext.isEmpty ? "" : "." + ext)
+            let suffix = index == 2 ? "_yuzu" : "_yuzu_\(index - 1)"
+            let candidate = index == 1 ? safeName : stem + suffix + (ext.isEmpty ? "" : "." + ext)
             let destination = directory.appendingPathComponent(candidate)
             // RENAME_EXCL makes the last step atomic and closes the check-then-overwrite race.
             let result = staged.path.withCString { from in

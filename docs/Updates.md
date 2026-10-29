@@ -2,7 +2,7 @@
 
 ## Using updates
 
-Choose **Check for Updates…** from either the menu bar or Settings. Yuzu checks only when asked. When a new version is available, Sparkle offers a download, followed by installation and restart with your confirmation. It checks the signed feed and the update archive before extraction. A failed network request or cancelled installation leaves the current app usable.
+Choose **Check for Updates…** from either the menu bar or Settings. Yuzu checks only when asked. When a new version is available, Sparkle shows its English Release Notes in the update window and offers a download, followed by installation and restart with your confirmation. It checks the signed feed and the update archive before extraction. A failed network request or cancelled installation leaves the current app usable.
 
 The updater waits for the current conversion/file-operation queue to finish. Once installation starts, Yuzu stops accepting new file drags. If installation fails or is cancelled while the app remains open, dragging is restored.
 
@@ -21,6 +21,8 @@ Current builds use ad-hoc signing. Their build disables library validation becau
 The public Ed25519 key is embedded as `SUPublicEDKey`. The private key is in the owner's login Keychain under the Sparkle account `com.stpashik.yuzu-converter`. It was generated for this project and was never exported or committed. Keep a secure backup of the Keychain: losing this key prevents seamless updates of these ad-hoc-signed builds. Never put a private signing key in Git or release assets.
 
 Follow [Releasing.md](Releasing.md): feature PR → develop, release PR → main, tag the release-PR merge commit, draft/verify/publish as stable Latest, publish legacy bridge feeds by a separate PR, and merge the release branch back by PR. CI checks native Apple Silicon and Intel builds without receiving the production signing key. Never push shared branches directly or install the release for the owner.
+
+`prepare-updates.mjs` embeds `docs/Release-notes-<version>.md` as native Sparkle Markdown inside the signed feed. Both architecture feeds and the GitHub release use the same reviewed English notes; missing or wrong-version notes stop preparation before signing. Existing Sparkle clients can display them without first installing this patch. CDATA-like content is preserved safely. `SUShowReleaseNotes` is explicitly enabled.
 
 `prepare-updates.mjs` writes signed appcasts into the artifact directory, not the live `updates/` directory. New apps use their architecture-specific appcast attached to `releases/latest`; its enclosure remains an immutable versioned GitHub ZIP URL. Publishing Latest therefore switches a complete public release. Normal releases do not use GitHub's prerelease flag; ad-hoc signing and absent notarization are disclosed separately.
 

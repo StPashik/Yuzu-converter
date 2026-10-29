@@ -212,11 +212,8 @@
 "Completed" = "Completed";
 "Failed" = "Failed";
 "%ld of %ld files completed" = "Files completed: %ld of %ld";
-"Show Results" = "Show Results";
-"New Shelf with Selection" = "New Shelf with Selection";
-"Copy Files" = "Copy Files";
-"Open Terminal" = "Open Terminal";
 "Compress to ZIP" = "Compress to ZIP";
-"Commands apply to selected files." = "Commands apply to selected files.";
-"Select files to use Conversion and Actions." = "Select files to use Conversion and Actions.";
-"Files on the floating shelf. Select files to convert or run Actions; drag to share." = "Files on the floating shelf. Select files to convert or run Actions; drag to share.";
+"Files on the floating shelf. Drag files out or reveal them in Finder." = "Files on the floating shelf. Drag files out or reveal them in Finder.";
+"Show in Finder" = "Show in Finder";
+"Could not show the file" = "Could not show the file";
+"The file is no longer available at its original location." = "The file is no longer available at its original location.";

@@ -77,7 +77,8 @@ enum NativeDocuments {
         for index in 1...document.numberOfPages {
             try Task.checkCancellation()
             guard let page = document.page(at: index) else { throw ConversionError.invalid("Could not read page \(index).") }
-            let bounds = page.getBoxRect(.mediaBox)
+            // Match the visible page in Preview; MediaBox may include a much larger printing canvas.
+            let bounds = page.getBoxRect(.cropBox).intersection(page.getBoxRect(.mediaBox))
             let rotated = abs(page.rotationAngle) % 180 != 0
             let widthPoints = rotated ? bounds.height : bounds.width
             let heightPoints = rotated ? bounds.width : bounds.height
@@ -91,7 +92,11 @@ enum NativeDocuments {
             }
             let rect = CGRect(x: 0, y: 0, width: width, height: height)
             context.setFillColor(CGColor.white); context.fill(rect)
-            context.concatenate(page.getDrawingTransform(.mediaBox, rect: rect, rotate: 0, preserveAspectRatio: true))
+            // getDrawingTransform only scales down: establish 300-DPI units before placing the page in points.
+            let scale: CGFloat = 300 / 72
+            context.scaleBy(x: scale, y: scale)
+            let pageRect = CGRect(x: 0, y: 0, width: width / scale, height: height / scale)
+            context.concatenate(page.getDrawingTransform(.cropBox, rect: pageRect, rotate: 0, preserveAspectRatio: true))
             context.drawPDFPage(page)
             guard let image = context.makeImage() else { throw ConversionError.failed("Could not render page \(index).") }
             let output = directory.appendingPathComponent(String(format: "Page %03d.%@", index, target.fileExtension))

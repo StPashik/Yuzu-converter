@@ -37,7 +37,7 @@ final class ConversionTests: XCTestCase {
         let outputs = try await ConversionEngine().convert(source, to: .jpg, in: directory)
         XCTAssertEqual(try String(contentsOf: existing, encoding: .utf8), "keep me")
         XCTAssertEqual(outputs.count, 1)
-        XCTAssertEqual(outputs[0].lastPathComponent, "photo 2.jpg")
+        XCTAssertEqual(outputs[0].lastPathComponent, "photo_yuzu.jpg")
         XCTAssertEqual(try SourceFile(url: outputs[0]).format, .jpg)
         XCTAssertTrue(FileManager.default.fileExists(atPath: source.url.path))
     }
@@ -57,7 +57,73 @@ final class ConversionTests: XCTestCase {
             XCTAssertEqual((properties[kCGImagePropertyPixelWidth as String] as? NSNumber)?.intValue, 300)
             XCTAssertEqual((properties[kCGImagePropertyPixelHeight as String] as? NSNumber)?.intValue, 600)
             XCTAssertEqual((properties[kCGImagePropertyDPIWidth as String] as? NSNumber)?.doubleValue ?? 0, 300, accuracy: 0.1)
+            let pixels = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: url)))
+            let corner = try XCTUnwrap(pixels.colorAt(x: 10, y: 10)?.usingColorSpace(.deviceRGB))
+            XCTAssertLessThan(corner.redComponent + corner.greenComponent + corner.blueComponent, 0.05)
         }
+    }
+
+    func testPDFVisibleCropAndRotationFillTheImageAt300DPI() async throws {
+        let input = directory.appendingPathComponent("cropped.pdf")
+        var media = CGRect(x: 0, y: 0, width: 360, height: 720)
+        let crop = CGRect(x: 108, y: 216, width: 72, height: 144)
+        let writer = try XCTUnwrap(CGContext(input as CFURL, mediaBox: &media, nil))
+        for _ in 0..<4 {
+            writer.beginPDFPage(nil)
+            writer.setFillColor(CGColor(red: 1, green: 0, blue: 0, alpha: 1)); writer.fill(crop)
+            writer.setFillColor(CGColor(red: 0, green: 0, blue: 1, alpha: 1))
+            writer.fill(CGRect(x: crop.minX, y: crop.minY, width: 36, height: 72))
+            writer.endPDFPage()
+        }
+        writer.closePDF()
+        let pdf = try XCTUnwrap(PDFDocument(url: input))
+        for index in 0..<4 {
+            let page = try XCTUnwrap(pdf.page(at: index))
+            page.setBounds(crop, for: .cropBox)
+            page.rotation = index * 90
+        }
+        XCTAssertTrue(pdf.write(to: input))
+        for target: FileFormat in [.png, .jpg] {
+            let outputs = try await ConversionEngine().convert(SourceFile(url: input), to: target, in: directory)
+            XCTAssertEqual(outputs.count, 4)
+            for (index, output) in outputs.enumerated() {
+                let image = try XCTUnwrap(NSBitmapImageRep(data: Data(contentsOf: output)))
+                XCTAssertEqual(image.pixelsWide, index % 2 == 0 ? 300 : 600)
+                XCTAssertEqual(image.pixelsHigh, index % 2 == 0 ? 600 : 300)
+                var red = 0, blue = 0
+                // Inspect visible content, not only DPI metadata: an incorrectly scaled page leaves white corners.
+                for x in [image.pixelsWide / 4, image.pixelsWide * 3 / 4] {
+                    for y in [image.pixelsHigh / 4, image.pixelsHigh * 3 / 4] {
+                        let color = try XCTUnwrap(image.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB))
+                        if color.redComponent > 0.9 && color.blueComponent < 0.1 { red += 1 }
+                        if color.blueComponent > 0.9 && color.redComponent < 0.1 { blue += 1 }
+                    }
+                }
+                XCTAssertEqual(red, 3, "Page \(index + 1) must fill its visible crop")
+                XCTAssertEqual(blue, 1, "Page content must survive rotation")
+                let blueX = index < 2 ? image.pixelsWide / 4 : image.pixelsWide * 3 / 4
+                let blueY = index == 0 || index == 3 ? image.pixelsHigh * 3 / 4 : image.pixelsHigh / 4
+                let rotatedCorner = try XCTUnwrap(image.colorAt(x: blueX, y: blueY)?.usingColorSpace(.deviceRGB))
+                XCTAssertGreaterThan(rotatedCorner.blueComponent, 0.9)
+                XCTAssertLessThan(rotatedCorner.redComponent, 0.1)
+            }
+        }
+    }
+
+    func testPublicationKeepsShortNamesAndSkipsEveryExistingCollision() throws {
+        for name in ["report.pdf", "report_yuzu.pdf", "report_yuzu_2.pdf", "folder", "folder_yuzu"] {
+            try Data("Keep existing".utf8).write(to: directory.appendingPathComponent(name))
+        }
+        let staged = directory.appendingPathComponent("staged")
+        try Data("New result".utf8).write(to: staged)
+        let published = try FileOperations.publish(staged, named: "report.pdf", in: directory)
+        XCTAssertEqual(published.lastPathComponent, "report_yuzu_3.pdf")
+        XCTAssertEqual(try String(contentsOf: published), "New result")
+        for name in ["report.pdf", "report_yuzu.pdf", "report_yuzu_2.pdf"] {
+            XCTAssertEqual(try String(contentsOf: directory.appendingPathComponent(name)), "Keep existing")
+        }
+        try FileManager.default.createDirectory(at: staged, withIntermediateDirectories: false)
+        XCTAssertEqual(try FileOperations.publish(staged, named: "folder", in: directory).lastPathComponent, "folder_yuzu_2")
     }
 
     func testSubtitlesRetainTimesAndTextAndRejectInvalidInput() async throws {
@@ -122,7 +188,7 @@ final class ConversionTests: XCTestCase {
         try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)
         try "keep".write(to: destination.appendingPathComponent("source.txt"), atomically: false, encoding: .utf8)
         let copied = try FileOperations.copy([input], to: destination, move: false)
-        XCTAssertEqual(copied[0].lastPathComponent, "source 2.txt")
+        XCTAssertEqual(copied[0].lastPathComponent, "source_yuzu.txt")
         XCTAssertTrue(FileManager.default.fileExists(atPath: input.path))
         let moved = try FileOperations.copy([input], to: destination, move: true)
         XCTAssertEqual(try String(contentsOf: moved[0], encoding: .utf8), "original")
@@ -287,7 +353,7 @@ final class ConversionTests: XCTestCase {
         try "child content".write(to: child, atomically: false, encoding: .utf8)
         let existing = try file("Archive.zip", text: "keep existing")
         let output = try FileOperations.compress([first, second, folder, child, first], in: directory)
-        XCTAssertEqual(output.lastPathComponent, "Archive 2.zip")
+        XCTAssertEqual(output.lastPathComponent, "Archive_yuzu.zip")
         XCTAssertEqual(try String(contentsOf: existing, encoding: .utf8), "keep existing")
         let extracted = directory.appendingPathComponent("zip-result", isDirectory: true)
         try FileManager.default.createDirectory(at: extracted, withIntermediateDirectories: false)

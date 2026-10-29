@@ -30,18 +30,6 @@ enum FileAction: String, CaseIterable {
         }
     }
 
-    var shelfTitle: String {
-        switch self {
-        case .airDrop: return L10n.text("AirDrop")
-        case .float: return L10n.text("New Shelf with Selection")
-        case .copy: return L10n.text("Copy Files")
-        case .move: return L10n.text("Move to Folder") + "…"
-        case .copyPath: return L10n.text("Copy Path")
-        case .openTerminal: return L10n.text("Open Terminal")
-        case .compress: return L10n.text("Compress to ZIP")
-        }
-    }
-
     var help: String {
         switch self {
         case .airDrop: return L10n.text("Share the selected files with AirDrop.")
@@ -406,12 +394,14 @@ final class WheelMonitor {
     private var panel: NSPanel?
     private var view: WheelDragView?
     private var mode: WheelMode?
-    private let feedbackSound = NSSound(named: NSSound.Name("Tink"))
-    private var lastFeedback = Date.distantPast
+    private let feedbackSound: NSSound?
     var onSources: (([URL], WheelDragView) -> Void)?
     var onDrop: (([URL], WheelOption) -> Void)?
 
-    init(settings: Settings) { self.settings = settings }
+    init(settings: Settings, feedbackSound: NSSound? = NSSound(named: NSSound.Name("Tink"))) {
+        self.settings = settings
+        self.feedbackSound = feedbackSound
+    }
 
     func start() {
         timer = Timer.scheduledTimer(withTimeInterval: 1 / 30, repeats: true) { [weak self] _ in
@@ -460,9 +450,10 @@ final class WheelMonitor {
         view.style = settings.wheelStyle
         view.shortcutHint = settings.shortcutHint
         view.onHighlight = { [weak self] in
-            guard let self, self.settings.soundsAndHapticsEnabled,
-                  Date().timeIntervalSince(self.lastFeedback) >= 0.08 else { return }
-            self.lastFeedback = Date()
+            guard let self, self.settings.soundsAndHapticsEnabled else { return }
+            // NSSound ignores play while already playing; restart its attack for every new petal.
+            self.feedbackSound?.stop()
+            self.feedbackSound?.currentTime = 0
             self.feedbackSound?.volume = 0.2
             self.feedbackSound?.play()
             NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)

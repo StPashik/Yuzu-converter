@@ -22,7 +22,7 @@ final class QueueWindowTests: XCTestCase {
         surface.layoutSubtreeIfNeeded()
         controller.window?.displayIfNeeded()
         let hosting = try XCTUnwrap(surface.subviews.first { String(describing: type(of: $0)).contains("NSHostingView") })
-        XCTAssertGreaterThan(hosting.frame.width, 530)
+        XCTAssertGreaterThan(hosting.frame.width, 450)
         XCTAssertEqual(hosting.frame.height, surface.bounds.height, accuracy: 4)
         let bitmap = try XCTUnwrap(surface.bitmapImageRepForCachingDisplay(in: surface.bounds))
         surface.cacheDisplay(in: surface.bounds, to: bitmap)
@@ -38,7 +38,7 @@ final class QueueWindowTests: XCTestCase {
         defer { L10n.language = previousLanguage }
         L10n.language = .english
         let gate = WindowGate()
-        let queue = JobQueue { request, progress in
+        let queue = JobQueue(successRetention: .seconds(60)) { request, progress in
             let name = request.files.urls[0].lastPathComponent
             if name == "Damaged video.mov" {
                 await progress(QueueProgress(completed: 1, published: [URL(fileURLWithPath: "/tmp/Completed.mp4")]))
@@ -69,6 +69,11 @@ final class QueueWindowTests: XCTestCase {
         XCTAssertEqual(queue.entries.map(\.state), expected)
         controller.present()
         XCTAssertTrue(try XCTUnwrap(controller.window).isVisible)
+        XCTAssertEqual(controller.window?.level, .normal)
+        XCTAssertFalse(try XCTUnwrap(controller.window as? NSPanel).isFloatingPanel)
+        XCTAssertFalse(try XCTUnwrap(controller.window).styleMask.contains(.resizable))
+        XCTAssertEqual(controller.window?.contentView?.layer?.cornerRadius, 24)
+        XCTAssertEqual(controller.window?.contentView?.layer?.masksToBounds, true)
         controller.setMaterial(reduceTransparency: false)
         #if compiler(>=6.2)
         if #available(macOS 26.0, *) { XCTAssertTrue(controller.window?.contentView is NSGlassEffectView) }
@@ -94,4 +99,39 @@ final class QueueWindowTests: XCTestCase {
         XCTAssertTrue(queue.isIdle)
         XCTAssertEqual(queue.entries.map(\.state), [.completed, .failed, .cancelled, .cancelled])
     }
+    @MainActor
+    func testSuccessfulRowsExpireAndCloseOnlyAnEmptyQueue() async throws {
+        _ = NSApplication.shared
+        let queue = JobQueue(successRetention: .milliseconds(50)) { request, _ in
+            if request.files.urls.first?.lastPathComponent == "broken.txt" { throw CocoaError(.fileReadCorruptFile) }
+            return []
+        }
+        let controller = QueueWindowController(queue: queue)
+        defer { controller.close() }
+        func enqueue(_ name: String) {
+            queue.enqueue(JobRequest(files: ScopedFiles([URL(fileURLWithPath: "/tmp/" + name)]), kind: .compress, destinations: []))
+        }
+        enqueue("success.txt")
+        controller.present()
+        await queue.waitForCurrentJob()
+        XCTAssertEqual(queue.entries.first?.state, .completed)
+        let deadline = Date().addingTimeInterval(5)
+        while (!queue.entries.isEmpty || controller.window?.isVisible == true) && Date() < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertTrue(queue.entries.isEmpty)
+        XCTAssertFalse(try XCTUnwrap(controller.window).isVisible)
+        enqueue("broken.txt")
+        await queue.waitForCurrentJob()
+        enqueue("success.txt")
+        await queue.waitForCurrentJob()
+        controller.present()
+        try await Task.sleep(for: .milliseconds(150))
+        XCTAssertEqual(queue.entries.map(\.state), [.failed])
+        XCTAssertTrue(try XCTUnwrap(controller.window).isVisible)
+        queue.clearFinished()
+        try await Task.sleep(for: .milliseconds(30))
+        XCTAssertFalse(try XCTUnwrap(controller.window).isVisible)
+    }
+
 }

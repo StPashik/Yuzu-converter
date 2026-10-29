@@ -30,6 +30,10 @@ enum AppSurface {
             surface = fallback(content: content, cornerRadius: cornerRadius)
             #endif
         }
+        // Clip every backing layer, including the glass rim, to the same transparent window corners.
+        surface.wantsLayer = true
+        surface.layer?.cornerRadius = cornerRadius
+        surface.layer?.masksToBounds = true
         content.autoresizingMask = [.width, .height]
         return surface
     }
