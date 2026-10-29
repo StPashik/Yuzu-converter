@@ -1,0 +1,53 @@
+# Yuzu Converter 0.6.3
+
+Recover unfinished work with Retry and keep shelf references usable after moving files. Release Notes appear in the update offer before installation.
+
+## What changed
+
+- **Retry unfinished work:** failed conversions and Actions can retry remaining inputs with the original settings and destination access. Already created results are kept and are not processed again. Retry joins the queue tail.
+- **Readable failures:** Operations shows localized reasons and recovery suggestions for missing files, permissions, space, output-name conflicts, damaged input, and image downloads. Details shows the original technical diagnostic; Copy Details includes it in full.
+- **Stable Operations:** retrying the only failed row keeps its window open. The window grows slightly for recovery advice, retains its outer margins, and keeps one-second success expiry and normal window ordering.
+- **Safe virtual-image retry:** a prepared browser image or screenshot survives encoding failure and is reused without consuming a file promise twice. Finishing or clearing the request releases its private temporary file. An exhausted promise asks for a new drag; URL retries retain existing download bounds.
+- **Shelf references follow Yuzu moves:** completed Move Actions update every shelf, including hidden collections and real-folder children. Duplicate paths merge while selection and destination access are retained. Symlink moves do not redirect references to target children.
+- **Queued work follows known moves:** waiting and retryable requests use the updated source. Beside-source outputs follow that source; explicitly selected folders follow their own completed directory move. Image Save As keeps its exact chosen path.
+- **Locate Original:** missing or unreadable shelf items show a clear state and search button. Choose the original at its new location to replace only the reference. Visible shelves check availability in the background; closing preserves the collection and stops polling.
+- **Partial Move safety:** a preserved copy is not duplicated after source cleanup fails. References follow only completed moves; if nothing remains to retry, Operations asks you to inspect originals and created copies before removing anything.
+
+![Operations with Retry](https://raw.githubusercontent.com/StPashik/Yuzu-converter/v0.6.3/docs/images/operations.png)
+
+## Download
+
+- [Apple Silicon (M-series) ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-Converter-0.6.3-arm64.zip)
+- [Intel ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-Converter-0.6.3-x64.zip)
+
+Requires **macOS 13 or later**. English is the default; English, Russian, German, French, and Spanish are available for app-owned controls. Project documentation, code comments, and Release Notes are English.
+
+## Quick start
+
+1. Existing users: choose **Check for Updates…** in the Yuzu menu or Settings → About, read these notes, and install when ready. Release publication does not install or restart your app.
+2. First installation: unzip the download for your Mac, move **Yuzu Converter.app** to Applications, and launch it. Yuzu appears in the menu bar.
+3. Drag files from Finder or the shelf; hold **Shift** for conversion or **Control** for Actions. Drop on a petal; Escape cancels.
+4. If work fails, fix the reported issue and choose **Retry** in Operations. Use **Details…** for the original error. The file counter restarts for remaining inputs.
+5. For a missing shelf reference, choose its search icon and locate the original. No file is moved or deleted by this repair.
+
+## npm option
+
+The app runs without Node. The [release npm package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/stpashik-yuzu-converter-0.6.3.tgz) is an optional CLI installer for Node 20.11+ and compatible npm. With npm 12:
+
+```sh
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/stpashik-yuzu-converter-0.6.3.tgz"
+npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
+yuzu-converter
+```
+
+Older npm versions can omit the two allowance options. Distribution is through GitHub Releases, not the npm registry. The installer verifies the archive checksum and installs into `~/Applications`; in-app updates do not update the npm package itself.
+
+## Support and verification
+
+Separate arm64 and x64 archives include FFmpeg/FFprobe under the existing codec policy. See the [retry/reference guide](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Retry-and-references.md), [format matrix](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Conversion-matrix.md), [virtual image guide](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Virtual-image-drops.md), and [validation record](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Validation.md). Conversion and seven Actions remain in scope; File tools and shelf conversion/Actions menus are excluded. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-FFmpeg-Sources-0.6.3.tar.xz), component notices, signed feeds, and SHA256SUMS accompany the release. FFmpeg is LGPL 2.1 or later.
+
+Automated fixtures cover real partial conversion/Move, input/destination alignment, preserved results, FIFO retry, scope lifetime, promise reuse/cleanup, transient HTTP failure, path variants, visible polling, recovery layouts, and the only-error-window regression. Physical Finder/browser/Powerbox/Sandbox, cross-volume devices, VoiceOver, macOS 13, and other-Mac appearance remain unverified. Native rendered previews show the opaque accessibility fallback.
+
+Retry and shelf references last for the current session; automatic retries and restart recovery are not included. External moves require locating/resubmitting a file; no disk search is performed. A permission issue can require a new file/destination grant. Permanent format limitations require a supported request. Cross-volume folder moves remain unavailable. Native table PDF still omits exact Excel styles, charts, and formula calculation. Virtual-image representation and download limits remain unchanged.
+
+Both archives are ad hoc signed and have no Developer ID or Apple notarization; Gatekeeper may block first launch. Sparkle authenticates feeds and archives with the existing Yuzu Ed25519 key.

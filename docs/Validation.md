@@ -12,6 +12,27 @@ Image fixtures verify a retained prepared promise is consumed only once, retry/c
 
 [Retry and reference recovery](Retry-and-references.md) records behavior and limits. Physical Finder/browser/Powerbox/Sandbox interoperability, VoiceOver, macOS 13, other-Mac appearance, and cross-volume devices remain deferred/unverified. Signed own-container archive/native CI evidence will be recorded separately. Installed owner app copies are not test targets.
 
+[Feature PR #29](https://github.com/StPashik/Yuzu-converter/pull/29) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40882383387) on arm64 and native Intel. Each ran 120 Swift tests and 24 Node tests without skips, restored verified media tools, and passed its signed own-container Sandbox archive, including the new retry/completed-move self-check.
+
+| Final 0.6.3 / build 15 preparation | Recorded result |
+| --- | --- |
+| Archives | Both final ZIPs passed deep strict codesign, exact main/helper CPU slices, versions/resources/icons/notices, and signed own-container document/media/batch/exclusive-save/retry/move checks |
+| Compatibility | SDK 26+, minimum macOS 13, weak native-glass class imports on both final main executables; local x64 execution used Rosetta, independently of native Intel CI |
+| npm | Local npm ci with scripts disabled and 24 final Node tests passed; seven exact package files; both actual ZIPs installed/version/CPU/codesign-checked only in temporary homes |
+| Source/licenses | 24 corresponding-source/configuration files, four pinned upstream archives, both helper hashes/portable configurations, seven exact upstream media notices, and exact pinned Sparkle license verified |
+| Updates | Both archive signatures independently verified with the embedded production key; exact reviewed English Markdown in both signed feeds; HTTP Sparkle available/current/tampered/500 fixture passed without installation |
+| Frozen assets | Nine files; eight payload SHA-256 values in [Release-checksums-0.6.3.txt](Release-checksums-0.6.3.txt); legacy feeds have not advanced |
+
+[Release PR #30](https://github.com/StPashik/Yuzu-converter/pull/30) passed [native release CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40885923000): each CPU ran 120 Swift tests and 24 Node tests without skips, plus its signed Sandbox archive including retry/completed-move checks. Tag `v0.6.3` points to the exact main merge `227d950d46ac3029c44d2af29a92f46fb14d18e8`, whose tree matches the verified release head.
+
+The draft's English notes and nine uploaded sizes/digests matched the frozen files before stable Latest publication. All nine public unauthenticated versioned downloads matched SHA-256. Both normal Latest feed URLs returned the exact signed Markdown XML. Eight real production-key Sparkle information checks passed across arm64/x64: builds 7, 13, and 14 find build 15 and its Markdown notes; build 15 reports current. No update was downloaded or installed by these probes.
+
+Both legacy bridges are copied from those exact public signed feeds after their compatible assets are public, without regenerating signatures or URLs. The original application-release tag remains unchanged. The owner installs personally; installed app copies are not release test targets.
+
+[Legacy feed PR #31](https://github.com/StPashik/Yuzu-converter/pull/31) passed [metadata/feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40888163558): nine Python tests, six Node release tests, and both signed-feed checks. Native matrix expansion was correctly skipped for only documentation/feed changes. Both normal raw main/updates URLs returned the exact signed public XML. Eight further production-key Sparkle checks passed for the same old/current builds and Markdown notes across both CPUs, for **16 information-only production checks** in total. No owner installation or restart was performed.
+
+The history audit preserved all 14 earlier release records, their asset IDs/digests/sizes, and all 14 earlier tag objects. The release branch carries main's application-release and legacy-publication merge history into the GitFlow merge-back. New physical/other-device checks remain explicitly unverified.
+
 ## v0.6.2 — Drag workflow, compact operations, and table PDFs
 
 Local Apple Silicon checks on October 29, 2026: **103 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Final review additionally exercises optional/zero XLSX sizing hints. Tests run in project-specific scratch paths; installed owner app copies are not test targets.

@@ -3,50 +3,51 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 --><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
   <channel>
     <title>Yuzu Converter Updates</title>
-    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.6.2</link>
+    <link>https://github.com/StPashik/Yuzu-converter/releases/tag/v0.6.3</link>
     <description>Signed arm64 updates for Yuzu Converter.</description>
     <item>
-      <title>Yuzu Converter 0.6.2</title>
-      <sparkle:version>14</sparkle:version>
-      <sparkle:shortVersionString>0.6.2</sparkle:shortVersionString>
+      <title>Yuzu Converter 0.6.3</title>
+      <sparkle:version>15</sparkle:version>
+      <sparkle:shortVersionString>0.6.3</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-      <description sparkle:format="markdown"><![CDATA[# Yuzu Converter 0.6.2
+      <description sparkle:format="markdown"><![CDATA[# Yuzu Converter 0.6.3
 
-Convert a batch into one PDF, save dragged browser images where you choose, and keep Operations small and brief. Release Notes appear in the update offer before installation.
+Recover unfinished work with Retry and keep shelf references usable after moving files. Release Notes appear in the update offer before installation.
 
 ## What changed
 
-- **Empty wheel:** hide the whole conversion wheel when the dragged inputs have no common target, including folders. Folder Actions remain available with Control.
-- **Smoother petal selection:** reuse wheel geometry and the glass mask, remove the appearance fade, and play selection sounds on a serial background queue so cold audio startup does not block the drag callback. Sound/haptic preferences are respected.
-- **Shared batch targets:** mixed supported inputs offer only formats available to every file. Multiple images dropped on PDF become one document, with one oriented page per image in drop order. Other targets retain per-file output.
-- **Virtual image drops:** raster pasteboard images, image file promises, and public image URLs can open the conversion wheel. Choosing a format opens Save Converted Image; the exact chosen filename is used and existing files are never replaced. Source-app representation limits apply.
-- **Readable spreadsheet PDFs:** XLSX/ODS/CSV/TSV export now uses a uniform table grid, wrapped text, worksheet titles, and page breaks. XLSX width/height hints and cached formula values improve readability; missing cached values show the formula text. Wide sheets continue across column bands.
-- **Compact Operations:** real 20-point outer margins keep headers and buttons away from the glass edges. Empty-state text wraps, and the window uses less space.
-- **Honest operation status:** remove progress bars that cannot measure every backend; keep state, completed-file counts, cancellation, and errors.
-- **Brief success feedback:** successful rows disappear after one second and the window closes when empty. Errors and cancellations remain until cleared. The window stays at normal level.
+- **Retry unfinished work:** failed conversions and Actions can retry remaining inputs with the original settings and destination access. Already created results are kept and are not processed again. Retry joins the queue tail.
+- **Readable failures:** Operations shows localized reasons and recovery suggestions for missing files, permissions, space, output-name conflicts, damaged input, and image downloads. Details shows the original technical diagnostic; Copy Details includes it in full.
+- **Stable Operations:** retrying the only failed row keeps its window open. The window grows slightly for recovery advice, retains its outer margins, and keeps one-second success expiry and normal window ordering.
+- **Safe virtual-image retry:** a prepared browser image or screenshot survives encoding failure and is reused without consuming a file promise twice. Finishing or clearing the request releases its private temporary file. An exhausted promise asks for a new drag; URL retries retain existing download bounds.
+- **Shelf references follow Yuzu moves:** completed Move Actions update every shelf, including hidden collections and real-folder children. Duplicate paths merge while selection and destination access are retained. Symlink moves do not redirect references to target children.
+- **Queued work follows known moves:** waiting and retryable requests use the updated source. Beside-source outputs follow that source; explicitly selected folders follow their own completed directory move. Image Save As keeps its exact chosen path.
+- **Locate Original:** missing or unreadable shelf items show a clear state and search button. Choose the original at its new location to replace only the reference. Visible shelves check availability in the background; closing preserves the collection and stops polling.
+- **Partial Move safety:** a preserved copy is not duplicated after source cleanup fails. References follow only completed moves; if nothing remains to retry, Operations asks you to inspect originals and created copies before removing anything.
 
-![Operations panel](https://raw.githubusercontent.com/StPashik/Yuzu-converter/v0.6.2/docs/images/operations.png)
+![Operations with Retry](https://raw.githubusercontent.com/StPashik/Yuzu-converter/v0.6.3/docs/images/operations.png)
 
 ## Download
 
-- [Apple Silicon (M-series) ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-arm64.zip)
-- [Intel ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-x64.zip)
+- [Apple Silicon (M-series) ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-Converter-0.6.3-arm64.zip)
+- [Intel ZIP](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-Converter-0.6.3-x64.zip)
 
-Requires **macOS 13 or later**. English is the default; English, Russian, German, French, and Spanish are available for app-owned controls. Release Notes and technical diagnostics are English.
+Requires **macOS 13 or later**. English is the default; English, Russian, German, French, and Spanish are available for app-owned controls. Project documentation, code comments, and Release Notes are English.
 
 ## Quick start
 
-1. Existing users: choose **Check for Updates…** in the Yuzu menu or Settings → About, read these notes, and install when ready. Publishing does not install or restart your app.
+1. Existing users: choose **Check for Updates…** in the Yuzu menu or Settings → About, read these notes, and install when ready. Release publication does not install or restart your app.
 2. First installation: unzip the download for your Mac, move **Yuzu Converter.app** to Applications, and launch it. Yuzu appears in the menu bar.
-3. Drag files from Finder or the shelf and hold **Shift** for conversion or **Control** for Actions. Drop on a petal; Escape cancels. Drop multiple images on PDF to create one document.
-4. Drag a supported virtual image, choose a conversion petal, and select its final location in **Save Converted Image**. Keep the source app open until preparation finishes.
+3. Drag files from Finder or the shelf; hold **Shift** for conversion or **Control** for Actions. Drop on a petal; Escape cancels.
+4. If work fails, fix the reported issue and choose **Retry** in Operations. Use **Details…** for the original error. The file counter restarts for remaining inputs.
+5. For a missing shelf reference, choose its search icon and locate the original. No file is moved or deleted by this repair.
 
 ## npm option
 
-The app runs without Node. The [release npm package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz) is an optional CLI installer for Node 20.11+ and compatible npm. With npm 12:
+The app runs without Node. The [release npm package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/stpashik-yuzu-converter-0.6.3.tgz) is an optional CLI installer for Node 20.11+ and compatible npm. With npm 12:
 
 ```sh
-YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/stpashik-yuzu-converter-0.6.2.tgz"
+YUZU_PACKAGE_URL="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/stpashik-yuzu-converter-0.6.3.tgz"
 npm install -g --allow-remote=all --allow-scripts="$YUZU_PACKAGE_URL" "$YUZU_PACKAGE_URL"
 yuzu-converter
 ```
@@ -55,18 +56,18 @@ Older npm versions can omit the two allowance options. Distribution is through G
 
 ## Support and verification
 
-Separate arm64 and x64 archives include FFmpeg/FFprobe under the existing codec policy. Read the [format matrix](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Conversion-matrix.md), [virtual image guide](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Virtual-image-drops.md), [shelf/queue workflow](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Shelf-workflow.md), and [validation record](https://github.com/StPashik/Yuzu-converter/blob/v0.6.2/docs/Validation.md). Conversion and seven Actions remain in scope; File tools are excluded. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-FFmpeg-Sources-0.6.2.tar.xz), licenses, signed feeds, and SHA256SUMS accompany this release. FFmpeg is LGPL 2.1 or later.
+Separate arm64 and x64 archives include FFmpeg/FFprobe under the existing codec policy. See the [retry/reference guide](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Retry-and-references.md), [format matrix](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Conversion-matrix.md), [virtual image guide](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Virtual-image-drops.md), and [validation record](https://github.com/StPashik/Yuzu-converter/blob/v0.6.3/docs/Validation.md). Conversion and seven Actions remain in scope; File tools and shelf conversion/Actions menus are excluded. [Complete corresponding media source](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-FFmpeg-Sources-0.6.3.tar.xz), component notices, signed feeds, and SHA256SUMS accompany the release. FFmpeg is LGPL 2.1 or later.
 
-Automated fixtures cover virtual-image provider lifetimes, bounded downloads, no-overwrite saves, batch PDF page order, table rendering, queue layout/expiry, and five locales. Full Excel styles, charts, merged cells, print areas, date/number formatting, and recalculation are not preserved by the native table exporter. Virtual imports accept one raster image, at most 32 MiB / 64 million total pixels / 256 frames; authenticated, blob/data, webpage and SVG URLs are unsupported. Browser representation availability varies.
+Automated fixtures cover real partial conversion/Move, input/destination alignment, preserved results, FIFO retry, scope lifetime, promise reuse/cleanup, transient HTTP failure, path variants, visible polling, recovery layouts, and the only-error-window regression. Physical Finder/browser/Powerbox/Sandbox, cross-volume devices, VoiceOver, macOS 13, and other-Mac appearance remain unverified. Native rendered previews show the opaque accessibility fallback.
 
-Physical Finder/browser/screenshot drags, external Powerbox/Sandbox access, audible/haptic timing, native-glass composition, VoiceOver, macOS 13, and macOS 26 Intel appearance remain unverified. Shelf references and queue history are session-only; cancellation preserves already published per-file results.
+Retry and shelf references last for the current session; automatic retries and restart recovery are not included. External moves require locating/resubmitting a file; no disk search is performed. A permission issue can require a new file/destination grant. Permanent format limitations require a supported request. Cross-volume folder moves remain unavailable. Native table PDF still omits exact Excel styles, charts, and formula calculation. Virtual-image representation and download limits remain unchanged.
 
-Both archives are ad hoc signed and have no Developer ID or Apple notarization; Gatekeeper may block first launch. Sparkle authenticates signed feeds and archives with the existing Yuzu Ed25519 key.
+Both archives are ad hoc signed and have no Developer ID or Apple notarization; Gatekeeper may block first launch. Sparkle authenticates feeds and archives with the existing Yuzu Ed25519 key.
 ]]></description>
-      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-Converter-0.6.2-arm64.zip" sparkle:edSignature="/PJCtMKhzQOmesNJ4r74+deM01RBn5BLBbzKkORNGPeKd1egwgmL7Zh8NCSFCgqUfRuu9TaMtr29Bs2rcfN2Cg==" length="24238029" type="application/octet-stream"></enclosure>
+      <enclosure url="https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-Converter-0.6.3-arm64.zip" sparkle:edSignature="EpGniZcuKJ4sBsfeUCLzu0Q/uyoV9Abde97LLtPoXCGYRe0tIjmw9fLEAzrOP89qwxIVP/01qLewRrZV0QY5BA==" length="24295949" type="application/octet-stream"></enclosure>
     </item>
   </channel>
 </rss><!-- sparkle-signatures:
-edSignature: X6hCSL4fNAiMDIgIyAYUiJBAaOMR8geliZjcKiW3tpy3125rshlywxT81w0gxFdK70NXq1bKhg/RLk9f7QfyDA==
-length: 7050
+edSignature: lKVNPuJqft/33JUzpRnggRXOYOFOcBeZD6MoEEeUBHWQ0I2EE7ZeBiyoTg3vraBbuJL5cvdsgGDs8DjrhgwPCw==
+length: 7635
 -->
