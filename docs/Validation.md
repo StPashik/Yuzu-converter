@@ -2,6 +2,27 @@
 
 Updated October 29, 2026. Results are version-specific. Translating the app and documentation does not turn historical checks into fresh runs.
 
+## v0.6.3 — Retry remaining inputs and repair shelf references
+
+Local Apple Silicon checks on October 29, 2026: **120 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Tests use the separate `.build/patch063-tests` scratch path and private temporary files. New five-language/light-dark Operations and missing-reference shelf renders were inspected; images use the opaque accessibility fallback.
+
+The new only-error-window test first failed: Retry removed the row before appending it, publishing an intermediate empty list that closed Operations. The fix reorders a local list and assigns one complete snapshot. The full 120-test pass includes that regression, FIFO/options retention, actual per-file destination retry without duplicate outputs, failed grant retention/clear, partial permission-failed Move, hidden shelves/children, queued/failed requests following known moves, collision naming, directory URL variants, visible deletion polling/reopen, and localized recovery families.
+
+Image fixtures verify a retained prepared promise is consumed only once, retry/clear cleanup, unavailable promise replay rejection, and an actual transient HTTP 503 followed by successful Retry. Public-copy cleanup failure is simulated at the executor boundary: the published copy is preserved, its input is not retried, and no source deletion is attempted. Core move fixtures separately exercise actual rename/no-op/copy callbacks, normalized directories, collisions and symlink-target exclusions.
+
+[Retry and reference recovery](Retry-and-references.md) records behavior and limits. Physical Finder/browser/Powerbox/Sandbox interoperability, VoiceOver, macOS 13, other-Mac appearance, and cross-volume devices remain deferred/unverified. Signed own-container archive/native CI evidence will be recorded separately. Installed owner app copies are not test targets.
+
+[Feature PR #29](https://github.com/StPashik/Yuzu-converter/pull/29) passed [native CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40882383387) on arm64 and native Intel. Each ran 120 Swift tests and 24 Node tests without skips, restored verified media tools, and passed its signed own-container Sandbox archive, including the new retry/completed-move self-check.
+
+| Final 0.6.3 / build 15 preparation | Recorded result |
+| --- | --- |
+| Archives | Both final ZIPs passed deep strict codesign, exact main/helper CPU slices, versions/resources/icons/notices, and signed own-container document/media/batch/exclusive-save/retry/move checks |
+| Compatibility | SDK 26+, minimum macOS 13, weak native-glass class imports on both final main executables; local x64 execution used Rosetta, independently of native Intel CI |
+| npm | Local npm ci with scripts disabled and 24 final Node tests passed; seven exact package files; both actual ZIPs installed/version/CPU/codesign-checked only in temporary homes |
+| Source/licenses | 24 corresponding-source/configuration files, four pinned upstream archives, both helper hashes/portable configurations, seven exact upstream media notices, and exact pinned Sparkle license verified |
+| Updates | Both archive signatures independently verified with the embedded production key; exact reviewed English Markdown in both signed feeds; HTTP Sparkle available/current/tampered/500 fixture passed without installation |
+| Frozen assets | Nine files; eight payload SHA-256 values in [Release-checksums-0.6.3.txt](Release-checksums-0.6.3.txt); legacy feeds have not advanced |
+
 ## v0.6.2 — Drag workflow, compact operations, and table PDFs
 
 Local Apple Silicon checks on October 29, 2026: **103 Swift tests**, **24 Node tests**, and **9 Python cache tests** passed without skips, with bundled media required. Final review additionally exercises optional/zero XLSX sizing hints. Tests run in project-specific scratch paths; installed owner app copies are not test targets.
@@ -30,6 +51,10 @@ The owner reported that PDF rasterization and wheel sound in 0.6.1 work. This is
 The reviewed draft's English notes and nine uploaded asset sizes/digests matched the frozen files before stable Latest publication. All nine unauthenticated versioned downloads matched SHA-256. Both normal Latest feed URLs returned the exact signed Markdown XML. Eight real production-key Sparkle information checks passed across arm64/x64: builds 7, 12, and 13 find build 14 and its Markdown notes; build 14 reports current. No update was downloaded or installed by these probes.
 
 Both legacy bridges are copied from those exact public signed feeds after their compatible assets are public; no signatures or archive URLs are regenerated. The application-release tag remains unchanged. Installed owner app copies are not release test targets.
+
+[Legacy feed PR #27](https://github.com/StPashik/Yuzu-converter/pull/27) passed [metadata/feed CI](https://github.com/StPashik/Yuzu-converter/actions/runs/40866394899): nine Python tests, six Node release tests, and both signed-feed checks. Native matrix expansion was correctly skipped for only documentation/feed changes. Both normal raw main/updates URLs then returned the exact public signed XML. Eight further production-key Sparkle checks passed for the same old/current builds and Markdown notes across both CPUs, for **16 information-only production checks** in total. No owner installation or restart was performed.
+
+A history audit preserved all 13 earlier release records, all their asset IDs/digests/sizes, and all 13 earlier tag objects. The release branch includes main's application-release and legacy-publication merge history for the GitFlow merge-back into develop. New physical/other-device gates remain explicitly unverified.
 
 ## v0.6.1 — Shelf, queue, PDF, and update-note polish
 

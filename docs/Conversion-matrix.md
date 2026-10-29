@@ -1,6 +1,6 @@
 # Conversion matrix: target inventory and implemented support
 
-Updated October 28, 2026 for v0.4.2. Version 0.4.1 was Apple Silicon only; version 0.4.2 restores separate Intel builds after native CI and signed Sandbox validation. The format inventory remains unchanged. The target remains Tangerine's 46-case format inventory. Missing capabilities remain requirements; they are not removed to match a backend. All candidate rows and research evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory). Version-specific build/test results and remaining physical gates are in [Validation.md](Validation.md).
+Updated October 29, 2026 for v0.6.3. Version 0.4.1 was Apple Silicon only; version 0.4.2 restores separate Intel builds after native CI and signed Sandbox validation. The format inventory remains unchanged. The target remains Tangerine's 46-case format inventory. Missing capabilities remain requirements; they are not removed to match a backend. All candidate rows and research evidence are in [TangerineResearch.md](TangerineResearch.md#full-static-candidate-inventory). Version-specific build/test results and remaining physical gates are in [Validation.md](Validation.md).
 
 ## Packaged Sandbox app and developer runs
 
@@ -76,9 +76,9 @@ The researched behavior and Yuzu’s implementation have separate evidence. [Tan
 
 Yuzu chooses its own enum order. Tangerine’s exact wheel order and visual parity are not established. The owner deferred new manual Finder/Sandbox/AirDrop/Terminal checks; those checks remain unverified.
 
-## Shelf entry points (0.6.0)
+## Shelf entry points (current behavior)
 
-Shelf Convert uses the same actual-source target intersection as the wheel, and exposes the same limitations above. Shelf Actions expose the existing seven actions without additional backends. New Shelf with Selection creates an independent reference collection. Conversion, Move, and ZIP use the shared serial queue; earlier published results remain available after failure/cancellation. Move can leave stale references on a shelf because the originals have moved; references are not silently replaced. See [Shelf workflow](Shelf-workflow.md).
+The shelf holds file references; drag them into the wheel for conversion or all seven Actions. It has no conversion/Actions menus. Float remains in the wheel. Conversion, Move, and ZIP use the shared serial queue; earlier published results remain available after failure/cancellation. Completed Yuzu moves now update shelf references and waiting/failed jobs, including real-directory descendants. External moves/deletions require availability refresh or Locate Original. Retry preserves completed results and queues only remaining inputs. See [Shelf workflow](Shelf-workflow.md).
 
 PDF raster output explicitly scales points to pixels at 300 DPI before applying page placement: the system drawing transform alone only scales down. Geometry uses the visible CropBox intersected with MediaBox, including nonzero origins and rotations. A four-page fixture checks JPG/PNG dimensions and colored content coverage; the original PDF from the owner's screenshot is unavailable, so that specific file remains unverified.
 

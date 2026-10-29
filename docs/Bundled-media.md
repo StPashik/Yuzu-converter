@@ -1,6 +1,6 @@
 # Bundled video conversion
 
-Current releases include FFmpeg and FFprobe for both Apple Silicon and Intel. Version 0.4.1 was Apple Silicon only; 0.4.2 restored Intel after native Intel CI and signed Sandbox checks passed. Version 0.6.2 retains the same media engines, codec policy, cache receipts, and portable build configurations. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
+Current releases include FFmpeg and FFprobe for both Apple Silicon and Intel. Version 0.4.1 was Apple Silicon only; 0.4.2 restored Intel after native Intel CI and signed Sandbox checks passed. Version 0.6.3 retains the same media engines, codec policy, cache receipts, and portable build configurations. No Homebrew installation, terminal setup, or separate codec download is required. The app remains a native macOS 13+ Sandbox app.
 
 ## What appears in the wheel
 
@@ -31,7 +31,7 @@ Outputs are written exclusively into private staging, validated, and published u
 | Opus | 1.6.1 | BSD license and upstream patent notices |
 | LAME | 3.100 | LGPL 2 or later |
 
-This software uses code from [FFmpeg](https://ffmpeg.org/) under LGPL 2.1 or later. [Download the complete corresponding media source package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.2/Yuzu-FFmpeg-Sources-0.6.2.tar.xz). The same GitHub Release hosts the application binaries and source. The package includes the exact upstream archives, checksums, build script, manifest, build configurations, and this guide. No upstream source patches are applied. License/notice copies are in [docs/licenses](licenses) and inside the app's `Contents/Resources/Media-Licenses` folder. Yuzu's own code and npm installer remain MIT; they invoke separate executables rather than link FFmpeg libraries into the application.
+This software uses code from [FFmpeg](https://ffmpeg.org/) under LGPL 2.1 or later. [Download the complete corresponding media source package](https://github.com/StPashik/Yuzu-converter/releases/download/v0.6.3/Yuzu-FFmpeg-Sources-0.6.3.tar.xz). The same GitHub Release hosts the application binaries and source. The package includes the exact upstream archives, checksums, build script, manifest, build configurations, and this guide. No upstream source patches are applied. License/notice copies are in [docs/licenses](licenses) and inside the app's `Contents/Resources/Media-Licenses` folder. Yuzu's own code and npm installer remain MIT; they invoke separate executables rather than link FFmpeg libraries into the application.
 
 The helper executables statically link these codec libraries and have only macOS system runtime dependencies. Source and build instructions are provided so the helpers can be rebuilt, modified, and relinked. There is no restriction on reverse engineering needed to debug modifications to LGPL components. Replacing signed app contents requires signing the modified bundle again; the application build script supports an ad-hoc development signature. A rebuilt helper is not a production update and cannot use the owner's private update-signing key.
 

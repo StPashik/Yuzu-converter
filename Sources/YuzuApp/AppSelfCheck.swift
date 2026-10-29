@@ -81,5 +81,33 @@ enum AppSelfCheck {
         let tar = try await engine.convert(SourceFile(url: zip), to: .tar, in: root)[0]
         _ = try await engine.convert(SourceFile(url: tar), to: .zip, in: root)
         _ = try FileOperations.compress([text, csv], in: root, compression: .maximum)
+        print("Sandbox self-check: retry and completed move references")
+        try await retryAndMove(in: root)
+    }
+
+    @MainActor private static func retryAndMove(in root: URL) async throws {
+        let first = root.appendingPathComponent("RetryFirst.txt"), later = root.appendingPathComponent("RetryLater.txt")
+        let output = root.appendingPathComponent("RetryOutput"), target = root.appendingPathComponent("RetryMoved")
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
+        try FileManager.default.createDirectory(at: target, withIntermediateDirectories: false)
+        try Data("First input".utf8).write(to: first)
+        let queue = JobQueue()
+        let id = queue.enqueue(JobRequest(files: ScopedFiles([first, later]), kind: .conversion(.md), destinations: [output, output]))
+        await queue.waitForCurrentJob()
+        guard queue.entries.first?.state == .failed, queue.entries.first?.canRetry == true,
+              queue.entries.first?.completedInputs == 1 else { throw CocoaError(.fileReadCorruptFile) }
+        try Data("Restored input".utf8).write(to: later)
+        queue.retry(id)
+        await queue.waitForCurrentJob()
+        guard queue.entries.first?.state == .completed,
+              Set(try FileManager.default.contentsOfDirectory(atPath: output.path)) == ["RetryFirst.md", "RetryLater.md"],
+              try String(contentsOf: output.appendingPathComponent("RetryFirst.md")) == "First input" else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        var moves: [FileMove] = []
+        let results = try FileOperations.copy([first], to: target, move: true, onMove: { moves.append($0) })
+        guard moves.count == 1, moves[0].relocating(first) == results.first,
+              !FileManager.default.fileExists(atPath: first.path),
+              try String(contentsOf: results[0]) == "First input" else { throw CocoaError(.fileReadCorruptFile) }
     }
 }

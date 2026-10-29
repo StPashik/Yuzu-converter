@@ -43,6 +43,10 @@ final class ActionController: NSObject, NSSharingServiceDelegate {
 
     func refreshLanguage() { shelves.forEach { $0.refreshLanguage() } }
 
+    func filesMoved(_ moves: [FileMove], access: ScopedFiles) {
+        shelves.forEach { $0.apply(moves, access: access) }
+    }
+
     func showShelf() {
         shelves.removeAll { $0.files.isEmpty && $0.window?.isVisible != true }
         if shelves.isEmpty { _ = makeShelf() }

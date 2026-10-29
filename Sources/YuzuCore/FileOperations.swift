@@ -1,6 +1,28 @@
 import Foundation
 import Darwin
 
+/// A completed move maps the original path and, for real directories, its descendants.
+public struct FileMove: Sendable, Equatable {
+    public let source: URL
+    public let destination: URL
+    public let includesDescendants: Bool
+
+    public init(source: URL, destination: URL, includesDescendants: Bool) {
+        self.source = source.standardizedFileURL
+        self.destination = destination.standardizedFileURL
+        self.includesDescendants = includesDescendants
+    }
+
+    public func relocating(_ url: URL) -> URL? {
+        guard source.isFileURL, destination.isFileURL, url.isFileURL else { return nil }
+        let root = source.pathComponents, path = url.standardizedFileURL.pathComponents
+        // The old path may no longer exist; lexical components also avoid following a moved symlink.
+        guard path.count >= root.count, Array(path.prefix(root.count)) == root,
+              path.count == root.count || includesDescendants else { return nil }
+        return path.dropFirst(root.count).reduce(destination) { $0.appendingPathComponent($1) }
+    }
+}
+
 /// File actions preserve existing destination names and stage copied/generated content before publication.
 /// Callers supply readable sources, a writable destination, and any required security-scoped grants.
 public enum FileOperations {
@@ -9,7 +31,9 @@ public enum FileOperations {
     /// is published atomically; a later failure or cancellation does not roll back completed batch items.
     /// Folder moves across volumes are rejected; cross-volume file moves copy before removing the original.
     /// This blocks during filesystem work. Run off the main thread; cancellation is checked between stages.
+    /// onPublish includes preserved copies; onMove reports only completed moves (including same-parent no-ops).
     public static func copy(_ sources: [URL], to directory: URL, move: Bool,
+                            onMove: (FileMove) -> Void = { _ in },
                             onPublish: (URL, URL) -> Void = { _, _ in }) throws -> [URL] {
         var isDirectory: ObjCBool = false
         guard !sources.isEmpty, FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
@@ -24,18 +48,23 @@ public enum FileOperations {
             // A directory cannot be copied into itself, even through a symlink.
             let resolvedSource = source.resolvingSymlinksInPath().path
             let resolvedDestination = destination.resolvingSymlinksInPath().path
-            if (try source.resourceValues(forKeys: [.isDirectoryKey])).isDirectory == true,
+            let values = try source.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+            let includesDescendants = values.isDirectory == true && values.isSymbolicLink != true
+            if values.isDirectory == true,
                resolvedDestination == resolvedSource || resolvedDestination.hasPrefix(resolvedSource + "/") {
                 throw ConversionError.invalid("A folder cannot be placed inside itself.")
             }
             if move {
                 if source.deletingLastPathComponent().resolvingSymlinksInPath() == destination.resolvingSymlinksInPath() {
-                    outputs.append(source); onPublish(source, source); continue
+                    outputs.append(source); onPublish(source, source)
+                    onMove(FileMove(source: source, destination: source, includesDescendants: includesDescendants))
+                    continue
                 }
                 do {
                     let output = try publish(source, named: source.lastPathComponent, in: destination)
                     outputs.append(output)
                     onPublish(source, output)
+                    onMove(FileMove(source: source, destination: output, includesDescendants: includesDescendants))
                     continue
                 } catch let error as POSIXError where error.code == .EXDEV {
                     // shortcut: cross-volume folder moves need coordinated recursive verification before deletion.
@@ -60,6 +89,8 @@ public enum FileOperations {
                     throw ConversionError.failed("The source changed while copying; both copies have been preserved.")
                 }
                 try FileManager.default.removeItem(at: source)
+                // A preserved copy is not a completed move until the original was safely removed.
+                onMove(FileMove(source: source, destination: output, includesDescendants: includesDescendants))
             }
         }
         return outputs
